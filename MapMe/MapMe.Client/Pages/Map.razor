@@ -1,0 +1,330 @@
+@page "/map"
+@page "/"
+@using Microsoft.JSInterop
+@using System.Net.Http
+@using System.Net.Http.Json
+@inject IJSRuntime JsRuntime
+@inject HttpClient Http
+@implements IAsyncDisposable
+
+<PageTitle>Map</PageTitle>
+
+<div class="page">
+    <h1>Map</h1>
+    
+    <div class="mb-3">
+        <Badge Color="BadgeColor.Primary">Interactive Map</Badge>
+    </div>
+
+    <div class="card">
+        <CardHeader>
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <CardTitle class="mb-0">Map View</CardTitle>
+                <div class="d-flex gap-2">
+                    <div class="search-container">
+                        <div class="input-group">
+                            <input type="text" 
+                                   class="form-control" 
+                                   placeholder="Search location..." 
+                                   @bind="_searchQuery"
+                                   @onkeyup="OnSearchKeyUp" />
+                            <Button Color="ButtonColor.Primary" 
+                                    @onclick="SearchLocation" 
+                                    Disabled="@(_isLoading || string.IsNullOrWhiteSpace(_searchQuery))">
+                                <i class="bi bi-search"></i>
+                            </Button>
+                        </div>
+                    </div>
+                    <Button Color="ButtonColor.Primary" 
+                            Outline="true" 
+                            Size="ButtonSize.Small" 
+                            @onclick="CenterMap" 
+                            Disabled="@_isLoading">
+                        @(_isLoading ? "Loading..." : "Center Map")
+                    </Button>
+                </div>
+            </div>
+        </CardHeader>
+        <CardBody>
+            @if (_isLoading)
+            {
+                <div class="d-flex justify-content-center align-items-center" style="height: 600px;">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading map...</span>
+                    </div>
+                    <span class="ms-2">Loading map and getting your location...</span>
+                </div>
+            }
+            <div id="map" style="height: 600px; border-radius: 4px; overflow: hidden; @(_isLoading ? "display: none;" : "") "></div>
+        </CardBody>
+    </div>
+
+    <div class="mt-3">
+        <Button Color="ButtonColor.Primary" Href="/">Back to Home</Button>
+    </div>
+</div>
+
+@code {
+    private IJSObjectReference? _mapModule;
+    private DotNetObjectReference<Map>? _dotNetHelper;
+    private double _latitude = 1.3521; // Default to Singapore
+    private double _longitude = 103.8198;
+    private int _zoom = 12;
+    private const string MapElementId = "map";
+    private string _mapType = "roadmap";
+    private bool _isLoading = true;
+    private bool _isDisposed;
+    private string _searchQuery = string.Empty;
+    private string? _googleMapsApiKey;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await InitializeMap();
+        }
+    }
+
+    private async Task InitializeMap()
+    {
+        try
+        {
+            _dotNetHelper = DotNetObjectReference.Create(this);
+            _mapModule = await JsRuntime.InvokeAsync<IJSObjectReference>(
+                "import", 
+                "/js/mapInitializer.js");
+            
+            // Fetch Google Maps API key from server configuration endpoint
+            try
+            {
+                var cfg = await Http.GetFromJsonAsync<MapConfig>("/config/maps");
+                _googleMapsApiKey = cfg?.ApiKey;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Failed to retrieve Maps API key: {ex.Message}");
+            }
+                
+            // Try to get user's current location first
+            try
+            {
+                var location = await GetCurrentLocationAsync();
+                _latitude = location.Latitude;
+                _longitude = location.Longitude;
+                _zoom = 15; // Zoom in more when using current location
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Geolocation error: {ex.Message}. Using default location.");
+                // Use default location (Singapore)
+            }
+            
+            await _mapModule.InvokeVoidAsync(
+                "initMap", 
+                _dotNetHelper, 
+                MapElementId, 
+                _latitude, 
+                _longitude, 
+                _zoom, 
+                _mapType,
+                _googleMapsApiKey);
+                
+            _isLoading = false;
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error initializing map: {ex.Message}");
+            _isLoading = false;
+            StateHasChanged();
+        }
+    }
+    
+    private async Task<Location> GetCurrentLocationAsync()
+    {
+        try
+        {
+            var position = await JsRuntime.InvokeAsync<GeolocationPosition>("getCurrentPosition");
+            
+            if (position?.Coords == null)
+            {
+                Console.WriteLine("Received null or incomplete geolocation data");
+                throw new Exception("Could not retrieve geolocation data");
+            }
+            
+            return new Location 
+            { 
+                Latitude = position.Coords.Latitude, 
+                Longitude = position.Coords.Longitude 
+            };
+        }
+        catch (JSException jsex)
+        {
+            Console.WriteLine($"JavaScript error getting current location: {jsex.Message}");
+            // Return default location (Singapore) if geolocation fails
+            return new Location 
+            { 
+                Latitude = 1.3521, 
+                Longitude = 103.8198 
+            };
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error getting current location: {ex.Message}");
+            // Return default location (Singapore) if geolocation fails
+            return new Location 
+            { 
+                Latitude = 1.3521, 
+                Longitude = 103.8198 
+            };
+        }
+    }
+    
+    private class GeolocationPosition
+    {
+        public GeolocationCoordinates? Coords { get; set; }
+        public long Timestamp { get; set; }
+    }
+    
+    private class GeolocationCoordinates
+    {
+        public double Latitude { get; set; }
+        public double Longitude { get; set; }
+        public double? Altitude { get; set; }
+        public double Accuracy { get; set; }
+        public double? AltitudeAccuracy { get; set; }
+        public double? Heading { get; set; }
+        public double? Speed { get; set; }
+    }
+    
+    public class Location
+    {
+        public double Latitude { get; set; }
+        public double Longitude { get; set; }
+    }
+
+    private async Task CenterMap()
+    {
+        try
+        {
+            if (_mapModule != null)
+            {
+                // Always recenter to the user's current geolocation
+                var location = await GetCurrentLocationAsync();
+                _latitude = location.Latitude;
+                _longitude = location.Longitude;
+                _zoom = 15; // reasonable zoom for current location
+
+                // Set the center on the already-initialized map
+                await _mapModule.InvokeVoidAsync("setCenter",
+                    _latitude,
+                    _longitude,
+                    _zoom);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error centering map: {ex.Message}");
+        }
+    }
+
+    private async Task SearchLocation()
+    {
+        if (string.IsNullOrWhiteSpace(_searchQuery) || _mapModule == null) 
+        {
+            Console.WriteLine("Search query is empty or map module is not initialized");
+            return;
+        }
+        
+        try
+        {
+            try
+            {
+                Console.WriteLine($"Searching for location: {_searchQuery}");
+                
+                // Then call the search function
+                var result = await _mapModule.InvokeAsync<SearchResult>("searchLocation", _searchQuery);
+                
+                if (result != null && result.Latitude != 0 && result.Longitude != 0)
+                {
+                    Console.WriteLine($"Found location: {result.Name} at {result.Latitude}, {result.Longitude}");
+                    _latitude = result.Latitude;
+                    _longitude = result.Longitude;
+                    _zoom = 16; // Zoom in more when searching for a location
+                    
+                    // Update the map center
+                    await _mapModule.InvokeVoidAsync("setCenter", _latitude, _longitude, _zoom);
+                    
+                    // Update the UI to show the new position
+                    StateHasChanged();
+                }
+                else
+                {
+                    // Show error to user
+                    Console.WriteLine($"Location '{_searchQuery}' not found. Please try a different search term.");
+                }
+            }
+            catch (JSException jex)
+            {
+                Console.WriteLine($"JavaScript error during search: {jex.Message}");
+                Console.WriteLine($"Stack trace: {jex.StackTrace}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error during search: {ex.Message}");
+                Console.WriteLine($"Stack trace: {ex.StackTrace}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error in SearchLocation: {ex.Message}");
+            Console.WriteLine($"Stack trace: {ex.StackTrace}");
+        }
+        finally
+        {
+            // No-op: keep map visible during search to avoid layout glitches
+        }
+    }
+
+    private async Task OnSearchKeyUp(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await SearchLocation();
+        }
+    }
+    
+    private class SearchResult
+    {
+        public double Latitude { get; set; }
+        public double Longitude { get; set; }
+        public string? Name { get; set; }
+        public string? Address { get; set; }
+    }
+
+    private class MapConfig
+    {
+        public string? ApiKey { get; set; }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_isDisposed) return;
+        
+        if (_mapModule != null)
+        {
+            try
+            {
+                await _mapModule.InvokeVoidAsync("dispose");
+                await _mapModule.DisposeAsync();
+            }
+            catch (JSDisconnectedException)
+            {
+                // Handle the case where the JavaScript side is no longer available
+            }
+        }
+        
+        _dotNetHelper?.Dispose();
+        _isDisposed = true;
+    }
+}
