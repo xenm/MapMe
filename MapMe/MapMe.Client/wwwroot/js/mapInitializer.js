@@ -533,23 +533,43 @@ function renderMarks(marks) {
 
             mk.addListener('click', () => {
                 const title = m.title ? `<div style="font-weight:600;">${escapeHtml(m.title)}</div>` : '';
-                const addr = m.address ? `<div style="color:#6c757d; font-size:12px;">${escapeHtml(m.address)}</div>` : '';
-                const note = m.note ? `<div style="margin-top:6px;">${escapeHtml(m.note)}</div>` : '';
-                const by = m.createdBy ? `<div style="color:#6c757d; font-size:12px; margin-top:4px;">By: ${escapeHtml(m.createdBy)}</div>` : '';
-                const userImg = m.userPhotoUrl && typeof m.userPhotoUrl === 'string' && m.userPhotoUrl.length
-                    ? m.userPhotoUrl
-                    : '/images/user-avatar.svg';
-                const placeImg = m.placePhotoUrl && typeof m.placePhotoUrl === 'string' && m.placePhotoUrl.length
+                const addr = m.address ? `<div style=\"color:#6c757d; font-size:12px;\">${escapeHtml(m.address)}</div>` : '';
+                const note = m.note ? `<div style=\"margin-top:6px;\">${escapeHtml(m.note)}</div>` : '';
+                const byName = m.createdBy ? escapeHtml(m.createdBy) : '';
+                const by = byName
+                    ? `<div style=\"color:#6c757d; font-size:12px; margin-top:4px;\">By: <a href=\"/user/${encodeURIComponent(byName)}\" style=\"text-decoration:none;\">${byName}</a></div>`
+                    : '';
+                // Prepare photos: 2 user photos (or placeholders), 1 place photo
+                const userPhotosArr = Array.isArray(m.userPhotoUrls) && m.userPhotoUrls.length
+                    ? m.userPhotoUrls.slice(0, 2)
+                    : [m.userPhotoUrl, m.userPhotoUrl].filter(Boolean);
+                while (userPhotosArr.length < 2) userPhotosArr.push('/images/user-avatar.svg');
+                const placeImg = (m.placePhotoUrl && typeof m.placePhotoUrl === 'string' && m.placePhotoUrl.length)
                     ? m.placePhotoUrl
                     : '/images/place-photo.svg';
-                const photos = `
-                  <div style="display:flex; gap:8px; margin:8px 0;">
-                    <img src="${userImg}" alt="User" style="width:72px;height:72px;border-radius:8px;object-fit:cover;border:1px solid #e9ecef;"/>
-                    <img src="${placeImg}" alt="Place" style="width:72px;height:72px;border-radius:8px;object-fit:cover;border:1px solid #e9ecef;"/>
+                const thumbHtml = (url) => `<img class=\"mm-thumb\" src=\"${url}\" alt=\"Photo\" style=\"width:72px;height:72px;border-radius:8px;object-fit:cover;border:1px solid #e9ecef;cursor:pointer;\"/>`;
+                const gallery = `
+                  <div class=\"mm-gallery\" style=\"display:flex; gap:8px; margin:8px 0;\">
+                    ${thumbHtml(userPhotosArr[0] || '/images/user-avatar.svg')}
+                    ${thumbHtml(userPhotosArr[1] || '/images/user-avatar.svg')}
+                    ${thumbHtml(placeImg)}
                   </div>`;
-                const content = `<div style="max-width:260px;">${title}${addr}${photos}${note}${by}</div>`;
+                const content = `<div style=\"max-width:280px;\">${title}${addr}${gallery}${note}${by}</div>`;
                 sharedInfoWindow.setContent(content);
                 sharedInfoWindow.open({ map, anchor: mk });
+                // After open, attach click handlers for lightbox
+                setTimeout(() => {
+                    try {
+                        const container = document.querySelector('.gm-style-iw, .gm-style-iw-c')?.parentElement || document.body;
+                        const thumbs = container.querySelectorAll('.mm-thumb');
+                        const allUrls = [userPhotosArr[0] || '/images/user-avatar.svg', userPhotosArr[1] || '/images/user-avatar.svg', placeImg];
+                        thumbs.forEach((el, idx) => {
+                            el.addEventListener('click', () => {
+                                try { window.MapMe && typeof window.MapMe.openPhotoViewer === 'function' ? window.MapMe.openPhotoViewer(allUrls, idx) : openPhotoViewer(allUrls, idx); } catch (_) {}
+                            }, { once: true });
+                        });
+                    } catch (_) { /* ignore */ }
+                }, 0);
             });
 
             savedMarkers.push(mk);
@@ -574,3 +594,69 @@ function escapeHtml(str) {
 window.MapMe = window.MapMe || {};
 window.MapMe.renderMarks = renderMarks;
 export { renderMarks };
+
+// Lightweight photo viewer (lightbox) with zoom controls
+let _mmViewerInjected = false;
+function ensureViewerStyles() {
+    if (_mmViewerInjected) return;
+    _mmViewerInjected = true;
+    const style = document.createElement('style');
+    style.textContent = `
+    .mm-viewer-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.85);display:flex;align-items:center;justify-content:center;z-index:99999}
+    .mm-viewer-content{position:relative;max-width:90vw;max-height:90vh}
+    .mm-viewer-img{max-width:90vw;max-height:90vh;transform:scale(1);transition:transform .15s ease;cursor:grab;border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.4)}
+    .mm-viewer-controls{position:absolute;top:8px;right:8px;display:flex;gap:8px}
+    .mm-btn{background:#ffffff; border:0; padding:8px 10px; border-radius:6px; cursor:pointer; font-weight:600}
+    `;
+    document.head.appendChild(style);
+}
+
+function openPhotoViewer(urls, startIndex = 0) {
+    try {
+        ensureViewerStyles();
+        const list = Array.isArray(urls) ? urls.filter(Boolean) : [];
+        if (!list.length) return;
+        let idx = Math.max(0, Math.min(startIndex, list.length - 1));
+        let scale = 1;
+        const overlay = document.createElement('div');
+        overlay.className = 'mm-viewer-overlay';
+        const content = document.createElement('div');
+        content.className = 'mm-viewer-content';
+        const img = document.createElement('img');
+        img.className = 'mm-viewer-img';
+        img.src = list[idx];
+        const ctrls = document.createElement('div');
+        ctrls.className = 'mm-viewer-controls';
+        const btnIn = document.createElement('button'); btnIn.className = 'mm-btn'; btnIn.textContent = '+';
+        const btnOut = document.createElement('button'); btnOut.className = 'mm-btn'; btnOut.textContent = '-';
+        const btnNext = document.createElement('button'); btnNext.className = 'mm-btn'; btnNext.textContent = '›';
+        const btnPrev = document.createElement('button'); btnPrev.className = 'mm-btn'; btnPrev.textContent = '‹';
+        const btnClose = document.createElement('button'); btnClose.className = 'mm-btn'; btnClose.textContent = '×';
+        ctrls.append(btnPrev, btnIn, btnOut, btnNext, btnClose);
+        content.append(img, ctrls);
+        overlay.appendChild(content);
+        document.body.appendChild(overlay);
+
+        const applyScale = () => { img.style.transform = `scale(${scale})`; };
+        const close = () => { try { document.body.removeChild(overlay); } catch (_) {} window.removeEventListener('keydown', onKey); };
+        const showIdx = (i) => { idx = (i + list.length) % list.length; img.src = list[idx]; scale = 1; applyScale(); };
+        const onKey = (e) => { if (e.key === 'Escape') close(); if (e.key === 'ArrowRight') showIdx(idx+1); if (e.key === 'ArrowLeft') showIdx(idx-1); };
+        btnIn.onclick = () => { scale = Math.min(4, scale + 0.25); applyScale(); };
+        btnOut.onclick = () => { scale = Math.max(0.5, scale - 0.25); applyScale(); };
+        btnNext.onclick = () => showIdx(idx + 1);
+        btnPrev.onclick = () => showIdx(idx - 1);
+        btnClose.onclick = close;
+        overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+        window.addEventListener('keydown', onKey);
+        // Basic drag to pan
+        let dragging = false, sx=0, sy=0, ox=0, oy=0;
+        img.addEventListener('mousedown', (e)=>{ dragging=true; sx=e.clientX; sy=e.clientY; img.style.cursor='grabbing'; ox = img.offsetLeft; oy = img.offsetTop; e.preventDefault(); });
+        window.addEventListener('mousemove', (e)=>{ if(!dragging) return; const dx=e.clientX-sx, dy=e.clientY-sy; img.style.transform = `translate(${dx}px, ${dy}px) scale(${scale})`; });
+        window.addEventListener('mouseup', ()=>{ if(!dragging) return; dragging=false; img.style.cursor='grab'; img.style.transform = `scale(${scale})`; });
+        // Wheel to zoom
+        overlay.addEventListener('wheel', (e)=>{ e.preventDefault(); const delta = e.deltaY > 0 ? -0.1 : 0.1; scale = Math.min(4, Math.max(0.5, scale + delta)); applyScale(); }, { passive: false });
+    } catch (e) { console.error('openPhotoViewer error', e); }
+}
+
+window.MapMe = window.MapMe || {};
+window.MapMe.openPhotoViewer = openPhotoViewer;

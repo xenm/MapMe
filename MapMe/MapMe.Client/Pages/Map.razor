@@ -445,6 +445,8 @@
         public List<string>? PhotoReferences { get; set; }
         public string? PlacePhotoUrl { get; set; }
         public string? UserPhotoUrl { get; set; }
+        // Optional: multiple user photos (first two will be shown in marker bubble)
+        public List<string>? UserPhotoUrls { get; set; }
         public DateTime SavedAt { get; set; }
     }
 
@@ -552,6 +554,8 @@
                 PlacePhotoUrl = geocoded?.PlacePhotoUrl,
                 // TODO: Populate with real user profile photo if available
                 UserPhotoUrl = null,
+                // TODO: Populate with multiple user photos when backend/profile is available
+                UserPhotoUrls = null,
                 SavedAt = DateTime.UtcNow
             };
 
@@ -634,6 +638,7 @@
                 note = m.Note,
                 createdBy = m.CreatedBy,
                 userPhotoUrl = m.UserPhotoUrl,
+                userPhotoUrls = m.UserPhotoUrls,
                 placePhotoUrl = m.PlacePhotoUrl
             }).ToList();
             await _mapModule.InvokeVoidAsync("renderMarks", payload);
