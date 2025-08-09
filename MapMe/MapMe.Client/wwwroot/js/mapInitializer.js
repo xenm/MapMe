@@ -550,9 +550,9 @@ function renderMarks(marks) {
             const uniquePlace = [...new Set(placePhotosArr.filter(Boolean))];
             if (!uniquePlace.length) uniquePlace.push('/images/place-photo.svg');
 
-            const firstUserPhoto = uniqueUser[0] || avatarPath;
+            const firstPlacePhoto = uniquePlace[0] || '/images/place-photo.svg';
             const icon = {
-                url: firstUserPhoto,
+                url: firstPlacePhoto,
                 scaledSize: new google.maps.Size(52, 52),
                 anchor: new google.maps.Point(26, 26)
             };
