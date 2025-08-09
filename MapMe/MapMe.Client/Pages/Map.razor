@@ -396,6 +396,32 @@
         public string? Name { get; set; }
         public string? Address { get; set; }
         public string? PlaceId { get; set; }
+        public string? Url { get; set; }
+        public List<string>? Types { get; set; }
+        // Note: Google Maps JS Places Photo objects do not expose photo_reference.
+        // For long-term stable images, use Places Details (Web Service) server-side
+        // to fetch photo_reference values and generate URLs on demand.
+        public List<string>? PhotoReferences { get; set; }
+    }
+
+    // DTO from JS Places getDetails
+    public class PlaceDetailsDto
+    {
+        public string? PlaceId { get; set; }
+        public string? Name { get; set; }
+        // Matches JS payload: { location: { lat: number, lng: number } }
+        public PlaceLocationDto? Location { get; set; }
+        public List<string>? Types { get; set; }
+        public string? Url { get; set; }
+        // See note above: JS does not expose photo_reference. Keep placeholders.
+        public List<string>? PhotoReferences { get; set; }
+        public string? Address { get; set; }
+    }
+
+    public class PlaceLocationDto
+    {
+        public double Lat { get; set; }
+        public double Lng { get; set; }
     }
 
     public class MarkDate
@@ -407,6 +433,10 @@
         public string? PlaceId { get; set; }
         public string CreatedBy { get; set; } = "current user";
         public string? Note { get; set; }
+        public List<string>? Types { get; set; }
+        public string? Url { get; set; }
+        // Store photo_reference values if obtained via backend.
+        public List<string>? PhotoReferences { get; set; }
         public DateTime SavedAt { get; set; }
     }
 
@@ -422,6 +452,37 @@
     public async Task OnMarkerDragEnd(double lat, double lng)
     {
         await BeginConfirmAsync(lat, lng);
+    }
+
+    // Called from JS when a POI was clicked and details are available
+    [JSInvokable]
+    public Task OnPlaceDetails(PlaceDetailsDto details)
+    {
+        if (details?.Location != null)
+        {
+            _pendingLat = details.Location.Lat;
+            _pendingLng = details.Location.Lng;
+        }
+        else
+        {
+            // Fallback to 0/0 if missing; user may cancel
+            _pendingLat = 0;
+            _pendingLng = 0;
+        }
+
+        _pendingNote = string.Empty;
+        _pendingGeo = new ReverseGeocodeResult
+        {
+            Name = details?.Name,
+            Address = details?.Address,
+            PlaceId = details?.PlaceId,
+            Url = details?.Url,
+            Types = details?.Types,
+            PhotoReferences = details?.PhotoReferences
+        };
+        _showConfirm = true;
+        StateHasChanged();
+        return Task.CompletedTask;
     }
 
     private async Task BeginConfirmAsync(double lat, double lng)
@@ -476,6 +537,9 @@
                 Address = geocoded?.Address,
                 PlaceId = geocoded?.PlaceId,
                 Note = string.IsNullOrWhiteSpace(note) ? null : note,
+                Types = geocoded?.Types,
+                Url = geocoded?.Url,
+                PhotoReferences = geocoded?.PhotoReferences,
                 SavedAt = DateTime.UtcNow
             };
 

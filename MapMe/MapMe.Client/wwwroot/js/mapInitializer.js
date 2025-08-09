@@ -198,9 +198,61 @@ export async function initMap(dotNetHelper, elementId, lat, lng, zoom, mapType, 
             }
 
             clickListener = map.addListener('click', (e) => {
+                try {
+                    // If user clicked a POI on the map, e.placeId will be present
+                    if (e.placeId) {
+                        // Prevent default Maps behavior
+                        e.stop();
+                        const service = new google.maps.places.PlacesService(map);
+                        const fields = [
+                            'place_id', 'name', 'geometry', 'types', 'url', 'photos', 'formatted_address'
+                        ];
+                        service.getDetails({ placeId: e.placeId, fields }, (place, status) => {
+                            if (status === google.maps.places.PlacesServiceStatus.OK && place) {
+                                try {
+                                    const loc = place.geometry && place.geometry.location
+                                        ? { lat: place.geometry.location.lat(), lng: place.geometry.location.lng() }
+                                        : { lat: lat, lng: lng };
+                                    // Move the marker to place location
+                                    marker.setPosition(new google.maps.LatLng(loc.lat, loc.lng));
+                                    // Build a portable details object
+                                    // NOTE: JS Places Photo object does not expose photo_reference.
+                                    // If you need stable references, use Places Details Web Service on the server
+                                    // to get photo_reference values and generate URLs when rendering.
+                                    const photoReferences = [];
+                                    const details = {
+                                        placeId: place.place_id || e.placeId,
+                                        name: place.name || null,
+                                        location: loc,
+                                        types: place.types || [],
+                                        url: place.url || null,
+                                        photoReferences: photoReferences,
+                                        address: place.formatted_address || null
+                                    };
+                                    if (dotNetHelper) {
+                                        dotNetHelper.invokeMethodAsync('OnPlaceDetails', details);
+                                    }
+                                } catch (err) {
+                                    console.error('Error processing place details', err);
+                                }
+                            } else {
+                                // Fallback: act like a raw map click
+                                const pos = e.latLng;
+                                marker.setPosition(pos);
+                                if (dotNetHelper) {
+                                    dotNetHelper.invokeMethodAsync('OnMapClick', pos.lat(), pos.lng());
+                                }
+                            }
+                        });
+                        return; // handled via details path
+                    }
+                } catch (err) {
+                    console.debug('No placeId on click or error while handling POI:', err);
+                }
+
+                // Regular map click without a placeId
                 const pos = e.latLng;
                 marker.setPosition(pos);
-                // Notify .NET about the click
                 if (dotNetHelper) {
                     dotNetHelper.invokeMethodAsync('OnMapClick', pos.lat(), pos.lng());
                 }
