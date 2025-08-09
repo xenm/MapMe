@@ -220,6 +220,24 @@ export async function initMap(dotNetHelper, elementId, lat, lng, zoom, mapType, 
     }
 }
 
+// Provide a no-op dispose to be safely called from .NET during teardown
+export function dispose() {
+    try {
+        if (clickListener) {
+            google.maps.event.removeListener(clickListener);
+            clickListener = null;
+        }
+        if (marker) {
+            marker.setMap(null);
+            marker = null;
+        }
+        // We intentionally do not call any DOM operations if map element is gone
+    } catch (e) {
+        // Swallow any errors during dispose
+        console.debug('dispose() ignored an error:', e);
+    }
+}
+
 // Set map center
 function setCenter(lat, lng, zoom) {
     if (map) {

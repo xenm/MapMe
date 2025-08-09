@@ -132,11 +132,17 @@
             _isLoading = false;
             StateHasChanged();
         }
+        catch (JSDisconnectedException)
+        {
+            // Occurs during prerender or when the circuit/browser connection is gone.
+            // Swallow to avoid "no browser renderer" errors.
+            return;
+        }
         catch (Exception ex)
         {
             Console.WriteLine($"Error initializing map: {ex.Message}");
             _isLoading = false;
-            StateHasChanged();
+            try { StateHasChanged(); } catch { /* ignore if renderer is gone */ }
         }
     }
     
@@ -321,6 +327,10 @@
             catch (JSDisconnectedException)
             {
                 // Handle the case where the JavaScript side is no longer available
+            }
+            catch
+            {
+                // Best-effort cleanup
             }
         }
         
