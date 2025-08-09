@@ -214,6 +214,9 @@ export async function initMap(dotNetHelper, elementId, lat, lng, zoom, mapType, 
                 }
             });
         };
+
+        // Ensure we add the initial marker and listeners
+        addMarker(lat, lng, dotNetHelper);
     } catch (error) {
         console.error('Error initializing map:', error);
         throw error;
@@ -260,3 +263,47 @@ window.MapMe.setCenter = setCenter;
 export { setCenter };
 
 // Removed legacy loader that embedded an API key. Keys must be provided at runtime.
+
+// Reverse geocode a coordinate to a friendly name/address
+async function reverseGeocode(lat, lng) {
+    if (!mapsApiLoaded) {
+        console.error('Google Maps API not loaded');
+        return null;
+    }
+    try {
+        const geocoder = new google.maps.Geocoder();
+        const latlng = { lat: Number(lat), lng: Number(lng) };
+        return await new Promise((resolve) => {
+            geocoder.geocode({ location: latlng }, (results, status) => {
+                if (status === 'OK' && results && results.length > 0) {
+                    const best = results[0];
+                    resolve({
+                        name: best.address_components?.find(c => c.types.includes('point_of_interest'))?.long_name || best.formatted_address,
+                        address: best.formatted_address,
+                        placeId: best.place_id || null
+                    });
+                } else {
+                    resolve(null);
+                }
+            });
+        });
+    } catch (e) {
+        console.error('reverseGeocode error', e);
+        return null;
+    }
+}
+
+// Simple localStorage helpers
+window.MapMe = window.MapMe || {};
+window.MapMe.storage = {
+    save: (key, value) => {
+        try { localStorage.setItem(key, value); } catch (_) {}
+    },
+    load: (key) => {
+        try { return localStorage.getItem(key); } catch (_) { return null; }
+    }
+};
+
+// Make helpers available on window and as module exports
+window.MapMe.reverseGeocode = reverseGeocode;
+export { reverseGeocode };
