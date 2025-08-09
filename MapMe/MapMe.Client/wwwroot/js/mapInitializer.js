@@ -266,6 +266,12 @@ export async function initMap(dotNetHelper, elementId, lat, lng, zoom, mapType, 
                                     // If you need stable references, use Places Details Web Service on the server
                                     // to get photo_reference values and generate URLs when rendering.
                                     const photoReferences = [];
+                                    let placePhotoUrl = null;
+                                    try {
+                                        if (place.photos && place.photos.length > 0 && typeof place.photos[0].getUrl === 'function') {
+                                            placePhotoUrl = place.photos[0].getUrl({ maxWidth: 600, maxHeight: 400 });
+                                        }
+                                    } catch (_) { /* ignore */ }
                                     const details = {
                                         placeId: place.place_id || e.placeId,
                                         name: place.name || null,
@@ -273,7 +279,8 @@ export async function initMap(dotNetHelper, elementId, lat, lng, zoom, mapType, 
                                         types: place.types || [],
                                         url: place.url || null,
                                         photoReferences: photoReferences,
-                                        address: place.formatted_address || null
+                                        address: place.formatted_address || null,
+                                        placePhotoUrl: placePhotoUrl
                                     };
                                     // Show pre-confirm prompt
                                     showDateProposalPrompt({
@@ -483,11 +490,22 @@ function renderMarks(marks) {
             });
 
             mk.addListener('click', () => {
-                const title = m.title ? `<div style="font-weight:600;">${m.title}</div>` : '';
-                const addr = m.address ? `<div style="color:#6c757d; font-size:12px;">${m.address}</div>` : '';
-                const note = m.note ? `<div style="margin-top:4px;">${escapeHtml(m.note)}</div>` : '';
+                const title = m.title ? `<div style="font-weight:600;">${escapeHtml(m.title)}</div>` : '';
+                const addr = m.address ? `<div style="color:#6c757d; font-size:12px;">${escapeHtml(m.address)}</div>` : '';
+                const note = m.note ? `<div style="margin-top:6px;">${escapeHtml(m.note)}</div>` : '';
                 const by = m.createdBy ? `<div style="color:#6c757d; font-size:12px; margin-top:4px;">By: ${escapeHtml(m.createdBy)}</div>` : '';
-                const content = `<div style="max-width:220px;">${title}${addr}${note}${by}</div>`;
+                const userImg = m.userPhotoUrl && typeof m.userPhotoUrl === 'string' && m.userPhotoUrl.length
+                    ? m.userPhotoUrl
+                    : '/images/user-avatar.svg';
+                const placeImg = m.placePhotoUrl && typeof m.placePhotoUrl === 'string' && m.placePhotoUrl.length
+                    ? m.placePhotoUrl
+                    : '/images/place-photo.svg';
+                const photos = `
+                  <div style="display:flex; gap:8px; margin:8px 0;">
+                    <img src="${userImg}" alt="User" style="width:72px;height:72px;border-radius:8px;object-fit:cover;border:1px solid #e9ecef;"/>
+                    <img src="${placeImg}" alt="Place" style="width:72px;height:72px;border-radius:8px;object-fit:cover;border:1px solid #e9ecef;"/>
+                  </div>`;
+                const content = `<div style="max-width:260px;">${title}${addr}${photos}${note}${by}</div>`;
                 sharedInfoWindow.setContent(content);
                 sharedInfoWindow.open({ map, anchor: mk });
             });

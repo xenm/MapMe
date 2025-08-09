@@ -406,6 +406,7 @@
         // For long-term stable images, use Places Details (Web Service) server-side
         // to fetch photo_reference values and generate URLs on demand.
         public List<string>? PhotoReferences { get; set; }
+        public string? PlacePhotoUrl { get; set; }
     }
 
     // DTO from JS Places getDetails
@@ -420,6 +421,7 @@
         // See note above: JS does not expose photo_reference. Keep placeholders.
         public List<string>? PhotoReferences { get; set; }
         public string? Address { get; set; }
+        public string? PlacePhotoUrl { get; set; }
     }
 
     public class PlaceLocationDto
@@ -441,6 +443,8 @@
         public string? Url { get; set; }
         // Store photo_reference values if obtained via backend.
         public List<string>? PhotoReferences { get; set; }
+        public string? PlacePhotoUrl { get; set; }
+        public string? UserPhotoUrl { get; set; }
         public DateTime SavedAt { get; set; }
     }
 
@@ -482,7 +486,8 @@
             PlaceId = details?.PlaceId,
             Url = details?.Url,
             Types = details?.Types,
-            PhotoReferences = details?.PhotoReferences
+            PhotoReferences = details?.PhotoReferences,
+            PlacePhotoUrl = details?.PlacePhotoUrl
         };
         _showConfirm = true;
         StateHasChanged();
@@ -544,6 +549,9 @@
                 Types = geocoded?.Types,
                 Url = geocoded?.Url,
                 PhotoReferences = geocoded?.PhotoReferences,
+                PlacePhotoUrl = geocoded?.PlacePhotoUrl,
+                // TODO: Populate with real user profile photo if available
+                UserPhotoUrl = null,
                 SavedAt = DateTime.UtcNow
             };
 
@@ -624,7 +632,9 @@
                 title = !string.IsNullOrWhiteSpace(m.Name) ? m.Name : $"Lat {m.Latitude:F5}, Lng {m.Longitude:F5}",
                 address = m.Address,
                 note = m.Note,
-                createdBy = m.CreatedBy
+                createdBy = m.CreatedBy,
+                userPhotoUrl = m.UserPhotoUrl,
+                placePhotoUrl = m.PlacePhotoUrl
             }).ToList();
             await _mapModule.InvokeVoidAsync("renderMarks", payload);
         }
