@@ -181,7 +181,7 @@ export async function initMap(dotNetHelper, elementId, lat, lng, zoom, mapType, 
         });
 
         // Small prompt before opening the full dialog
-        const showDateProposalPrompt = ({ position, title, address, photos, onConfirm }) => {
+        const showDateProposalPrompt = ({ position, title, address, photos, isAdvanced = false, onConfirm }) => {
             try {
                 if (!sharedInfoWindow) {
                     sharedInfoWindow = new google.maps.InfoWindow();
@@ -274,14 +274,26 @@ export async function initMap(dotNetHelper, elementId, lat, lng, zoom, mapType, 
                 google.maps.event.removeListener(placeClickListener);
             }
 
+            // Module-level variable to track advanced dialog state
+            let isInAdvancedDialog = false;
+            
             // Function to handle map clicks
             const handleMapClick = (e) => {
                 try { console.debug('Map click at', e.latLng && e.latLng.toString(), 'placeId:', e.placeId); } catch (_) {}
                 try {
-                    // If a dialog/info window is currently open, close it and do not open a new one immediately
+                    // Check if we're in an advanced dialog by looking for specific class
+                    isInAdvancedDialog = document.querySelector('.advanced-dialog') !== null;
+                    
+                    // If a dialog/info window is currently open, check if we should close it
                     if (sharedInfoWindow && typeof sharedInfoWindow.getMap === 'function' && sharedInfoWindow.getMap()) {
-                        try { sharedInfoWindow.close(); } catch (_) {}
-                        return;
+                        if (!isInAdvancedDialog) {
+                            try { sharedInfoWindow.close(); } catch (_) {}
+                        }
+                        // If we have an advanced dialog, don't proceed with other click handling
+                        if (isInAdvancedDialog) {
+                            e.stop();
+                            return;
+                        }
                     }
                     // Prevent default behavior for all clicks
                     e.stop();
@@ -334,6 +346,7 @@ export async function initMap(dotNetHelper, elementId, lat, lng, zoom, mapType, 
                                         title: details.name || 'Selected place',
                                         address: details.address || '',
                                         photos: photoUrls,
+                                        isAdvanced: false, // Mark as non-advanced dialog
                                         onConfirm: () => {
                                             // Move marker after confirm
                                             marker.setPosition(new google.maps.LatLng(loc.lat, loc.lng));
@@ -385,13 +398,32 @@ export async function initMap(dotNetHelper, elementId, lat, lng, zoom, mapType, 
                 }
             };
 
-            // Add click listener for regular map clicks (double-click for empty areas)
-            clickListener = map.addListener('dblclick', (e) => {
+            // Add click listener for regular map clicks (single click to close dialogs)
+            clickListener = map.addListener('click', (e) => {
+                try {
+                    // If there's a place ID, handle it as a place click
+                    if (e.placeId) {
+                        handleMapClick(e);
+                        return;
+                    }
+                    
+                    // For regular map clicks, close any open dialogs
+                    const isAdvancedDialog = document.querySelector('.advanced-dialog') !== null;
+                    if (sharedInfoWindow && !isAdvancedDialog) {
+                        try { sharedInfoWindow.close(); } catch (_) {}
+                    }
+                } catch (err) {
+                    console.error('Error handling map click:', err);
+                }
+            });
+
+            // Add double-click listener for creating new marks
+            map.addListener('dblclick', (e) => {
                 try {
                     // Prevent default double-click zoom behavior
                     e.stop();
                     
-                    // Only handle if not a place click (those are handled separately)
+                    // Only handle if not a place click (those are handled by single click)
                     if (!e.placeId) {
                         // For empty map locations, directly show the prompt with the clicked position
                         const pos = e.latLng;
@@ -410,13 +442,6 @@ export async function initMap(dotNetHelper, elementId, lat, lng, zoom, mapType, 
                     }
                 } catch (err) {
                     console.error('Error handling double-click:', err);
-                }
-            });
-
-            // Add separate click listener for place clicks (single click)
-            placeClickListener = map.addListener('click', (e) => {
-                if (e.placeId) {
-                    handleMapClick(e);
                 }
             });
 
