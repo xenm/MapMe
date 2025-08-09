@@ -260,7 +260,7 @@ export async function initMap(dotNetHelper, elementId, lat, lng, zoom, mapType, 
                 google.maps.event.removeListener(clickListener);
             }
 
-            clickListener = map.addListener('click', (e) => {
+            clickListener = map.addListener('dblclick', (e) => {
                 try { console.debug('Map click at', e.latLng && e.latLng.toString(), 'placeId:', e.placeId); } catch (_) {}
                 try {
                     // If a dialog/info window is currently open, close it and do not open a new one immediately
