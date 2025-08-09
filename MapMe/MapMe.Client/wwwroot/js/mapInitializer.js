@@ -606,144 +606,133 @@ function renderMarks(marks) {
             const uniquePlace = [...new Set(placePhotosArr.filter(Boolean))];
             if (!uniquePlace.length) uniquePlace.push('/images/place-photo.svg');
 
-            // Use the place photo by default, fall back to user photo or avatar
-            const markerPhoto = uniquePlace[0] || uniqueUser[0] || avatarPath;
-            
-            // Create a simple circular marker
-            const icon = {
-                url: markerPhoto,
-                scaledSize: new google.maps.Size(40, 40),
-                anchor: new google.maps.Point(20, 20),
+            // Always render a custom overlay with overlapping circular images (place + user)
+            // Create the marker with a transparent icon to preserve hit-testing
+            const transparentIcon = {
+                url: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAAAwCAYAAAB9DqNwAAAAC0lEQVR4nO3BMQEAAADCoPdPbQ43oAAAAAAK4wAAAKS3XrQAAQ==',
+                size: new google.maps.Size(64, 48),
+                scaledSize: new google.maps.Size(64, 48),
                 origin: new google.maps.Point(0, 0),
-                scaledSize: new google.maps.Size(40, 40),
-                labelOrigin: new google.maps.Point(20, 20)
+                anchor: new google.maps.Point(32, 40)
             };
-            
-            // Create the marker
+
             const mk = new google.maps.Marker({
                 position: pos,
                 map: map,
-                icon: icon,
+                icon: transparentIcon,
                 title: m.title || 'Saved mark',
                 clickable: true,
-                optimized: false, // ensure proper hit-testing with transparent/custom icons
+                optimized: false,
                 zIndex: 100
             });
-            
-            // If we have both user and place photos, create a custom label with both
-            if (uniquePlace[0] && uniqueUser[0] && uniqueUser[0] !== avatarPath) {
-                const labelDiv = document.createElement('div');
-                labelDiv.style.display = 'flex';
-                labelDiv.style.width = '80px';
-                labelDiv.style.height = '40px';
-                labelDiv.style.borderRadius = '20px';
-                labelDiv.style.overflow = 'hidden';
-                labelDiv.style.boxShadow = '0 2px 5px rgba(0,0,0,0.3)';
-                // Make overlay itself clickable so it works consistently across layers
-                labelDiv.style.pointerEvents = 'auto';
-                labelDiv.style.cursor = 'pointer';
-                labelDiv.style.zIndex = '9999';
-                
-                // User photo on the left
-                const userImg = document.createElement('div');
-                userImg.style.flex = '1';
-                userImg.style.backgroundImage = `url(${uniqueUser[0]})`;
-                userImg.style.backgroundSize = 'cover';
-                userImg.style.backgroundPosition = 'center';
-                
-                // Place photo on the right
-                const placeImg = document.createElement('div');
-                placeImg.style.flex = '1';
-                placeImg.style.backgroundImage = `url(${uniquePlace[0]})`;
-                placeImg.style.backgroundSize = 'cover';
-                placeImg.style.backgroundPosition = 'center';
-                
-                // Add images to the label
-                labelDiv.appendChild(userImg);
-                labelDiv.appendChild(placeImg);
-                
-                // Create a custom overlay for the label
-                const labelOverlay = new google.maps.OverlayView();
-                labelOverlay.onAdd = function() {
-                    this.div = labelDiv;
-                    const panes = this.getPanes();
-                    // Put into interactive pane so we can catch clicks on the overlay itself
-                    panes.overlayMouseTarget.appendChild(this.div);
-                    // Clicking the overlay should open the same info as the marker
-                    try {
-                        const handler = (ev) => {
-                            try { if (ev && typeof ev.preventDefault === 'function') ev.preventDefault(); } catch (_) {}
-                            try { if (ev && typeof ev.stopPropagation === 'function') ev.stopPropagation(); } catch (_) {}
-                            try { showMarkInfo(); } catch (_) {}
-                        };
-                        const handlerDown = (ev) => { try { if (ev && typeof ev.preventDefault === 'function') ev.preventDefault(); if (ev && typeof ev.stopPropagation === 'function') ev.stopPropagation(); } catch (_) {} };
-                        this._listeners = [
-                            google.maps.event.addDomListener(this.div, 'click', handler),
-                            google.maps.event.addDomListener(this.div, 'mousedown', handlerDown),
-                            google.maps.event.addDomListener(this.div, 'mouseup', handler),
-                            google.maps.event.addDomListener(this.div, 'touchstart', handlerDown),
-                            google.maps.event.addDomListener(this.div, 'touchend', handler)
-                        ];
-                    } catch (_) { /* ignore */ }
-                };
-                
-                labelOverlay.draw = function() {
-                    const projection = this.getProjection();
-                    const position = projection.fromLatLngToDivPixel(pos);
-                    if (position) {
-                        labelDiv.style.left = (position.x - 40) + 'px';
-                        labelDiv.style.top = (position.y - 60) + 'px';
-                        labelDiv.style.position = 'absolute';
-                    }
-                };
-                
-                labelOverlay.onRemove = function() {
-                    try {
-                        if (this._listeners && this._listeners.length) {
-                            this._listeners.forEach(l => { try { google.maps.event.removeListener(l); } catch (_) {} });
-                            this._listeners = [];
-                        }
-                        if (this._mapListeners && this._mapListeners.length) {
-                            this._mapListeners.forEach(l => { try { google.maps.event.removeListener(l); } catch (_) {} });
-                            this._mapListeners = [];
-                        }
-                        if (this.div && this.div.parentNode) {
-                            this.div.parentNode.removeChild(this.div);
-                        }
-                        this.div = null;
-                    } catch (_) { /* ignore */ }
-                };
-                
-                // Now add overlay to the map (after lifecycle methods are defined)
-                labelOverlay.setMap(map);
-                
-                // Store reference to remove later if needed
-                mk.labelOverlay = labelOverlay;
-                
-                // Update position on map events
-                const redraw = () => { try { labelOverlay.draw(); } catch (_) {} };
-                labelOverlay._mapListeners = [
-                    google.maps.event.addListener(map, 'bounds_changed', redraw),
-                    google.maps.event.addListener(map, 'idle', redraw),
-                    google.maps.event.addListener(map, 'zoom_changed', redraw),
-                    google.maps.event.addListener(map, 'drag', redraw)
-                ];
-                // Force an initial draw after the overlay is added and map settles
-                try { google.maps.event.addListenerOnce(map, 'idle', redraw); } catch (_) {}
-                
-                // Hide the base circular marker icon to avoid showing the place photo twice
+
+            // Build overlay DOM: two circles overlapped; user on top casting shadow over place
+            const labelDiv = document.createElement('div');
+            labelDiv.style.position = 'absolute';
+            labelDiv.style.width = '64px';
+            labelDiv.style.height = '48px';
+            labelDiv.style.pointerEvents = 'auto';
+            labelDiv.style.cursor = 'pointer';
+            labelDiv.style.zIndex = '9999';
+
+            // Base (place) circle
+            const placeCircle = document.createElement('div');
+            placeCircle.style.position = 'absolute';
+            placeCircle.style.left = '8px';
+            placeCircle.style.top = '8px';
+            placeCircle.style.width = '40px';
+            placeCircle.style.height = '40px';
+            placeCircle.style.borderRadius = '50%';
+            placeCircle.style.backgroundImage = `url(${uniquePlace[0] || '/images/place-photo.svg'})`;
+            placeCircle.style.backgroundSize = 'cover';
+            placeCircle.style.backgroundPosition = 'center';
+            placeCircle.style.boxShadow = '0 1px 2px rgba(0,0,0,0.25)';
+
+            // Top (user) circle, overlapping with shadow
+            const userCircle = document.createElement('div');
+            userCircle.style.position = 'absolute';
+            userCircle.style.left = '24px'; // overlap on the right
+            userCircle.style.top = '0px';   // slightly above to emphasize layering
+            userCircle.style.width = '40px';
+            userCircle.style.height = '40px';
+            userCircle.style.borderRadius = '50%';
+            userCircle.style.backgroundImage = `url(${uniqueUser[0] || avatarPath})`;
+            userCircle.style.backgroundSize = 'cover';
+            userCircle.style.backgroundPosition = 'center';
+            // Stronger shadow so it appears above the place image
+            userCircle.style.boxShadow = '0 4px 8px rgba(0,0,0,0.35)';
+            userCircle.style.zIndex = '2';
+
+            // Ensure both are circles even if images have transparency
+            placeCircle.style.overflow = 'hidden';
+            userCircle.style.overflow = 'hidden';
+
+            // Append to container
+            labelDiv.appendChild(placeCircle);
+            labelDiv.appendChild(userCircle);
+
+            // Create overlay
+            const labelOverlay = new google.maps.OverlayView();
+            labelOverlay.onAdd = function() {
+                this.div = labelDiv;
+                const panes = this.getPanes();
+                panes.overlayMouseTarget.appendChild(this.div);
                 try {
-                    // Use a large transparent icon so the marker has a generous clickable hit area overlapping the overlay
-                    const transparentIcon = {
-                        url: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAFgAAAB4CAYAAAAzF3V8AAAAC0lEQVR4nO3BMQEAAADCoPdPbQ43oAAAAAAAAACwG9bTAAE7wXHjAAAAAElFTkSuQmCC',
-                        size: new google.maps.Size(80, 120),
-                        scaledSize: new google.maps.Size(80, 120),
-                        origin: new google.maps.Point(0, 0),
-                        anchor: new google.maps.Point(40, 100)
+                    const handler = (ev) => {
+                        try { ev && ev.preventDefault && ev.preventDefault(); } catch (_) {}
+                        try { ev && ev.stopPropagation && ev.stopPropagation(); } catch (_) {}
+                        try { showMarkInfo(); } catch (_) {}
                     };
-                    mk.setIcon(transparentIcon);
-                } catch (_) { /* noop */ }
-            }
+                    const handlerDown = (ev) => { try { ev && ev.preventDefault && ev.preventDefault(); ev && ev.stopPropagation && ev.stopPropagation(); } catch (_) {} };
+                    this._listeners = [
+                        google.maps.event.addDomListener(this.div, 'click', handler),
+                        google.maps.event.addDomListener(this.div, 'mousedown', handlerDown),
+                        google.maps.event.addDomListener(this.div, 'mouseup', handler),
+                        google.maps.event.addDomListener(this.div, 'touchstart', handlerDown),
+                        google.maps.event.addDomListener(this.div, 'touchend', handler)
+                    ];
+                } catch (_) { /* ignore */ }
+            };
+
+            labelOverlay.draw = function() {
+                const projection = this.getProjection();
+                const position = projection.fromLatLngToDivPixel(pos);
+                if (position) {
+                    // Center the overlay horizontally on the marker and place it just above the point
+                    labelDiv.style.left = (position.x - 32) + 'px';
+                    labelDiv.style.top = (position.y - 48) + 'px';
+                }
+            };
+
+            labelOverlay.onRemove = function() {
+                try {
+                    if (this._listeners && this._listeners.length) {
+                        this._listeners.forEach(l => { try { google.maps.event.removeListener(l); } catch (_) {} });
+                        this._listeners = [];
+                    }
+                    if (this._mapListeners && this._mapListeners.length) {
+                        this._mapListeners.forEach(l => { try { google.maps.event.removeListener(l); } catch (_) {} });
+                        this._mapListeners = [];
+                    }
+                    if (this.div && this.div.parentNode) {
+                        this.div.parentNode.removeChild(this.div);
+                    }
+                    this.div = null;
+                } catch (_) { /* ignore */ }
+            };
+
+            // Attach to map and keep references for cleanup
+            labelOverlay.setMap(map);
+            mk.labelOverlay = labelOverlay;
+
+            const redraw = () => { try { labelOverlay.draw(); } catch (_) {} };
+            labelOverlay._mapListeners = [
+                google.maps.event.addListener(map, 'bounds_changed', redraw),
+                google.maps.event.addListener(map, 'idle', redraw),
+                google.maps.event.addListener(map, 'zoom_changed', redraw),
+                google.maps.event.addListener(map, 'drag', redraw)
+            ];
+            try { google.maps.event.addListenerOnce(map, 'idle', redraw); } catch (_) {}
 
             const showMarkInfo = () => {
                 try { console.debug('Opening mark info at', pos); } catch (_) {}
