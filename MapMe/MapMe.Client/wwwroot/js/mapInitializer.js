@@ -180,16 +180,23 @@ export async function initMap(dotNetHelper, elementId, lat, lng, zoom, mapType, 
         });
 
         // Small prompt before opening the full dialog
-        const showDateProposalPrompt = ({ position, title, address, onConfirm }) => {
+        const showDateProposalPrompt = ({ position, title, address, photos, onConfirm }) => {
             try {
                 if (!sharedInfoWindow) {
                     sharedInfoWindow = new google.maps.InfoWindow();
                 }
                 const safe = (s) => typeof s === 'string' ? s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') : '';
+                const imgs = (Array.isArray(photos) && photos.length > 0
+                    ? photos
+                    : ['/images/place-photo.svg','/images/place-photo.svg','/images/place-photo.svg'])
+                    .slice(0,3)
+                    .map(u => `<img src=\"${u}\" style=\"width:64px;height:64px;border-radius:6px;object-fit:cover;border:1px solid #e9ecef;\"/>`) 
+                    .join('<div style=\"width:6px\"></div>');
                 const content = `
-                  <div style="min-width:180px; max-width:240px;">
+                  <div style="min-width:220px; max-width:280px;">
                     ${title ? `<div style=\"font-weight:600;margin-bottom:2px;\">${safe(title)}</div>` : ''}
                     ${address ? `<div style=\"color:#6c757d;font-size:12px;margin-bottom:6px;\">${safe(address)}</div>` : ''}
+                    <div style=\"display:flex;align-items:center;margin:6px 0;\">${imgs}</div>
                     <div style="display:flex; gap:8px; align-items:center;">
                       <button id="mm-mini-create" style="display:inline-flex;align-items:center;gap:6px;padding:4px 8px;border:0;border-radius:4px;background:#3478f6;color:#fff;font-size:12px;cursor:pointer;">
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 5v14M5 12h14" stroke="white" stroke-width="2" stroke-linecap="round"/></svg>
@@ -267,9 +274,15 @@ export async function initMap(dotNetHelper, elementId, lat, lng, zoom, mapType, 
                                     // to get photo_reference values and generate URLs when rendering.
                                     const photoReferences = [];
                                     let placePhotoUrl = null;
+                                    let photoUrls = [];
                                     try {
-                                        if (place.photos && place.photos.length > 0 && typeof place.photos[0].getUrl === 'function') {
-                                            placePhotoUrl = place.photos[0].getUrl({ maxWidth: 600, maxHeight: 400 });
+                                        if (place.photos && place.photos.length > 0) {
+                                            photoUrls = place.photos.slice(0,3).map(p => {
+                                                try { return typeof p.getUrl === 'function' ? p.getUrl({ maxWidth: 400, maxHeight: 300 }) : null; } catch (_) { return null; }
+                                            }).filter(Boolean);
+                                            if (photoUrls.length > 0) {
+                                                placePhotoUrl = photoUrls[0];
+                                            }
                                         }
                                     } catch (_) { /* ignore */ }
                                     const details = {
@@ -287,6 +300,7 @@ export async function initMap(dotNetHelper, elementId, lat, lng, zoom, mapType, 
                                         position: new google.maps.LatLng(loc.lat, loc.lng),
                                         title: details.name || 'Selected place',
                                         address: details.address || '',
+                                        photos: photoUrls,
                                         onConfirm: () => {
                                             // Move marker after confirm
                                             marker.setPosition(new google.maps.LatLng(loc.lat, loc.lng));
@@ -301,19 +315,33 @@ export async function initMap(dotNetHelper, elementId, lat, lng, zoom, mapType, 
                             } else {
                                 // Fallback: act like a raw map click
                                 const pos = e.latLng;
-                                // Reverse geocode minimal info then prompt
+                                // Reverse geocode minimal info then prompt (try to fetch photos if placeId exists)
                                 reverseGeocode(pos.lat(), pos.lng()).then(min => {
-                                    showDateProposalPrompt({
-                                        position: pos,
-                                        title: min && min.name ? min.name : 'Selected location',
-                                        address: min && min.address ? min.address : '',
-                                        onConfirm: () => {
+                                    const title = (min && min.name) ? min.name : 'Selected location';
+                                    const address = (min && min.address) ? min.address : '';
+                                    const pid = min && min.placeId ? min.placeId : null;
+                                    if (pid) {
+                                        const service2 = new google.maps.places.PlacesService(map);
+                                        service2.getDetails({ placeId: pid, fields: ['photos'] }, (pl, st) => {
+                                            let thumbs = [];
+                                            try {
+                                                if (st === google.maps.places.PlacesServiceStatus.OK && pl && pl.photos && pl.photos.length) {
+                                                    thumbs = pl.photos.slice(0,3).map(p => {
+                                                        try { return typeof p.getUrl === 'function' ? p.getUrl({ maxWidth: 400, maxHeight: 300 }) : null; } catch (_) { return null; }
+                                                    }).filter(Boolean);
+                                                }
+                                            } catch (_) {}
+                                            showDateProposalPrompt({ position: pos, title, address, photos: thumbs, onConfirm: () => {
+                                                marker.setPosition(pos);
+                                                if (dotNetHelper) { dotNetHelper.invokeMethodAsync('OnMapClick', pos.lat(), pos.lng()); }
+                                            }});
+                                        });
+                                    } else {
+                                        showDateProposalPrompt({ position: pos, title, address, photos: [], onConfirm: () => {
                                             marker.setPosition(pos);
-                                            if (dotNetHelper) {
-                                                dotNetHelper.invokeMethodAsync('OnMapClick', pos.lat(), pos.lng());
-                                            }
-                                        }
-                                    });
+                                            if (dotNetHelper) { dotNetHelper.invokeMethodAsync('OnMapClick', pos.lat(), pos.lng()); }
+                                        }});
+                                    }
                                 });
                             }
                         });
@@ -326,17 +354,31 @@ export async function initMap(dotNetHelper, elementId, lat, lng, zoom, mapType, 
                 // Regular map click without a placeId
                 const pos = e.latLng;
                 reverseGeocode(pos.lat(), pos.lng()).then(min => {
-                    showDateProposalPrompt({
-                        position: pos,
-                        title: (min && min.name) ? min.name : 'Selected location',
-                        address: (min && min.address) ? min.address : '',
-                        onConfirm: () => {
+                    const title = (min && min.name) ? min.name : 'Selected location';
+                    const address = (min && min.address) ? min.address : '';
+                    const pid = min && min.placeId ? min.placeId : null;
+                    if (pid) {
+                        const service3 = new google.maps.places.PlacesService(map);
+                        service3.getDetails({ placeId: pid, fields: ['photos'] }, (pl, st) => {
+                            let thumbs = [];
+                            try {
+                                if (st === google.maps.places.PlacesServiceStatus.OK && pl && pl.photos && pl.photos.length) {
+                                    thumbs = pl.photos.slice(0,3).map(p => {
+                                        try { return typeof p.getUrl === 'function' ? p.getUrl({ maxWidth: 400, maxHeight: 300 }) : null; } catch (_) { return null; }
+                                    }).filter(Boolean);
+                                }
+                            } catch (_) {}
+                            showDateProposalPrompt({ position: pos, title, address, photos: thumbs, onConfirm: () => {
+                                marker.setPosition(pos);
+                                if (dotNetHelper) { dotNetHelper.invokeMethodAsync('OnMapClick', pos.lat(), pos.lng()); }
+                            }});
+                        });
+                    } else {
+                        showDateProposalPrompt({ position: pos, title, address, photos: [], onConfirm: () => {
                             marker.setPosition(pos);
-                            if (dotNetHelper) {
-                                dotNetHelper.invokeMethodAsync('OnMapClick', pos.lat(), pos.lng());
-                            }
-                        }
-                    });
+                            if (dotNetHelper) { dotNetHelper.invokeMethodAsync('OnMapClick', pos.lat(), pos.lng()); }
+                        }});
+                    }
                 });
             });
 
