@@ -133,6 +133,14 @@
 </div>
 
 @code {
+    // Default fake user images for demo purposes (real-looking images first)
+    private static readonly string DefaultUserAvatar = "/images/user-avatar.svg"; // used only as fallback when none
+    private static readonly List<string> DefaultUserPhotoUrls = new()
+    {
+        "https://i.pravatar.cc/300?img=12",
+        "https://i.pravatar.cc/300?img=32",
+        "https://i.pravatar.cc/300?img=68"
+    };
     private IJSObjectReference? _mapModule;
     private DotNetObjectReference<Map>? _dotNetHelper;
     private double _latitude = 1.3521; // Default to Singapore
@@ -557,10 +565,9 @@
                 PhotoReferences = geocoded?.PhotoReferences,
                 PlacePhotoUrl = geocoded?.PlacePhotoUrl,
                 PlacePhotoUrls = geocoded?.PlacePhotoUrls,
-                // TODO: Populate with real user profile photo if available
-                UserPhotoUrl = null,
-                // TODO: Populate with multiple user photos when backend/profile is available
-                UserPhotoUrls = null,
+                // Fake current user photos for demo: pick first real image as primary
+                UserPhotoUrl = DefaultUserPhotoUrls.FirstOrDefault() ?? DefaultUserAvatar,
+                UserPhotoUrls = new List<string>(DefaultUserPhotoUrls),
                 SavedAt = DateTime.UtcNow
             };
 
@@ -584,6 +591,18 @@
             {
                 var loaded = JsonSerializer.Deserialize<List<MarkDate>>(json) ?? new List<MarkDate>();
                 _savedMarks.Clear();
+                // Backfill fake user photos if missing
+                foreach (var m in loaded)
+                {
+                    if (m.UserPhotoUrls == null || m.UserPhotoUrls.Count == 0)
+                    {
+                        m.UserPhotoUrls = new List<string>(DefaultUserPhotoUrls);
+                    }
+                    if (string.IsNullOrWhiteSpace(m.UserPhotoUrl))
+                    {
+                        m.UserPhotoUrl = m.UserPhotoUrls.FirstOrDefault() ?? DefaultUserAvatar;
+                    }
+                }
                 _savedMarks.AddRange(loaded.OrderByDescending(m => m.SavedAt));
             }
         }

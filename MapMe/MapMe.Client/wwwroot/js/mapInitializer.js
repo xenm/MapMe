@@ -263,6 +263,11 @@ export async function initMap(dotNetHelper, elementId, lat, lng, zoom, mapType, 
             clickListener = map.addListener('click', (e) => {
                 try { console.debug('Map click at', e.latLng && e.latLng.toString(), 'placeId:', e.placeId); } catch (_) {}
                 try {
+                    // If a dialog/info window is currently open, close it and do not open a new one immediately
+                    if (sharedInfoWindow && typeof sharedInfoWindow.getMap === 'function' && sharedInfoWindow.getMap()) {
+                        try { sharedInfoWindow.close(); } catch (_) {}
+                        return;
+                    }
                     // If user clicked a POI on the map, e.placeId will be present
                     if (e.placeId) {
                         // Prevent default Maps behavior
@@ -503,7 +508,7 @@ window.MapMe.storage = {
 window.MapMe.reverseGeocode = reverseGeocode;
 export { reverseGeocode };
 
-// Render a collection of saved marks on the map with a small user icon
+// Render a collection of saved marks on the map using user's first photo as the marker icon
 function renderMarks(marks) {
     if (!mapsApiLoaded || !map) {
         // Map not ready yet; ignore safely
@@ -525,14 +530,33 @@ function renderMarks(marks) {
             sharedInfoWindow = new google.maps.InfoWindow();
         }
 
-        const icon = {
-            url: '/images/user-pin.svg',
-            scaledSize: new google.maps.Size(28, 28),
-            anchor: new google.maps.Point(14, 14)
-        };
-
         marks.forEach(m => {
             const pos = { lat: Number(m.lat), lng: Number(m.lng) };
+            // Prepare photos early to pick first user image for marker icon
+            const userPhotosArr = [];
+            if (Array.isArray(m.userPhotoUrls) && m.userPhotoUrls.length) userPhotosArr.push(...m.userPhotoUrls);
+            if (m.userPhotoUrl) userPhotosArr.push(m.userPhotoUrl);
+            let uniqueUser = [...new Set(userPhotosArr.filter(Boolean))];
+            // Prefer non-avatar if available
+            const avatarPath = '/images/user-avatar.svg';
+            if (uniqueUser.length > 1) {
+                uniqueUser = uniqueUser.filter(u => u !== avatarPath);
+            }
+            if (!uniqueUser.length) uniqueUser.push(avatarPath);
+
+            const placePhotosArr = [];
+            if (Array.isArray(m.placePhotoUrls) && m.placePhotoUrls.length) placePhotosArr.push(...m.placePhotoUrls);
+            if (m.placePhotoUrl) placePhotosArr.push(m.placePhotoUrl);
+            const uniquePlace = [...new Set(placePhotosArr.filter(Boolean))];
+            if (!uniquePlace.length) uniquePlace.push('/images/place-photo.svg');
+
+            const firstUserPhoto = uniqueUser[0] || avatarPath;
+            const icon = {
+                url: firstUserPhoto,
+                scaledSize: new google.maps.Size(52, 52),
+                anchor: new google.maps.Point(26, 26)
+            };
+
             const mk = new google.maps.Marker({
                 position: pos,
                 map: map,
@@ -549,18 +573,7 @@ function renderMarks(marks) {
                 const by = byName
                     ? `<div style=\"color:#6c757d; font-size:12px; margin-top:4px;\">By: <a href=\"/user/${encodeURIComponent(byName)}\" style=\"text-decoration:none;\">${byName}</a></div>`
                     : '';
-                // Prepare photos: all user photos (or placeholder), all place photos (or placeholder)
-                const userPhotosArr = [];
-                if (Array.isArray(m.userPhotoUrls) && m.userPhotoUrls.length) userPhotosArr.push(...m.userPhotoUrls);
-                if (m.userPhotoUrl) userPhotosArr.push(m.userPhotoUrl);
-                const uniqueUser = [...new Set(userPhotosArr.filter(Boolean))];
-                if (!uniqueUser.length) uniqueUser.push('/images/user-avatar.svg');
-
-                const placePhotosArr = [];
-                if (Array.isArray(m.placePhotoUrls) && m.placePhotoUrls.length) placePhotosArr.push(...m.placePhotoUrls);
-                if (m.placePhotoUrl) placePhotosArr.push(m.placePhotoUrl);
-                const uniquePlace = [...new Set(placePhotosArr.filter(Boolean))];
-                if (!uniquePlace.length) uniquePlace.push('/images/place-photo.svg');
+                // uniqueUser and uniquePlace already prepared above
 
                 const thumbHtml = (url) => `<img class=\"mm-thumb\" src=\"${url}\" alt=\"Photo\" style=\"width:72px;height:72px;border-radius:8px;object-fit:cover;border:1px solid #e9ecef;cursor:pointer;\"/>`;
                 const userStrip = `<div class=\"mm-scroll\" style=\"display:flex; gap:8px; overflow-x:auto; padding-bottom:4px; margin:8px 0;\">${uniqueUser.map(thumbHtml).join('')}</div>`;

@@ -86,6 +86,14 @@ else
     private string _avatar = "/images/user-avatar.svg";
     private List<string> _photos = new();
     private string? _lastNote;
+    // Defaults for fake user images (match Map.razor): real images first; avatar as fallback only
+    private static readonly string DefaultUserAvatar = "/images/user-avatar.svg";
+    private static readonly List<string> DefaultUserPhotoUrls = new()
+    {
+        "https://i.pravatar.cc/300?img=12",
+        "https://i.pravatar.cc/300?img=32",
+        "https://i.pravatar.cc/300?img=68"
+    };
 
     protected override async Task OnParametersSetAsync()
     {
@@ -102,6 +110,18 @@ else
             if (!string.IsNullOrWhiteSpace(username))
             {
                 _marks = all.Where(m => string.Equals(m.CreatedBy, username, StringComparison.OrdinalIgnoreCase)).OrderByDescending(m => m.SavedAt).ToList();
+                // Backfill fake user photos if missing
+                foreach (var m in _marks)
+                {
+                    if (m.UserPhotoUrls == null || m.UserPhotoUrls.Count == 0)
+                    {
+                        m.UserPhotoUrls = new List<string>(DefaultUserPhotoUrls);
+                    }
+                    if (string.IsNullOrWhiteSpace(m.UserPhotoUrl))
+                    {
+                        m.UserPhotoUrl = DefaultUserAvatar;
+                    }
+                }
             }
             else
             {
@@ -112,7 +132,7 @@ else
             {
                 // Avatar: pick the first available user photo or placeholder
                 var first = _marks.First();
-                _avatar = first.UserPhotoUrl ?? first.UserPhotoUrls?.FirstOrDefault() ?? _avatar;
+                _avatar = first.UserPhotoUrl ?? first.UserPhotoUrls?.FirstOrDefault() ?? DefaultUserAvatar;
                 // Photos: collect user photos up to 3
                 var uphotos = _marks
                     .SelectMany(m => (m.UserPhotoUrls ?? new List<string>()).Concat(string.IsNullOrWhiteSpace(m.UserPhotoUrl) ? Array.Empty<string>() : new[] { m.UserPhotoUrl! }))
@@ -121,10 +141,10 @@ else
                     .Take(3)
                     .ToList();
                 _photos = uphotos;
-                // Fallbacks
-                while (_photos.Count < 3 && _photos.Count < _marks.Count)
+                // Fallbacks if none found
+                if (_photos.Count == 0)
                 {
-                    _photos.Add("/images/user-avatar.svg");
+                    _photos = DefaultUserPhotoUrls.Take(3).ToList();
                 }
                 _lastNote = _marks.FirstOrDefault(m => !string.IsNullOrWhiteSpace(m.Note))?.Note;
             }
