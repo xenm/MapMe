@@ -186,17 +186,15 @@ export async function initMap(dotNetHelper, elementId, lat, lng, zoom, mapType, 
                     sharedInfoWindow = new google.maps.InfoWindow();
                 }
                 const safe = (s) => typeof s === 'string' ? s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') : '';
-                const imgs = (Array.isArray(photos) && photos.length > 0
-                    ? photos
-                    : ['/images/place-photo.svg','/images/place-photo.svg','/images/place-photo.svg'])
-                    .slice(0,3)
-                    .map(u => `<img src=\"${u}\" style=\"width:64px;height:64px;border-radius:6px;object-fit:cover;border:1px solid #e9ecef;\"/>`) 
-                    .join('<div style=\"width:6px\"></div>');
+                const list = Array.isArray(photos) && photos.length > 0 ? photos : ['/images/place-photo.svg'];
+                const imgs = list
+                    .map(u => `<img class=\"mm-thumb\" src=\"${u}\" style=\"width:72px;height:72px;border-radius:6px;object-fit:cover;border:1px solid #e9ecef;cursor:pointer;\"/>`) 
+                    .join('');
                 const content = `
-                  <div style="min-width:220px; max-width:280px;">
+                  <div style="min-width:220px; max-width:320px;">
                     ${title ? `<div style=\"font-weight:600;margin-bottom:2px;\">${safe(title)}</div>` : ''}
                     ${address ? `<div style=\"color:#6c757d;font-size:12px;margin-bottom:6px;\">${safe(address)}</div>` : ''}
-                    <div style=\"display:flex;align-items:center;margin:6px 0;\">${imgs}</div>
+                    <div class=\"mm-scroll\" style=\"display:flex; gap:8px; overflow-x:auto; padding-bottom:4px; margin:6px 0;\">${imgs}</div>
                     <div style="display:flex; gap:8px; align-items:center;">
                       <button id="mm-mini-create" style="display:inline-flex;align-items:center;gap:6px;padding:4px 8px;border:0;border-radius:4px;background:#3478f6;color:#fff;font-size:12px;cursor:pointer;">
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 5v14M5 12h14" stroke="white" stroke-width="2" stroke-linecap="round"/></svg>
@@ -215,6 +213,17 @@ export async function initMap(dotNetHelper, elementId, lat, lng, zoom, mapType, 
                 setTimeout(() => {
                     const createBtn = document.getElementById('mm-mini-create');
                     const cancelBtn = document.getElementById('mm-mini-cancel');
+                    // Lightbox for place photos in prompt
+                    try {
+                        const container = document.querySelector('.gm-style-iw, .gm-style-iw-c')?.parentElement || document.body;
+                        const thumbs = container.querySelectorAll('.mm-thumb');
+                        const urls = list.slice();
+                        thumbs.forEach((el, idx) => {
+                            el.addEventListener('click', () => {
+                                try { window.MapMe && typeof window.MapMe.openPhotoViewer === 'function' ? window.MapMe.openPhotoViewer(urls, idx) : openPhotoViewer(urls, idx); } catch (_) {}
+                            }, { once: true });
+                        });
+                    } catch (_) {}
                     if (createBtn) {
                         createBtn.onclick = () => {
                             try { sharedInfoWindow.close(); } catch (_) {}
@@ -277,9 +286,9 @@ export async function initMap(dotNetHelper, elementId, lat, lng, zoom, mapType, 
                                     let photoUrls = [];
                                     try {
                                         if (place.photos && place.photos.length > 0) {
-                                            photoUrls = place.photos.slice(0,3).map(p => {
-                                                try { return typeof p.getUrl === 'function' ? p.getUrl({ maxWidth: 400, maxHeight: 300 }) : null; } catch (_) { return null; }
-                                            }).filter(Boolean);
+                                            photoUrls = place.photos.map(p => {
+                                                try { return typeof p.getUrl === 'function' ? p.getUrl({ maxWidth: 800, maxHeight: 600 }) : null; } catch (_) { return null; }
+                                            }).filter(Boolean).slice(0, 12);
                                             if (photoUrls.length > 0) {
                                                 placePhotoUrl = photoUrls[0];
                                             }
@@ -293,7 +302,8 @@ export async function initMap(dotNetHelper, elementId, lat, lng, zoom, mapType, 
                                         url: place.url || null,
                                         photoReferences: photoReferences,
                                         address: place.formatted_address || null,
-                                        placePhotoUrl: placePhotoUrl
+                                        placePhotoUrl: placePhotoUrl,
+                                        placePhotoUrls: photoUrls
                                     };
                                     // Show pre-confirm prompt
                                     showDateProposalPrompt({
@@ -363,8 +373,8 @@ export async function initMap(dotNetHelper, elementId, lat, lng, zoom, mapType, 
                             let thumbs = [];
                             try {
                                 if (st === google.maps.places.PlacesServiceStatus.OK && pl && pl.photos && pl.photos.length) {
-                                    thumbs = pl.photos.slice(0,3).map(p => {
-                                        try { return typeof p.getUrl === 'function' ? p.getUrl({ maxWidth: 400, maxHeight: 300 }) : null; } catch (_) { return null; }
+                                    thumbs = pl.photos.map(p => {
+                                        try { return typeof p.getUrl === 'function' ? p.getUrl({ maxWidth: 800, maxHeight: 600 }) : null; } catch (_) { return null; }
                                     }).filter(Boolean);
                                 }
                             } catch (_) {}
@@ -539,35 +549,46 @@ function renderMarks(marks) {
                 const by = byName
                     ? `<div style=\"color:#6c757d; font-size:12px; margin-top:4px;\">By: <a href=\"/user/${encodeURIComponent(byName)}\" style=\"text-decoration:none;\">${byName}</a></div>`
                     : '';
-                // Prepare photos: 2 user photos (or placeholders), 1 place photo
-                const userPhotosArr = Array.isArray(m.userPhotoUrls) && m.userPhotoUrls.length
-                    ? m.userPhotoUrls.slice(0, 2)
-                    : [m.userPhotoUrl, m.userPhotoUrl].filter(Boolean);
-                while (userPhotosArr.length < 2) userPhotosArr.push('/images/user-avatar.svg');
-                const placeImg = (m.placePhotoUrl && typeof m.placePhotoUrl === 'string' && m.placePhotoUrl.length)
-                    ? m.placePhotoUrl
-                    : '/images/place-photo.svg';
+                // Prepare photos: all user photos (or placeholder), all place photos (or placeholder)
+                const userPhotosArr = [];
+                if (Array.isArray(m.userPhotoUrls) && m.userPhotoUrls.length) userPhotosArr.push(...m.userPhotoUrls);
+                if (m.userPhotoUrl) userPhotosArr.push(m.userPhotoUrl);
+                const uniqueUser = [...new Set(userPhotosArr.filter(Boolean))];
+                if (!uniqueUser.length) uniqueUser.push('/images/user-avatar.svg');
+
+                const placePhotosArr = [];
+                if (Array.isArray(m.placePhotoUrls) && m.placePhotoUrls.length) placePhotosArr.push(...m.placePhotoUrls);
+                if (m.placePhotoUrl) placePhotosArr.push(m.placePhotoUrl);
+                const uniquePlace = [...new Set(placePhotosArr.filter(Boolean))];
+                if (!uniquePlace.length) uniquePlace.push('/images/place-photo.svg');
+
                 const thumbHtml = (url) => `<img class=\"mm-thumb\" src=\"${url}\" alt=\"Photo\" style=\"width:72px;height:72px;border-radius:8px;object-fit:cover;border:1px solid #e9ecef;cursor:pointer;\"/>`;
-                const gallery = `
-                  <div class=\"mm-gallery\" style=\"display:flex; gap:8px; margin:8px 0;\">
-                    ${thumbHtml(userPhotosArr[0] || '/images/user-avatar.svg')}
-                    ${thumbHtml(userPhotosArr[1] || '/images/user-avatar.svg')}
-                    ${thumbHtml(placeImg)}
-                  </div>`;
-                const content = `<div style=\"max-width:280px;\">${title}${addr}${gallery}${note}${by}</div>`;
+                const userStrip = `<div class=\"mm-scroll\" style=\"display:flex; gap:8px; overflow-x:auto; padding-bottom:4px; margin:8px 0;\">${uniqueUser.map(thumbHtml).join('')}</div>`;
+                const placeStrip = `<div class=\"mm-scroll\" style=\"display:flex; gap:8px; overflow-x:auto; padding-bottom:4px; margin:8px 0;\">${uniquePlace.map(thumbHtml).join('')}</div>`;
+                const content = `<div style=\"max-width:320px;\">${title}${addr}${userStrip}${placeStrip}${note}${by}</div>`;
                 sharedInfoWindow.setContent(content);
                 sharedInfoWindow.open({ map, anchor: mk });
                 // After open, attach click handlers for lightbox
                 setTimeout(() => {
                     try {
                         const container = document.querySelector('.gm-style-iw, .gm-style-iw-c')?.parentElement || document.body;
-                        const thumbs = container.querySelectorAll('.mm-thumb');
-                        const allUrls = [userPhotosArr[0] || '/images/user-avatar.svg', userPhotosArr[1] || '/images/user-avatar.svg', placeImg];
-                        thumbs.forEach((el, idx) => {
-                            el.addEventListener('click', () => {
-                                try { window.MapMe && typeof window.MapMe.openPhotoViewer === 'function' ? window.MapMe.openPhotoViewer(allUrls, idx) : openPhotoViewer(allUrls, idx); } catch (_) {}
-                            }, { once: true });
-                        });
+                        const strips = container.querySelectorAll('.mm-scroll');
+                        if (strips[0]) {
+                            const userUrls = uniqueUser.slice();
+                            strips[0].querySelectorAll('.mm-thumb').forEach((el, idx) => {
+                                el.addEventListener('click', () => {
+                                    try { window.MapMe && typeof window.MapMe.openPhotoViewer === 'function' ? window.MapMe.openPhotoViewer(userUrls, idx) : openPhotoViewer(userUrls, idx); } catch (_) {}
+                                }, { once: true });
+                            });
+                        }
+                        if (strips[1]) {
+                            const placeUrls = uniquePlace.slice();
+                            strips[1].querySelectorAll('.mm-thumb').forEach((el, idx) => {
+                                el.addEventListener('click', () => {
+                                    try { window.MapMe && typeof window.MapMe.openPhotoViewer === 'function' ? window.MapMe.openPhotoViewer(placeUrls, idx) : openPhotoViewer(placeUrls, idx); } catch (_) {}
+                                }, { once: true });
+                            });
+                        }
                     } catch (_) { /* ignore */ }
                 }, 0);
             });

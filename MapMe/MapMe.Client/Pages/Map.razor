@@ -407,6 +407,7 @@
         // to fetch photo_reference values and generate URLs on demand.
         public List<string>? PhotoReferences { get; set; }
         public string? PlacePhotoUrl { get; set; }
+        public List<string>? PlacePhotoUrls { get; set; }
     }
 
     // DTO from JS Places getDetails
@@ -422,6 +423,7 @@
         public List<string>? PhotoReferences { get; set; }
         public string? Address { get; set; }
         public string? PlacePhotoUrl { get; set; }
+        public List<string>? PlacePhotoUrls { get; set; }
     }
 
     public class PlaceLocationDto
@@ -444,6 +446,7 @@
         // Store photo_reference values if obtained via backend.
         public List<string>? PhotoReferences { get; set; }
         public string? PlacePhotoUrl { get; set; }
+        public List<string>? PlacePhotoUrls { get; set; }
         public string? UserPhotoUrl { get; set; }
         // Optional: multiple user photos (first two will be shown in marker bubble)
         public List<string>? UserPhotoUrls { get; set; }
@@ -489,7 +492,8 @@
             Url = details?.Url,
             Types = details?.Types,
             PhotoReferences = details?.PhotoReferences,
-            PlacePhotoUrl = details?.PlacePhotoUrl
+            PlacePhotoUrl = details?.PlacePhotoUrl,
+            PlacePhotoUrls = details?.PlacePhotoUrls
         };
         _showConfirm = true;
         StateHasChanged();
@@ -552,6 +556,7 @@
                 Url = geocoded?.Url,
                 PhotoReferences = geocoded?.PhotoReferences,
                 PlacePhotoUrl = geocoded?.PlacePhotoUrl,
+                PlacePhotoUrls = geocoded?.PlacePhotoUrls,
                 // TODO: Populate with real user profile photo if available
                 UserPhotoUrl = null,
                 // TODO: Populate with multiple user photos when backend/profile is available
@@ -639,7 +644,8 @@
                 createdBy = m.CreatedBy,
                 userPhotoUrl = m.UserPhotoUrl,
                 userPhotoUrls = m.UserPhotoUrls,
-                placePhotoUrl = m.PlacePhotoUrl
+                placePhotoUrl = m.PlacePhotoUrl,
+                placePhotoUrls = m.PlacePhotoUrls
             }).ToList();
             await _mapModule.InvokeVoidAsync("renderMarks", payload);
         }
