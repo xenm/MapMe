@@ -550,13 +550,20 @@ function renderMarks(marks) {
             const uniquePlace = [...new Set(placePhotosArr.filter(Boolean))];
             if (!uniquePlace.length) uniquePlace.push('/images/place-photo.svg');
 
-            const firstPlacePhoto = uniquePlace[0] || '/images/place-photo.svg';
+            // Use the place photo by default, fall back to user photo or avatar
+            const markerPhoto = uniquePlace[0] || uniqueUser[0] || avatarPath;
+            
+            // Create a simple circular marker
             const icon = {
-                url: firstPlacePhoto,
-                scaledSize: new google.maps.Size(52, 52),
-                anchor: new google.maps.Point(26, 26)
+                url: markerPhoto,
+                scaledSize: new google.maps.Size(40, 40),
+                anchor: new google.maps.Point(20, 20),
+                origin: new google.maps.Point(0, 0),
+                scaledSize: new google.maps.Size(40, 40),
+                labelOrigin: new google.maps.Point(20, 20)
             };
-
+            
+            // Create the marker
             const mk = new google.maps.Marker({
                 position: pos,
                 map: map,
@@ -564,6 +571,62 @@ function renderMarks(marks) {
                 title: m.title || 'Saved mark',
                 clickable: true
             });
+            
+            // If we have both user and place photos, create a custom label with both
+            if (uniquePlace[0] && uniqueUser[0] && uniqueUser[0] !== avatarPath) {
+                const labelDiv = document.createElement('div');
+                labelDiv.style.display = 'flex';
+                labelDiv.style.width = '80px';
+                labelDiv.style.height = '40px';
+                labelDiv.style.borderRadius = '20px';
+                labelDiv.style.overflow = 'hidden';
+                labelDiv.style.boxShadow = '0 2px 5px rgba(0,0,0,0.3)';
+                
+                // User photo on the left
+                const userImg = document.createElement('div');
+                userImg.style.flex = '1';
+                userImg.style.backgroundImage = `url(${uniqueUser[0]})`;
+                userImg.style.backgroundSize = 'cover';
+                userImg.style.backgroundPosition = 'center';
+                
+                // Place photo on the right
+                const placeImg = document.createElement('div');
+                placeImg.style.flex = '1';
+                placeImg.style.backgroundImage = `url(${uniquePlace[0]})`;
+                placeImg.style.backgroundSize = 'cover';
+                placeImg.style.backgroundPosition = 'center';
+                
+                // Add images to the label
+                labelDiv.appendChild(userImg);
+                labelDiv.appendChild(placeImg);
+                
+                // Create a custom overlay for the label
+                const labelOverlay = new google.maps.OverlayView();
+                labelOverlay.setMap(map);
+                labelOverlay.onAdd = function() {
+                    this.div = labelDiv;
+                    const panes = this.getPanes();
+                    panes.overlayMouseTarget.appendChild(this.div);
+                };
+                
+                labelOverlay.draw = function() {
+                    const projection = this.getProjection();
+                    const position = projection.fromLatLngToDivPixel(pos);
+                    if (position) {
+                        labelDiv.style.left = (position.x - 40) + 'px';
+                        labelDiv.style.top = (position.y - 60) + 'px';
+                        labelDiv.style.position = 'absolute';
+                    }
+                };
+                
+                // Store reference to remove later if needed
+                mk.labelOverlay = labelOverlay;
+                
+                // Update position on map events
+                google.maps.event.addListener(map, 'bounds_changed', () => {
+                    labelOverlay.draw();
+                });
+            }
 
             mk.addListener('click', () => {
                 const title = m.title ? `<div style="font-weight:600;">${escapeHtml(m.title)}</div>` : '';
