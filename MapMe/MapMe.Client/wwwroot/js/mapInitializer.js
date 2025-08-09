@@ -2,6 +2,7 @@
 let map;
 let marker;
 let clickListener;
+let placeClickListener;
 let mapsApiLoaded = false;
 // Keep track of rendered saved markers
 let savedMarkers = [];
@@ -246,21 +247,35 @@ export async function initMap(dotNetHelper, elementId, lat, lng, zoom, mapType, 
                 marker.setMap(null);
             }
 
-            // Add new marker
+            // Create a transparent 1x1 pixel PNG for the invisible marker
+            const invisibleIcon = {
+                url: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=',
+                size: new google.maps.Size(1, 1),
+                origin: new google.maps.Point(0, 0),
+                anchor: new google.maps.Point(0, 0)
+            };
+
+            // Add new marker (invisible and non-draggable)
             marker = new google.maps.Marker({
                 position: { lat, lng },
                 map: map,
-                title: 'Your Location',
-                animation: google.maps.Animation.DROP,
-                draggable: true
+                title: '',
+                draggable: false,
+                visible: true,
+                icon: invisibleIcon,
+                clickable: false
             });
 
-            // Add click event to update marker position
+            // Remove existing click listeners
             if (clickListener) {
                 google.maps.event.removeListener(clickListener);
             }
+            if (placeClickListener) {
+                google.maps.event.removeListener(placeClickListener);
+            }
 
-            clickListener = map.addListener('dblclick', (e) => {
+            // Function to handle map clicks
+            const handleMapClick = (e) => {
                 try { console.debug('Map click at', e.latLng && e.latLng.toString(), 'placeId:', e.placeId); } catch (_) {}
                 try {
                     // If a dialog/info window is currently open, close it and do not open a new one immediately
@@ -268,6 +283,9 @@ export async function initMap(dotNetHelper, elementId, lat, lng, zoom, mapType, 
                         try { sharedInfoWindow.close(); } catch (_) {}
                         return;
                     }
+                    // Prevent default behavior for all clicks
+                    e.stop();
+
                     // If user clicked a POI on the map, e.placeId will be present
                     if (e.placeId) {
                         // Prevent default Maps behavior
@@ -363,38 +381,43 @@ export async function initMap(dotNetHelper, elementId, lat, lng, zoom, mapType, 
                         return; // handled via details path
                     }
                 } catch (err) {
-                    console.debug('No placeId on click or error while handling POI:', err);
+                    console.debug('Error handling map click:', err);
                 }
+            };
 
-                // Regular map click without a placeId
-                const pos = e.latLng;
-                reverseGeocode(pos.lat(), pos.lng()).then(min => {
-                    const title = (min && min.name) ? min.name : 'Selected location';
-                    const address = (min && min.address) ? min.address : '';
-                    const pid = min && min.placeId ? min.placeId : null;
-                    if (pid) {
-                        const service3 = new google.maps.places.PlacesService(map);
-                        service3.getDetails({ placeId: pid, fields: ['photos'] }, (pl, st) => {
-                            let thumbs = [];
-                            try {
-                                if (st === google.maps.places.PlacesServiceStatus.OK && pl && pl.photos && pl.photos.length) {
-                                    thumbs = pl.photos.map(p => {
-                                        try { return typeof p.getUrl === 'function' ? p.getUrl({ maxWidth: 800, maxHeight: 600 }) : null; } catch (_) { return null; }
-                                    }).filter(Boolean);
-                                }
-                            } catch (_) {}
-                            showDateProposalPrompt({ position: pos, title, address, photos: thumbs, onConfirm: () => {
+            // Add click listener for regular map clicks (double-click for empty areas)
+            clickListener = map.addListener('dblclick', (e) => {
+                try {
+                    // Prevent default double-click zoom behavior
+                    e.stop();
+                    
+                    // Only handle if not a place click (those are handled separately)
+                    if (!e.placeId) {
+                        // For empty map locations, directly show the prompt with the clicked position
+                        const pos = e.latLng;
+                        showDateProposalPrompt({
+                            position: pos,
+                            title: 'Selected location',
+                            address: '',
+                            photos: [],
+                            onConfirm: () => {
                                 marker.setPosition(pos);
-                                if (dotNetHelper) { dotNetHelper.invokeMethodAsync('OnMapClick', pos.lat(), pos.lng()); }
-                            }});
+                                if (dotNetHelper) {
+                                    dotNetHelper.invokeMethodAsync('OnMapClick', pos.lat(), pos.lng());
+                                }
+                            }
                         });
-                    } else {
-                        showDateProposalPrompt({ position: pos, title, address, photos: [], onConfirm: () => {
-                            marker.setPosition(pos);
-                            if (dotNetHelper) { dotNetHelper.invokeMethodAsync('OnMapClick', pos.lat(), pos.lng()); }
-                        }});
                     }
-                });
+                } catch (err) {
+                    console.error('Error handling double-click:', err);
+                }
+            });
+
+            // Add separate click listener for place clicks (single click)
+            placeClickListener = map.addListener('click', (e) => {
+                if (e.placeId) {
+                    handleMapClick(e);
+                }
             });
 
             // Add marker drag end event
