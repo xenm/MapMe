@@ -3,6 +3,9 @@ let map;
 let marker;
 let clickListener;
 let mapsApiLoaded = false;
+// Keep track of rendered saved markers
+let savedMarkers = [];
+let sharedInfoWindow = null;
 // API key is provided at runtime from the server; no keys are stored in source.
 
 // Get current position using browser's geolocation API
@@ -286,6 +289,15 @@ export function dispose() {
             marker.setMap(null);
             marker = null;
         }
+        // Clear any saved markers
+        if (savedMarkers && savedMarkers.length) {
+            savedMarkers.forEach(m => m.setMap(null));
+            savedMarkers = [];
+        }
+        if (sharedInfoWindow) {
+            try { sharedInfoWindow.close(); } catch (_) {}
+            sharedInfoWindow = null;
+        }
         // We intentionally do not call any DOM operations if map element is gone
     } catch (e) {
         // Swallow any errors during dispose
@@ -359,3 +371,74 @@ window.MapMe.storage = {
 // Make helpers available on window and as module exports
 window.MapMe.reverseGeocode = reverseGeocode;
 export { reverseGeocode };
+
+// Render a collection of saved marks on the map with a small user icon
+function renderMarks(marks) {
+    if (!mapsApiLoaded || !map) {
+        // Map not ready yet; ignore safely
+        return;
+    }
+    try {
+        // Remove existing saved markers
+        if (savedMarkers && savedMarkers.length) {
+            savedMarkers.forEach(m => m.setMap(null));
+        }
+        savedMarkers = [];
+
+        if (!Array.isArray(marks) || marks.length === 0) {
+            return;
+        }
+
+        // Reuse a single info window
+        if (!sharedInfoWindow) {
+            sharedInfoWindow = new google.maps.InfoWindow();
+        }
+
+        const icon = {
+            url: '/images/user-pin.svg',
+            scaledSize: new google.maps.Size(28, 28),
+            anchor: new google.maps.Point(14, 14)
+        };
+
+        marks.forEach(m => {
+            const pos = { lat: Number(m.lat), lng: Number(m.lng) };
+            const mk = new google.maps.Marker({
+                position: pos,
+                map: map,
+                icon: icon,
+                title: m.title || 'Saved mark',
+                clickable: true
+            });
+
+            mk.addListener('click', () => {
+                const title = m.title ? `<div style="font-weight:600;">${m.title}</div>` : '';
+                const addr = m.address ? `<div style="color:#6c757d; font-size:12px;">${m.address}</div>` : '';
+                const note = m.note ? `<div style="margin-top:4px;">${escapeHtml(m.note)}</div>` : '';
+                const by = m.createdBy ? `<div style="color:#6c757d; font-size:12px; margin-top:4px;">By: ${escapeHtml(m.createdBy)}</div>` : '';
+                const content = `<div style="max-width:220px;">${title}${addr}${note}${by}</div>`;
+                sharedInfoWindow.setContent(content);
+                sharedInfoWindow.open({ map, anchor: mk });
+            });
+
+            savedMarkers.push(mk);
+        });
+    } catch (e) {
+        console.error('renderMarks error', e);
+    }
+}
+
+// Basic HTML escape for displaying user-provided content in InfoWindow
+function escapeHtml(str) {
+    if (typeof str !== 'string') return str;
+    return str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
+// Expose to global and export
+window.MapMe = window.MapMe || {};
+window.MapMe.renderMarks = renderMarks;
+export { renderMarks };
