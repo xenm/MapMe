@@ -179,6 +179,50 @@ export async function initMap(dotNetHelper, elementId, lat, lng, zoom, mapType, 
             clickableIcons: true
         });
 
+        // Small prompt before opening the full dialog
+        const showDateProposalPrompt = ({ position, title, address, onConfirm }) => {
+            try {
+                if (!sharedInfoWindow) {
+                    sharedInfoWindow = new google.maps.InfoWindow();
+                }
+                const safe = (s) => typeof s === 'string' ? s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') : '';
+                const content = `
+                  <div style="min-width:180px; max-width:240px;">
+                    ${title ? `<div style=\"font-weight:600;margin-bottom:2px;\">${safe(title)}</div>` : ''}
+                    ${address ? `<div style=\"color:#6c757d;font-size:12px;margin-bottom:6px;\">${safe(address)}</div>` : ''}
+                    <div style="display:flex; gap:8px; align-items:center;">
+                      <button id="mm-mini-create" style="display:inline-flex;align-items:center;gap:6px;padding:4px 8px;border:0;border-radius:4px;background:#3478f6;color:#fff;font-size:12px;cursor:pointer;">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 5v14M5 12h14" stroke="white" stroke-width="2" stroke-linecap="round"/></svg>
+                        Create
+                      </button>
+                      <button id="mm-mini-cancel" style="padding:4px 8px;border:1px solid #dee2e6;border-radius:4px;background:#fff;color:#333;font-size:12px;cursor:pointer;">Cancel</button>
+                    </div>
+                  </div>`;
+                sharedInfoWindow.setContent(content);
+                // Ensure we are not anchored to a previous marker; explicitly set position and open on map
+                try { sharedInfoWindow.close(); } catch (_) {}
+                sharedInfoWindow.setPosition(position);
+                sharedInfoWindow.open({ map });
+                // Wire events after the DOM is attached
+                // Use a short timeout to ensure DOM is available
+                setTimeout(() => {
+                    const createBtn = document.getElementById('mm-mini-create');
+                    const cancelBtn = document.getElementById('mm-mini-cancel');
+                    if (createBtn) {
+                        createBtn.onclick = () => {
+                            try { sharedInfoWindow.close(); } catch (_) {}
+                            onConfirm && onConfirm();
+                        };
+                    }
+                    if (cancelBtn) {
+                        cancelBtn.onclick = () => { try { sharedInfoWindow.close(); } catch (_) {} };
+                    }
+                }, 0);
+            } catch (e) {
+                console.error('showDateProposalPrompt error', e);
+            }
+        };
+
         // Function to add marker and event listeners
         const addMarker = (lat, lng, dotNetHelper) => {
             // Remove existing marker if it exists
@@ -201,6 +245,7 @@ export async function initMap(dotNetHelper, elementId, lat, lng, zoom, mapType, 
             }
 
             clickListener = map.addListener('click', (e) => {
+                try { console.debug('Map click at', e.latLng && e.latLng.toString(), 'placeId:', e.placeId); } catch (_) {}
                 try {
                     // If user clicked a POI on the map, e.placeId will be present
                     if (e.placeId) {
@@ -216,8 +261,6 @@ export async function initMap(dotNetHelper, elementId, lat, lng, zoom, mapType, 
                                     const loc = place.geometry && place.geometry.location
                                         ? { lat: place.geometry.location.lat(), lng: place.geometry.location.lng() }
                                         : { lat: lat, lng: lng };
-                                    // Move the marker to place location
-                                    marker.setPosition(new google.maps.LatLng(loc.lat, loc.lng));
                                     // Build a portable details object
                                     // NOTE: JS Places Photo object does not expose photo_reference.
                                     // If you need stable references, use Places Details Web Service on the server
@@ -232,19 +275,39 @@ export async function initMap(dotNetHelper, elementId, lat, lng, zoom, mapType, 
                                         photoReferences: photoReferences,
                                         address: place.formatted_address || null
                                     };
-                                    if (dotNetHelper) {
-                                        dotNetHelper.invokeMethodAsync('OnPlaceDetails', details);
-                                    }
+                                    // Show pre-confirm prompt
+                                    showDateProposalPrompt({
+                                        position: new google.maps.LatLng(loc.lat, loc.lng),
+                                        title: details.name || 'Selected place',
+                                        address: details.address || '',
+                                        onConfirm: () => {
+                                            // Move marker after confirm
+                                            marker.setPosition(new google.maps.LatLng(loc.lat, loc.lng));
+                                            if (dotNetHelper) {
+                                                dotNetHelper.invokeMethodAsync('OnPlaceDetails', details);
+                                            }
+                                        }
+                                    });
                                 } catch (err) {
                                     console.error('Error processing place details', err);
                                 }
                             } else {
                                 // Fallback: act like a raw map click
                                 const pos = e.latLng;
-                                marker.setPosition(pos);
-                                if (dotNetHelper) {
-                                    dotNetHelper.invokeMethodAsync('OnMapClick', pos.lat(), pos.lng());
-                                }
+                                // Reverse geocode minimal info then prompt
+                                reverseGeocode(pos.lat(), pos.lng()).then(min => {
+                                    showDateProposalPrompt({
+                                        position: pos,
+                                        title: min && min.name ? min.name : 'Selected location',
+                                        address: min && min.address ? min.address : '',
+                                        onConfirm: () => {
+                                            marker.setPosition(pos);
+                                            if (dotNetHelper) {
+                                                dotNetHelper.invokeMethodAsync('OnMapClick', pos.lat(), pos.lng());
+                                            }
+                                        }
+                                    });
+                                });
                             }
                         });
                         return; // handled via details path
@@ -255,10 +318,19 @@ export async function initMap(dotNetHelper, elementId, lat, lng, zoom, mapType, 
 
                 // Regular map click without a placeId
                 const pos = e.latLng;
-                marker.setPosition(pos);
-                if (dotNetHelper) {
-                    dotNetHelper.invokeMethodAsync('OnMapClick', pos.lat(), pos.lng());
-                }
+                reverseGeocode(pos.lat(), pos.lng()).then(min => {
+                    showDateProposalPrompt({
+                        position: pos,
+                        title: (min && min.name) ? min.name : 'Selected location',
+                        address: (min && min.address) ? min.address : '',
+                        onConfirm: () => {
+                            marker.setPosition(pos);
+                            if (dotNetHelper) {
+                                dotNetHelper.invokeMethodAsync('OnMapClick', pos.lat(), pos.lng());
+                            }
+                        }
+                    });
+                });
             });
 
             // Add marker drag end event
