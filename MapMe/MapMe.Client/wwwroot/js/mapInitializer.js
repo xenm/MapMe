@@ -540,7 +540,15 @@ function renderMarks(marks) {
     try {
         // Remove existing saved markers
         if (savedMarkers && savedMarkers.length) {
-            savedMarkers.forEach(m => m.setMap(null));
+            savedMarkers.forEach(m => {
+                try {
+                    if (m.labelOverlay && typeof m.labelOverlay.setMap === 'function') {
+                        m.labelOverlay.setMap(null);
+                        m.labelOverlay = null;
+                    }
+                } catch (_) { /* ignore */ }
+                try { m.setMap(null); } catch (_) { /* ignore */ }
+            });
         }
         savedMarkers = [];
 
@@ -592,7 +600,9 @@ function renderMarks(marks) {
                 map: map,
                 icon: icon,
                 title: m.title || 'Saved mark',
-                clickable: true
+                clickable: true,
+                optimized: false, // ensure proper hit-testing with transparent/custom icons
+                zIndex: 100
             });
             
             // If we have both user and place photos, create a custom label with both
@@ -604,6 +614,10 @@ function renderMarks(marks) {
                 labelDiv.style.borderRadius = '20px';
                 labelDiv.style.overflow = 'hidden';
                 labelDiv.style.boxShadow = '0 2px 5px rgba(0,0,0,0.3)';
+                // Make overlay itself clickable so it works consistently across layers
+                labelDiv.style.pointerEvents = 'auto';
+                labelDiv.style.cursor = 'pointer';
+                labelDiv.style.zIndex = '9999';
                 
                 // User photo on the left
                 const userImg = document.createElement('div');
@@ -625,11 +639,27 @@ function renderMarks(marks) {
                 
                 // Create a custom overlay for the label
                 const labelOverlay = new google.maps.OverlayView();
-                labelOverlay.setMap(map);
                 labelOverlay.onAdd = function() {
                     this.div = labelDiv;
                     const panes = this.getPanes();
+                    // Put into interactive pane so we can catch clicks on the overlay itself
                     panes.overlayMouseTarget.appendChild(this.div);
+                    // Clicking the overlay should open the same info as the marker
+                    try {
+                        const handler = (ev) => {
+                            try { if (ev && typeof ev.preventDefault === 'function') ev.preventDefault(); } catch (_) {}
+                            try { if (ev && typeof ev.stopPropagation === 'function') ev.stopPropagation(); } catch (_) {}
+                            try { showMarkInfo(); } catch (_) {}
+                        };
+                        const handlerDown = (ev) => { try { if (ev && typeof ev.preventDefault === 'function') ev.preventDefault(); if (ev && typeof ev.stopPropagation === 'function') ev.stopPropagation(); } catch (_) {} };
+                        this._listeners = [
+                            google.maps.event.addDomListener(this.div, 'click', handler),
+                            google.maps.event.addDomListener(this.div, 'mousedown', handlerDown),
+                            google.maps.event.addDomListener(this.div, 'mouseup', handler),
+                            google.maps.event.addDomListener(this.div, 'touchstart', handlerDown),
+                            google.maps.event.addDomListener(this.div, 'touchend', handler)
+                        ];
+                    } catch (_) { /* ignore */ }
                 };
                 
                 labelOverlay.draw = function() {
@@ -642,17 +672,57 @@ function renderMarks(marks) {
                     }
                 };
                 
+                labelOverlay.onRemove = function() {
+                    try {
+                        if (this._listeners && this._listeners.length) {
+                            this._listeners.forEach(l => { try { google.maps.event.removeListener(l); } catch (_) {} });
+                            this._listeners = [];
+                        }
+                        if (this._mapListeners && this._mapListeners.length) {
+                            this._mapListeners.forEach(l => { try { google.maps.event.removeListener(l); } catch (_) {} });
+                            this._mapListeners = [];
+                        }
+                        if (this.div && this.div.parentNode) {
+                            this.div.parentNode.removeChild(this.div);
+                        }
+                        this.div = null;
+                    } catch (_) { /* ignore */ }
+                };
+                
+                // Now add overlay to the map (after lifecycle methods are defined)
+                labelOverlay.setMap(map);
+                
                 // Store reference to remove later if needed
                 mk.labelOverlay = labelOverlay;
                 
                 // Update position on map events
-                google.maps.event.addListener(map, 'bounds_changed', () => {
-                    labelOverlay.draw();
-                });
+                const redraw = () => { try { labelOverlay.draw(); } catch (_) {} };
+                labelOverlay._mapListeners = [
+                    google.maps.event.addListener(map, 'bounds_changed', redraw),
+                    google.maps.event.addListener(map, 'idle', redraw),
+                    google.maps.event.addListener(map, 'zoom_changed', redraw),
+                    google.maps.event.addListener(map, 'drag', redraw)
+                ];
+                // Force an initial draw after the overlay is added and map settles
+                try { google.maps.event.addListenerOnce(map, 'idle', redraw); } catch (_) {}
+                
+                // Hide the base circular marker icon to avoid showing the place photo twice
+                try {
+                    // Use a large transparent icon so the marker has a generous clickable hit area overlapping the overlay
+                    const transparentIcon = {
+                        url: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAFgAAAB4CAYAAAAzF3V8AAAAC0lEQVR4nO3BMQEAAADCoPdPbQ43oAAAAAAAAACwG9bTAAE7wXHjAAAAAElFTkSuQmCC',
+                        size: new google.maps.Size(80, 120),
+                        scaledSize: new google.maps.Size(80, 120),
+                        origin: new google.maps.Point(0, 0),
+                        anchor: new google.maps.Point(40, 100)
+                    };
+                    mk.setIcon(transparentIcon);
+                } catch (_) { /* noop */ }
             }
 
-            mk.addListener('click', () => {
-                const title = m.title ? `<div style="font-weight:600;">${escapeHtml(m.title)}</div>` : '';
+            const showMarkInfo = () => {
+                try { console.debug('Opening mark info at', pos); } catch (_) {}
+                const title = m.title ? `<div style=\"font-weight:600;\">${escapeHtml(m.title)}</div>` : '';
                 const addr = m.address ? `<div style=\"color:#6c757d; font-size:12px;\">${escapeHtml(m.address)}</div>` : '';
                 const note = m.note ? `<div style=\"margin-top:6px;\">${escapeHtml(m.note)}</div>` : '';
                 const byName = m.createdBy ? escapeHtml(m.createdBy) : '';
@@ -665,7 +735,9 @@ function renderMarks(marks) {
                 const userStrip = `<div class=\"mm-scroll\" style=\"display:flex; gap:8px; overflow-x:auto; padding-bottom:4px; margin:8px 0;\">${uniqueUser.map(thumbHtml).join('')}</div>`;
                 const placeStrip = `<div class=\"mm-scroll\" style=\"display:flex; gap:8px; overflow-x:auto; padding-bottom:4px; margin:8px 0;\">${uniquePlace.map(thumbHtml).join('')}</div>`;
                 const content = `<div style=\"max-width:320px;\">${title}${addr}${userStrip}${placeStrip}${note}${by}</div>`;
+                try { sharedInfoWindow.close(); } catch (_) {}
                 sharedInfoWindow.setContent(content);
+                // Anchor to the marker for precise placement
                 sharedInfoWindow.open({ map, anchor: mk });
                 // After open, attach click handlers for lightbox
                 setTimeout(() => {
@@ -690,7 +762,9 @@ function renderMarks(marks) {
                         }
                     } catch (_) { /* ignore */ }
                 }, 0);
-            });
+            };
+
+            mk.addListener('click', showMarkInfo);
 
             savedMarkers.push(mk);
         });
