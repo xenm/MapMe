@@ -623,6 +623,7 @@ function renderMarks(marks) {
             // Collect photos
             const userArr = [];
             if (Array.isArray(m.userPhotoUrls) && m.userPhotoUrls.length) userArr.push(...m.userPhotoUrls);
+            if (Array.isArray(m.userPhotos) && m.userPhotos.length) userArr.push(...m.userPhotos);
             if (m.userPhotoUrl) userArr.push(m.userPhotoUrl);
             let userPhotos = [...new Set(userArr.filter(Boolean))];
             if (userPhotos.length > 1) userPhotos = userPhotos.filter(u => u !== AVATAR);
@@ -630,6 +631,7 @@ function renderMarks(marks) {
 
             const placeArr = [];
             if (Array.isArray(m.placePhotoUrls) && m.placePhotoUrls.length) placeArr.push(...m.placePhotoUrls);
+            if (Array.isArray(m.placePhotos) && m.placePhotos.length) placeArr.push(...m.placePhotos);
             if (m.placePhotoUrl) placeArr.push(m.placePhotoUrl);
             let placePhotos = [...new Set(placeArr.filter(Boolean))];
             if (!placePhotos.length) placePhotos.push(PLACE_FALLBACK);
@@ -842,31 +844,36 @@ function renderMarks(marks) {
                 const thumbHtml = (url) => `<img class=\"mm-thumb\" src=\"${url}\" alt=\"Photo\" style=\"width:72px;height:72px;border-radius:8px;object-fit:cover;border:1px solid #e9ecef;cursor:pointer;\"/>`;
                 // Build sections: first place images, then for each user: their images, name link and message
                 const placeUrls = [...new Set(g.items.flatMap(it => it.placePhotos).filter(Boolean))];
-                const byUser = new Map(); // name -> { urls:Set, message:string, avatar:string }
+                const byUser = new Map(); // name -> { urls:Set, messages:Set, avatar:string }
                 for (const it of g.items) {
                     const name = it.createdBy || 'Unknown';
-                    if (!byUser.has(name)) byUser.set(name, { urls: new Set(), message: null, avatar: null });
+                    if (!byUser.has(name)) byUser.set(name, { urls: new Set(), messages: new Set(), avatar: null });
                     const entry = byUser.get(name);
                     (it.userPhotos || []).forEach(u => { if (u) entry.urls.add(u); });
-                    const msg = it.message || it.note || it.comment || null;
-                    if (!entry.message && msg) entry.message = msg;
-                    if (!entry.avatar) entry.avatar = (it.userPhotos && it.userPhotos[0]) || it.userPhotoUrl || '/images/user-avatar.svg';
+                    const src = it.mark || {};
+                    const msg = src.message || src.userMessage || src.note || src.comment || src.caption || src.description || src.text || src.msg || null;
+                    if (msg) entry.messages.add(msg);
+                    if (!entry.avatar) entry.avatar = (it.userPhotos && it.userPhotos[0]) || src.userPhotoUrl || '/images/user-avatar.svg';
                 }
-                const userSections = Array.from(byUser.entries()).map(([name, val]) => ({ name, urls: Array.from(val.urls), message: val.message || '', avatar: val.avatar }));
+                const userSections = Array.from(byUser.entries()).map(([name, val]) => ({ name, urls: Array.from(val.urls), messages: Array.from(val.messages), avatar: val.avatar }));
                 // Optional: sort users alphabetically for consistent order
                 userSections.sort((a,b) => a.name.localeCompare(b.name));
 
                 const sections = [];
                 if (placeUrls.length) sections.push({ type: 'place', label: 'Place photos', urls: placeUrls });
                 for (const us of userSections) {
-                    sections.push({ type: 'user', label: us.name, urls: us.urls, message: us.message, avatar: us.avatar });
+                    sections.push({ type: 'user', label: us.name, urls: us.urls, messages: us.messages, avatar: us.avatar });
                 }
 
                 const sectionsHtml = sections.map((sec, idx) => {
                     const heading = sec.type === 'user'
                         ? `<div style=\"display:flex;align-items:center;gap:6px;margin-top:${idx===0? '0':'8'}px;\"><span style=\"font-weight:600;\">User:</span> <a href=\"/user/${encodeURIComponent(sec.label)}\" class=\"mm-user-link\" data-username=\"${encodeURIComponent(sec.label)}\" data-avatar=\"${sec.avatar}\" style=\"text-decoration:none;\">${escapeHtml(sec.label)}</a></div>`
                         : `<div style=\"font-weight:600;margin-top:${idx===0? '0':'8'}px;\">${escapeHtml(sec.label)}</div>`;
-                    const msgHtml = sec.type === 'user' && sec.message ? `<div style=\"color:#6c757d;font-size:12px;margin:2px 0 4px;\">${escapeHtml(sec.message)}</div>` : '';
+                    let msgHtml = '';
+                    if (sec.type === 'user' && Array.isArray(sec.messages) && sec.messages.length) {
+                        const items = sec.messages.map(m => `<li>${escapeHtml(m)}</li>`).join('');
+                        msgHtml = `<ul style=\"color:#6c757d;font-size:12px;margin:2px 0 4px;padding-left:16px;\">${items}</ul>`;
+                    }
                     const strip = `<div class=\"mm-scroll\" data-sec-idx=\"${idx}\" style=\"display:flex; gap:8px; overflow-x:auto; padding-bottom:4px; margin:6px 0;\">${sec.urls.map(thumbHtml).join('')}</div>`;
                     return `<div class=\"mm-sec\">${heading}${msgHtml}${strip}</div>`;
                 }).join('');
