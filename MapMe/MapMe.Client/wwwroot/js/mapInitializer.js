@@ -840,21 +840,32 @@ function renderMarks(marks) {
                 const title = titleVal ? `<div style=\"font-weight:600;\">${escapeHtml(titleVal)}</div>` : '';
                 const addr = addrVal ? `<div style=\"color:#6c757d; font-size:12px;\">${escapeHtml(addrVal)}</div>` : '';
                 const thumbHtml = (url) => `<img class=\"mm-thumb\" src=\"${url}\" alt=\"Photo\" style=\"width:72px;height:72px;border-radius:8px;object-fit:cover;border:1px solid #e9ecef;cursor:pointer;\"/>`;
-                // Gather unique lists for strips
-                const allUserUrls = [...new Set(g.items.flatMap(it => it.userPhotos))];
-                const allPlaceUrls = [...new Set(g.items.flatMap(it => it.placePhotos))];
-                const userStrip = `<div class=\"mm-scroll\" style=\"display:flex; gap:8px; overflow-x:auto; padding-bottom:4px; margin:8px 0;\">${allUserUrls.map(thumbHtml).join('')}</div>`;
-                const placeStrip = `<div class=\"mm-scroll\" style=\"display:flex; gap:8px; overflow-x:auto; padding-bottom:4px; margin:8px 0;\">${allPlaceUrls.map(thumbHtml).join('')}</div>`;
-                // By section: show single user name with link when exactly one user in this group
-                let bySection = '';
-                try {
-                    const uniqueNames = [...new Set(g.items.map(it => it.createdBy).filter(Boolean))];
-                    if (uniqueNames.length === 1) {
-                        const name = uniqueNames[0];
-                        bySection = `<div style=\"color:#6c757d; font-size:12px; margin-top:4px;\">By: <a href=\"/user/${encodeURIComponent(name)}\" style=\"text-decoration:none;\">${escapeHtml(name)}</a></div>`;
-                    }
-                } catch (_) { /* ignore */ }
-                const content = `<div style=\"max-width:320px;\">${title}${addr}${userStrip}${placeStrip}${bySection}</div>`;
+                // Build sections: first place images, then for each user: their images and name link
+                const placeUrls = [...new Set(g.items.flatMap(it => it.placePhotos).filter(Boolean))];
+                const byUser = new Map();
+                for (const it of g.items) {
+                    const name = it.createdBy || 'Unknown';
+                    if (!byUser.has(name)) byUser.set(name, new Set());
+                    (it.userPhotos || []).forEach(u => { if (u) byUser.get(name).add(u); });
+                }
+                const userSections = Array.from(byUser.entries()).map(([name, set]) => ({ name, urls: Array.from(set) }));
+                // Optional: sort users alphabetically for consistent order
+                userSections.sort((a,b) => a.name.localeCompare(b.name));
+
+                const sections = [];
+                if (placeUrls.length) sections.push({ type: 'place', label: 'Place photos', urls: placeUrls });
+                for (const us of userSections) {
+                    sections.push({ type: 'user', label: us.name, urls: us.urls });
+                }
+
+                const sectionsHtml = sections.map((sec, idx) => {
+                    const heading = sec.type === 'user'
+                        ? `<div style=\"display:flex;align-items:center;gap:6px;margin-top:${idx===0? '0':'8'}px;\"><span style=\"font-weight:600;\">User:</span> <a href=\"/user/${encodeURIComponent(sec.label)}\" style=\"text-decoration:none;\">${escapeHtml(sec.label)}</a></div>`
+                        : `<div style=\"font-weight:600;margin-top:${idx===0? '0':'8'}px;\">${escapeHtml(sec.label)}</div>`;
+                    const strip = `<div class=\"mm-scroll\" data-sec-idx=\"${idx}\" style=\"display:flex; gap:8px; overflow-x:auto; padding-bottom:4px; margin:6px 0;\">${sec.urls.map(thumbHtml).join('')}</div>`;
+                    return `<div class=\"mm-sec\">${heading}${strip}</div>`;
+                }).join('');
+                const content = `<div style=\"max-width:320px; max-height:360px; overflow:auto;\">${title}${addr}${sectionsHtml}</div>`;
                 try { sharedInfoWindow.close(); } catch (_) {}
                 sharedInfoWindow.setContent(content);
                 // Anchor to the marker for precise placement
@@ -864,22 +875,15 @@ function renderMarks(marks) {
                     try {
                         const container = document.querySelector('.gm-style-iw, .gm-style-iw-c')?.parentElement || document.body;
                         const strips = container.querySelectorAll('.mm-scroll');
-                        if (strips[0]) {
-                            const userUrls = allUserUrls.slice();
-                            strips[0].querySelectorAll('.mm-thumb').forEach((el, idx) => {
+                        strips.forEach((stripEl) => {
+                            const i = parseInt(stripEl.getAttribute('data-sec-idx'), 10);
+                            const urls = (sections[i] && sections[i].urls) ? sections[i].urls.slice() : [];
+                            stripEl.querySelectorAll('.mm-thumb').forEach((el, idx) => {
                                 el.addEventListener('click', () => {
-                                    try { window.MapMe && typeof window.MapMe.openPhotoViewer === 'function' ? window.MapMe.openPhotoViewer(userUrls, idx) : openPhotoViewer(userUrls, idx); } catch (_) {}
+                                    try { window.MapMe && typeof window.MapMe.openPhotoViewer === 'function' ? window.MapMe.openPhotoViewer(urls, idx) : openPhotoViewer(urls, idx); } catch (_) {}
                                 }, { once: true });
                             });
-                        }
-                        if (strips[1]) {
-                            const placeUrls = allPlaceUrls.slice();
-                            strips[1].querySelectorAll('.mm-thumb').forEach((el, idx) => {
-                                el.addEventListener('click', () => {
-                                    try { window.MapMe && typeof window.MapMe.openPhotoViewer === 'function' ? window.MapMe.openPhotoViewer(placeUrls, idx) : openPhotoViewer(placeUrls, idx); } catch (_) {}
-                                }, { once: true });
-                            });
-                        }
+                        });
                     } catch (_) { /* ignore */ }
                 }, 0);
             };
