@@ -901,18 +901,26 @@ function renderMarks(marks) {
                         ensureUIStyles();
                         let popTimer = null;
                         let activePopover = null;
-                        const showPopover = (anchor, username, avatar) => {
+                        const showPopover = async (anchor, username, avatar) => {
                             hidePopover();
                             const rect = anchor.getBoundingClientRect();
                             const pop = document.createElement('div');
                             pop.className = 'mm-popover';
                             pop.innerHTML = `
                                 <div class=\"mm-pop-inner\">
-                                  <div style=\"display:flex;align-items:center;gap:8px;\">
-                                    <img src=\"${avatar || '/images/user-avatar.svg'}\" alt=\"${escapeHtml(username)}\" style=\"width:32px;height:32px;border-radius:50%;object-fit:cover;\"/>
-                                    <div style=\"font-weight:600;\">${escapeHtml(username)}</div>
+                                  <div style=\"display:flex;align-items:center;gap:8px;margin-bottom:8px;\">
+                                    <img src=\"${avatar || '/images/user-avatar.svg'}\" alt=\"${escapeHtml(username)}\" style=\"width:40px;height:40px;border-radius:50%;object-fit:cover;\">
+                                    <div>
+                                      <div style=\"font-weight:700;\" class=\"mm-pop-name\">${escapeHtml(username)}</div>
+                                      <div style=\"color:#6c757d;font-size:12px;\" class=\"mm-pop-handle\">@${escapeHtml(username)}</div>
+                                    </div>
                                   </div>
-                                  <button class=\"mm-btn\" data-go=\"/user/${encodeURIComponent(username)}\" style=\"margin-top:8px;\">View profile →</button>
+                                  <div class=\"mm-pop-body\" style=\"font-size:12px;color:#374151;\">Loading profile…</div>
+                                  <div class=\"mm-pop-photos\" style=\"display:flex;gap:6px;overflow-x:auto;margin-top:8px;\"></div>
+                                  <div style=\"display:flex;gap:8px;margin-top:10px;\">
+                                    <button class=\"mm-btn\" data-go=\"/user/${encodeURIComponent(username)}\">View profile →</button>
+                                    <button class=\"mm-btn\" data-msg=\"/messages/new?to=${encodeURIComponent(username)}\">Message</button>
+                                  </div>
                                 </div>`;
                             document.body.appendChild(pop);
                             const top = window.scrollY + rect.top + rect.height + 6;
@@ -921,9 +929,44 @@ function renderMarks(marks) {
                             pop.style.left = `${left}px`;
                             pop.addEventListener('mouseenter', () => { if (popTimer) { clearTimeout(popTimer); popTimer=null; } });
                             pop.addEventListener('mouseleave', () => { hidePopover(150); });
-                            const btn = pop.querySelector('button.mm-btn');
+                            const btn = pop.querySelector('button.mm-btn[data-go]');
                             if (btn) btn.addEventListener('click', (e) => { e.preventDefault(); window.location.href = btn.getAttribute('data-go'); });
+                            const msgBtn = pop.querySelector('button.mm-btn[data-msg]');
+                            if (msgBtn) msgBtn.addEventListener('click', (e) => { e.preventDefault(); window.location.href = msgBtn.getAttribute('data-msg'); });
                             activePopover = pop;
+                            try {
+                                const profile = await getUserProfile(username, avatar);
+                                const body = pop.querySelector('.mm-pop-body');
+                                const photosEl = pop.querySelector('.mm-pop-photos');
+                                if (body) {
+                                    const lines = [];
+                                    if (profile.fullName) lines.push(`<div><strong>Name:</strong> ${escapeHtml(profile.fullName)}</div>`);
+                                    if (profile.username) lines.push(`<div><strong>Handle:</strong> @${escapeHtml(profile.username)}</div>`);
+                                    if (profile.bio) lines.push(`<div style=\"margin-top:4px;\">${escapeHtml(profile.bio)}</div>`);
+                                    if (profile.location) lines.push(`<div><strong>Location:</strong> ${escapeHtml(profile.location)}</div>`);
+                                    if (profile.website) lines.push(`<div><strong>Website:</strong> <a href=\"${profile.website}\" target=\"_blank\" rel=\"noopener\">${escapeHtml(profile.website)}</a></div>`);
+                                    if (profile.joinedAt) lines.push(`<div><strong>Joined:</strong> ${escapeHtml(profile.joinedAt)}</div>`);
+                                    const stats = [];
+                                    if (profile.followers != null) stats.push(`${profile.followers} followers`);
+                                    if (profile.following != null) stats.push(`${profile.following} following`);
+                                    if (profile.photosCount != null) stats.push(`${profile.photosCount} photos`);
+                                    if (stats.length) lines.push(`<div style=\"color:#6b7280\">${stats.join(' • ')}</div>`);
+                                    if (Array.isArray(profile.interests) && profile.interests.length) {
+                                        lines.push(`<div style=\"margin-top:6px;\"><strong>Interests:</strong> ${profile.interests.map(escapeHtml).join(', ')}</div>`);
+                                    }
+                                    body.innerHTML = lines.join('');
+                                }
+                                if (photosEl) {
+                                    const urls = Array.isArray(profile.recentPhotos) ? profile.recentPhotos.slice(0, 10) : [];
+                                    if (urls.length) {
+                                        photosEl.innerHTML = urls.map(u => `<img src=\"${u}\" alt=\"\" style=\"width:44px;height:44px;border-radius:6px;object-fit:cover;border:1px solid #e5e7eb;\"/>`).join('');
+                                    } else {
+                                        photosEl.style.display = 'none';
+                                    }
+                                }
+                            } catch (e) {
+                                // leave loading text
+                            }
                         };
                         const hidePopover = (delay=0) => {
                             if (popTimer) { clearTimeout(popTimer); popTimer=null; }
@@ -1045,6 +1088,60 @@ function openPhotoViewer(urls, startIndex = 0) {
 
 window.MapMe = window.MapMe || {};
 window.MapMe.openPhotoViewer = openPhotoViewer;
+
+// Profile fetcher for popovers (tries app hook, then API, then mock)
+const _mmProfileCache = new Map();
+async function getUserProfile(username, avatarUrl) {
+    try {
+        const key = (username || '').toLowerCase();
+        if (_mmProfileCache.has(key)) return _mmProfileCache.get(key);
+        // 1) App-provided hook
+        if (window.MapMe && typeof window.MapMe.getUserProfile === 'function') {
+            const prof = await window.MapMe.getUserProfile(username);
+            if (prof) { _mmProfileCache.set(key, prof); return prof; }
+        }
+        // 2) REST API fallback
+        try {
+            const res = await fetch(`/api/users/${encodeURIComponent(username)}`);
+            if (res.ok) {
+                const data = await res.json();
+                const prof = {
+                    fullName: data.fullName || data.name || username,
+                    username: data.username || username,
+                    bio: data.bio || '',
+                    location: data.location || data.city || '',
+                    website: data.website || data.url || '',
+                    joinedAt: data.joinedAt || data.createdAt || '',
+                    followers: data.followersCount ?? data.followers ?? null,
+                    following: data.followingCount ?? data.following ?? null,
+                    photosCount: data.photosCount ?? null,
+                    interests: Array.isArray(data.interests) ? data.interests : [] ,
+                    avatar: data.avatar || avatarUrl || '/images/user-avatar.svg'
+                };
+                _mmProfileCache.set(key, prof);
+                return prof;
+            }
+        } catch (_) { /* ignore network errors; fall back to mock */ }
+        // 3) Mock data
+        const prof = {
+            fullName: username.charAt(0).toUpperCase() + username.slice(1),
+            username,
+            bio: 'Traveler. Food lover. Always marking new places.',
+            location: 'Somewhere on Earth',
+            website: 'https://example.com',
+            joinedAt: 'Jan 2024',
+            followers: Math.floor(Math.random()*900)+100,
+            following: Math.floor(Math.random()*300)+50,
+            photosCount: Math.floor(Math.random()*120)+20,
+            interests: ['coffee', 'parks', 'nightlife'],
+            avatar: avatarUrl || '/images/user-avatar.svg'
+        };
+        _mmProfileCache.set(key, prof);
+        return prof;
+    } catch (_) {
+        return { fullName: username, username, avatar: avatarUrl || '/images/user-avatar.svg' };
+    }
+}
 
 // ---- Debug helpers to mock multiple users and marks ----
 function _mmCreateMockMarks(center) {
