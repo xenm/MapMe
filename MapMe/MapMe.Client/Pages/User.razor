@@ -1,0 +1,200 @@
+@page "/user/{username}"
+@using System.Text.Json
+@inject IJSRuntime Js
+@inject NavigationManager Nav
+
+<PageTitle>User Profile</PageTitle>
+
+@if (_loading)
+{
+    <div class="d-flex justify-content-center align-items-center" style="height: 50vh;">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <span class="ms-2">Loading user profile...</span>
+    </div>
+}
+else if (_error != null)
+{
+    <div class="alert alert-danger">@_error</div>
+}
+else if (_marks.Count == 0)
+{
+    <div class="alert alert-info">No data found for user <strong>@username</strong>.</div>
+}
+else
+{
+    <div class="page">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+            <h1 class="mb-0">@username</h1>
+            <Button Color="ButtonColor.Secondary" Outline="true" @onclick="GoBack">Back</Button>
+        </div>
+
+        <div class="card mb-3">
+            <CardHeader>
+                <CardTitle class="mb-0">User Info</CardTitle>
+            </CardHeader>
+            <CardBody>
+                <div class="row g-3 align-items-center">
+                    <div class="col-auto">
+                        <img src="@_avatar" alt="Avatar" style="width:64px;height:64px;border-radius:50%;object-fit:cover;border:1px solid #e9ecef;" />
+                    </div>
+                    <div class="col">
+                        <div class="fw-semibold">@username</div>
+                        <div class="text-muted small">Marks: @_marks.Count</div>
+                        @if (!string.IsNullOrWhiteSpace(_lastNote))
+                        {
+                            <div class="small mt-1">Last message: <span class="text-muted">@_lastNote</span></div>
+                        }
+                    </div>
+                </div>
+            </CardBody>
+        </div>
+
+        <div class="card">
+            <CardHeader>
+                <CardTitle class="mb-0">Photos</CardTitle>
+            </CardHeader>
+            <CardBody>
+                <div class="d-flex flex-wrap gap-2">
+                    @for (int i = 0; i < _photos.Count; i++)
+                    {
+                        var p = _photos[i];
+                        <img src="@p" @onclick="() => OpenLightbox(i)" style="width:140px;height:140px;border-radius:8px;object-fit:cover;border:1px solid #e9ecef;cursor:pointer;" />
+                    }
+                </div>
+                @if (_photos.Count == 0)
+                {
+                    <div class="text-muted">No photos available.</div>
+                }
+            </CardBody>
+        </div>
+
+        <div class="mt-3">
+            <a class="btn btn-link" href="/map">Back to Map</a>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public string? username { get; set; }
+
+    private bool _loading = true;
+    private string? _error;
+    private List<MarkDate> _marks = new();
+    private string _avatar = "/images/user-avatar.svg";
+    private List<string> _photos = new();
+    private string? _lastNote;
+    // Defaults for fake user images (match Map.razor): real images first; avatar as fallback only
+    private static readonly string DefaultUserAvatar = "/images/user-avatar.svg";
+    private static readonly List<string> DefaultUserPhotoUrls = new()
+    {
+        "https://i.pravatar.cc/300?img=12",
+        "https://i.pravatar.cc/300?img=32",
+        "https://i.pravatar.cc/300?img=68"
+    };
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _loading = true;
+        _error = null;
+        _marks.Clear();
+        _photos.Clear();
+        _lastNote = null;
+
+        try
+        {
+            var json = await Js.InvokeAsync<string?>("MapMe.storage.load", "markDates");
+            var all = !string.IsNullOrWhiteSpace(json) ? JsonSerializer.Deserialize<List<MarkDate>>(json) ?? new List<MarkDate>() : new List<MarkDate>();
+            if (!string.IsNullOrWhiteSpace(username))
+            {
+                _marks = all.Where(m => string.Equals(m.CreatedBy, username, StringComparison.OrdinalIgnoreCase)).OrderByDescending(m => m.SavedAt).ToList();
+                // Backfill fake user photos if missing
+                foreach (var m in _marks)
+                {
+                    if (m.UserPhotoUrls == null || m.UserPhotoUrls.Count == 0)
+                    {
+                        m.UserPhotoUrls = new List<string>(DefaultUserPhotoUrls);
+                    }
+                    if (string.IsNullOrWhiteSpace(m.UserPhotoUrl))
+                    {
+                        m.UserPhotoUrl = DefaultUserAvatar;
+                    }
+                }
+            }
+            else
+            {
+                _marks = new();
+            }
+
+            if (_marks.Count > 0)
+            {
+                // Avatar: pick the first available user photo or placeholder
+                var first = _marks.First();
+                _avatar = first.UserPhotoUrl ?? first.UserPhotoUrls?.FirstOrDefault() ?? DefaultUserAvatar;
+                // Photos: collect user photos up to 3
+                var uphotos = _marks
+                    .SelectMany(m => (m.UserPhotoUrls ?? new List<string>()).Concat(string.IsNullOrWhiteSpace(m.UserPhotoUrl) ? Array.Empty<string>() : new[] { m.UserPhotoUrl! }))
+                    .Where(u => !string.IsNullOrWhiteSpace(u))
+                    .Distinct()
+                    .Take(3)
+                    .ToList();
+                _photos = uphotos;
+                // Fallbacks if none found
+                if (_photos.Count == 0)
+                {
+                    _photos = DefaultUserPhotoUrls.Take(3).ToList();
+                }
+                _lastNote = _marks.FirstOrDefault(m => !string.IsNullOrWhiteSpace(m.Note))?.Note;
+            }
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private async Task OpenLightbox(int index)
+    {
+        try
+        {
+            await Js.InvokeVoidAsync("MapMe.openPhotoViewer", _photos, index);
+        }
+        catch { }
+    }
+
+    private void GoBack()
+    {
+        if (Nav.Uri.EndsWith($"/user/{username}", StringComparison.OrdinalIgnoreCase))
+        {
+            Nav.NavigateTo("/map");
+        }
+        else
+        {
+            Nav.NavigateTo("/");
+        }
+    }
+
+    private class MarkDate
+    {
+        public double Latitude { get; set; }
+        public double Longitude { get; set; }
+        public string? Name { get; set; }
+        public string? Address { get; set; }
+        public string? PlaceId { get; set; }
+        public string CreatedBy { get; set; } = "current user";
+        public string? Note { get; set; }
+        public List<string>? Types { get; set; }
+        public string? Url { get; set; }
+        public List<string>? PhotoReferences { get; set; }
+        public string? PlacePhotoUrl { get; set; }
+        public string? UserPhotoUrl { get; set; }
+        public List<string>? UserPhotoUrls { get; set; }
+        public DateTime SavedAt { get; set; }
+    }
+}
