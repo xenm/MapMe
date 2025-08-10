@@ -840,30 +840,35 @@ function renderMarks(marks) {
                 const title = titleVal ? `<div style=\"font-weight:600;\">${escapeHtml(titleVal)}</div>` : '';
                 const addr = addrVal ? `<div style=\"color:#6c757d; font-size:12px;\">${escapeHtml(addrVal)}</div>` : '';
                 const thumbHtml = (url) => `<img class=\"mm-thumb\" src=\"${url}\" alt=\"Photo\" style=\"width:72px;height:72px;border-radius:8px;object-fit:cover;border:1px solid #e9ecef;cursor:pointer;\"/>`;
-                // Build sections: first place images, then for each user: their images and name link
+                // Build sections: first place images, then for each user: their images, name link and message
                 const placeUrls = [...new Set(g.items.flatMap(it => it.placePhotos).filter(Boolean))];
-                const byUser = new Map();
+                const byUser = new Map(); // name -> { urls:Set, message:string, avatar:string }
                 for (const it of g.items) {
                     const name = it.createdBy || 'Unknown';
-                    if (!byUser.has(name)) byUser.set(name, new Set());
-                    (it.userPhotos || []).forEach(u => { if (u) byUser.get(name).add(u); });
+                    if (!byUser.has(name)) byUser.set(name, { urls: new Set(), message: null, avatar: null });
+                    const entry = byUser.get(name);
+                    (it.userPhotos || []).forEach(u => { if (u) entry.urls.add(u); });
+                    const msg = it.message || it.note || it.comment || null;
+                    if (!entry.message && msg) entry.message = msg;
+                    if (!entry.avatar) entry.avatar = (it.userPhotos && it.userPhotos[0]) || it.userPhotoUrl || '/images/user-avatar.svg';
                 }
-                const userSections = Array.from(byUser.entries()).map(([name, set]) => ({ name, urls: Array.from(set) }));
+                const userSections = Array.from(byUser.entries()).map(([name, val]) => ({ name, urls: Array.from(val.urls), message: val.message || '', avatar: val.avatar }));
                 // Optional: sort users alphabetically for consistent order
                 userSections.sort((a,b) => a.name.localeCompare(b.name));
 
                 const sections = [];
                 if (placeUrls.length) sections.push({ type: 'place', label: 'Place photos', urls: placeUrls });
                 for (const us of userSections) {
-                    sections.push({ type: 'user', label: us.name, urls: us.urls });
+                    sections.push({ type: 'user', label: us.name, urls: us.urls, message: us.message, avatar: us.avatar });
                 }
 
                 const sectionsHtml = sections.map((sec, idx) => {
                     const heading = sec.type === 'user'
-                        ? `<div style=\"display:flex;align-items:center;gap:6px;margin-top:${idx===0? '0':'8'}px;\"><span style=\"font-weight:600;\">User:</span> <a href=\"/user/${encodeURIComponent(sec.label)}\" style=\"text-decoration:none;\">${escapeHtml(sec.label)}</a></div>`
+                        ? `<div style=\"display:flex;align-items:center;gap:6px;margin-top:${idx===0? '0':'8'}px;\"><span style=\"font-weight:600;\">User:</span> <a href=\"/user/${encodeURIComponent(sec.label)}\" class=\"mm-user-link\" data-username=\"${encodeURIComponent(sec.label)}\" data-avatar=\"${sec.avatar}\" style=\"text-decoration:none;\">${escapeHtml(sec.label)}</a></div>`
                         : `<div style=\"font-weight:600;margin-top:${idx===0? '0':'8'}px;\">${escapeHtml(sec.label)}</div>`;
+                    const msgHtml = sec.type === 'user' && sec.message ? `<div style=\"color:#6c757d;font-size:12px;margin:2px 0 4px;\">${escapeHtml(sec.message)}</div>` : '';
                     const strip = `<div class=\"mm-scroll\" data-sec-idx=\"${idx}\" style=\"display:flex; gap:8px; overflow-x:auto; padding-bottom:4px; margin:6px 0;\">${sec.urls.map(thumbHtml).join('')}</div>`;
-                    return `<div class=\"mm-sec\">${heading}${strip}</div>`;
+                    return `<div class=\"mm-sec\">${heading}${msgHtml}${strip}</div>`;
                 }).join('');
                 const content = `<div style=\"max-width:320px; max-height:360px; overflow:auto;\">${title}${addr}${sectionsHtml}</div>`;
                 try { sharedInfoWindow.close(); } catch (_) {}
@@ -883,6 +888,47 @@ function renderMarks(marks) {
                                     try { window.MapMe && typeof window.MapMe.openPhotoViewer === 'function' ? window.MapMe.openPhotoViewer(urls, idx) : openPhotoViewer(urls, idx); } catch (_) {}
                                 }, { once: true });
                             });
+                        });
+
+                        // Popover for user link hover/click
+                        ensureUIStyles();
+                        let popTimer = null;
+                        let activePopover = null;
+                        const showPopover = (anchor, username, avatar) => {
+                            hidePopover();
+                            const rect = anchor.getBoundingClientRect();
+                            const pop = document.createElement('div');
+                            pop.className = 'mm-popover';
+                            pop.innerHTML = `
+                                <div class=\"mm-pop-inner\">
+                                  <div style=\"display:flex;align-items:center;gap:8px;\">
+                                    <img src=\"${avatar || '/images/user-avatar.svg'}\" alt=\"${escapeHtml(username)}\" style=\"width:32px;height:32px;border-radius:50%;object-fit:cover;\"/>
+                                    <div style=\"font-weight:600;\">${escapeHtml(username)}</div>
+                                  </div>
+                                  <button class=\"mm-btn\" data-go=\"/user/${encodeURIComponent(username)}\" style=\"margin-top:8px;\">View profile →</button>
+                                </div>`;
+                            document.body.appendChild(pop);
+                            const top = window.scrollY + rect.top + rect.height + 6;
+                            const left = window.scrollX + rect.left;
+                            pop.style.top = `${top}px`;
+                            pop.style.left = `${left}px`;
+                            pop.addEventListener('mouseenter', () => { if (popTimer) { clearTimeout(popTimer); popTimer=null; } });
+                            pop.addEventListener('mouseleave', () => { hidePopover(150); });
+                            const btn = pop.querySelector('button.mm-btn');
+                            if (btn) btn.addEventListener('click', (e) => { e.preventDefault(); window.location.href = btn.getAttribute('data-go'); });
+                            activePopover = pop;
+                        };
+                        const hidePopover = (delay=0) => {
+                            if (popTimer) { clearTimeout(popTimer); popTimer=null; }
+                            const fn = () => { if (activePopover && activePopover.parentNode) { activePopover.parentNode.removeChild(activePopover); activePopover=null; } };
+                            if (delay>0) popTimer = setTimeout(fn, delay); else fn();
+                        };
+                        container.querySelectorAll('.mm-user-link').forEach(a => {
+                            const username = decodeURIComponent(a.getAttribute('data-username') || '');
+                            const avatar = a.getAttribute('data-avatar');
+                            a.addEventListener('mouseenter', () => showPopover(a, username, avatar));
+                            a.addEventListener('mouseleave', () => hidePopover(150));
+                            a.addEventListener('click', (e) => { e.preventDefault(); showPopover(a, username, avatar); });
                         });
                     } catch (_) { /* ignore */ }
                 }, 0);
@@ -924,6 +970,21 @@ function ensureViewerStyles() {
     .mm-viewer-img{max-width:90vw;max-height:90vh;transform:scale(1);transition:transform .15s ease;cursor:grab;border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.4)}
     .mm-viewer-controls{position:absolute;top:8px;right:8px;display:flex;gap:8px}
     .mm-btn{background:#ffffff; border:0; padding:8px 10px; border-radius:6px; cursor:pointer; font-weight:600}
+    `;
+    document.head.appendChild(style);
+}
+
+// Lightweight UI styles for popovers etc.
+let _mmUIInjected = false;
+function ensureUIStyles() {
+    if (_mmUIInjected) return;
+    _mmUIInjected = true;
+    const style = document.createElement('style');
+    style.textContent = `
+    .mm-popover{position:absolute;background:#fff;border:1px solid #e5e7eb;border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.12);padding:10px;z-index:100000}
+    .mm-pop-inner{max-width:240px}
+    .mm-popover .mm-btn{background:#0d6efd;color:#fff}
+    .mm-popover .mm-btn:hover{filter:brightness(0.95)}
     `;
     document.head.appendChild(style);
 }
@@ -988,8 +1049,9 @@ function _mmCreateMockMarks(center) {
         const dLng = (meters / (111320 * Math.cos(baseLat * Math.PI/180))) * (Math.random() - 0.5);
         return { lat: baseLat + dLat, lng: baseLng + dLng };
     };
-    const placePic = (seed) => `https://picsum.photos/seed/${encodeURIComponent(seed)}/300/200`;
-    const userPic = (id) => `https://i.pravatar.cc/100?img=${id}`; // stable-ish avatars
+    const placePic = (seed, w=300, h=200) => `https://picsum.photos/seed/${encodeURIComponent(seed)}/${w}/${h}`;
+    const userAvatar = (id) => `https://i.pravatar.cc/100?img=${id}`; // stable-ish avatars
+    const userPhoto = (name, i) => `https://picsum.photos/seed/user-${encodeURIComponent(name)}-${i}/240/240`;
 
     // 1) Single user at P1
     const p1 = jitter(0);
@@ -998,31 +1060,49 @@ function _mmCreateMockMarks(center) {
         lat: p1.lat, lng: p1.lng,
         title: 'Cafe Solo', address: '123 Market St',
         createdBy: 'alice',
-        userPhotoUrl: userPic(5),
-        placePhotoUrl: placePic('cafe-solo')
+        message: 'Best cappuccino in town ☕️',
+        userPhotoUrl: userAvatar(5),
+        userPhotos: Array.from({length:6}, (_,i)=>userPhoto('alice', i+1)),
+        placePhotoUrl: placePic('cafe-solo'),
+        placePhotos: Array.from({length:8}, (_,i)=>placePic(`cafe-solo-${i+1}`, 320, 200))
     };
 
     // 2) Two users at same P2
     const p2 = jitter(40);
-    const m2a = { placeId: 'P2', lat: p2.lat, lng: p2.lng, title: 'Park View', address: '200 Green Rd', createdBy: 'bob', userPhotoUrl: userPic(12), placePhotoUrl: placePic('park-view') };
-    const m2b = { placeId: 'P2', lat: p2.lat, lng: p2.lng, title: 'Park View', address: '200 Green Rd', createdBy: 'charlie', userPhotoUrl: userPic(22), placePhotoUrl: placePic('park-view') };
+    const m2a = { placeId: 'P2', lat: p2.lat, lng: p2.lng, title: 'Park View', address: '200 Green Rd', createdBy: 'bob', message: 'Great spot for jogging', userPhotoUrl: userAvatar(12), userPhotos: Array.from({length:5},(_,i)=>userPhoto('bob', i+1)), placePhotoUrl: placePic('park-view'), placePhotos: Array.from({length:7},(_,i)=>placePic(`park-view-${i+1}`, 320, 200)) };
+    const m2b = { placeId: 'P2', lat: p2.lat, lng: p2.lng, title: 'Park View', address: '200 Green Rd', createdBy: 'charlie', message: 'Picnic area is lovely!', userPhotoUrl: userAvatar(22), userPhotos: Array.from({length:4},(_,i)=>userPhoto('charlie', i+1)), placePhotoUrl: placePic('park-view'), placePhotos: Array.from({length:7},(_,i)=>placePic(`park-view-${i+1}`, 320, 200)) };
 
     // 3) Three users at same P3
     const p3 = jitter(80);
-    const m3a = { placeId: 'P3', lat: p3.lat, lng: p3.lng, title: 'Sky Bar', address: '45 Sunset Blvd', createdBy: 'dana', userPhotoUrl: userPic(30), placePhotoUrl: placePic('sky-bar') };
-    const m3b = { placeId: 'P3', lat: p3.lat, lng: p3.lng, title: 'Sky Bar', address: '45 Sunset Blvd', createdBy: 'ed', userPhotoUrl: userPic(31), placePhotoUrl: placePic('sky-bar') };
-    const m3c = { placeId: 'P3', lat: p3.lat, lng: p3.lng, title: 'Sky Bar', address: '45 Sunset Blvd', createdBy: 'frank', userPhotoUrl: userPic(32), placePhotoUrl: placePic('sky-bar') };
+    const m3a = { placeId: 'P3', lat: p3.lat, lng: p3.lng, title: 'Sky Bar', address: '45 Sunset Blvd', createdBy: 'dana', message: 'Sunset views are unreal 🌇', userPhotoUrl: userAvatar(30), userPhotos: Array.from({length:6},(_,i)=>userPhoto('dana', i+1)), placePhotoUrl: placePic('sky-bar'), placePhotos: Array.from({length:6},(_,i)=>placePic(`sky-bar-${i+1}`, 320, 200)) };
+    const m3b = { placeId: 'P3', lat: p3.lat, lng: p3.lng, title: 'Sky Bar', address: '45 Sunset Blvd', createdBy: 'ed', message: 'Cocktails are pricey but worth it', userPhotoUrl: userAvatar(31), userPhotos: Array.from({length:5},(_,i)=>userPhoto('ed', i+1)), placePhotoUrl: placePic('sky-bar'), placePhotos: Array.from({length:6},(_,i)=>placePic(`sky-bar-${i+1}`, 320, 200)) };
+    const m3c = { placeId: 'P3', lat: p3.lat, lng: p3.lng, title: 'Sky Bar', address: '45 Sunset Blvd', createdBy: 'frank', message: 'Live DJ on weekends 🎶', userPhotoUrl: userAvatar(32), userPhotos: Array.from({length:7},(_,i)=>userPhoto('frank', i+1)), placePhotoUrl: placePic('sky-bar'), placePhotos: Array.from({length:6},(_,i)=>placePic(`sky-bar-${i+1}`, 320, 200)) };
 
     // 4) Five users at same P4 (tests +N counter -> +2)
     const p4 = jitter(120);
     const users4 = ['gina','henry','irene','jack','kate'];
-    const marks4 = users4.map((name, idx) => ({ placeId: 'P4', lat: p4.lat, lng: p4.lng, title: 'Central Plaza', address: '1 Main Sq', createdBy: name, userPhotoUrl: userPic(40+idx), placePhotoUrl: placePic('central-plaza') }));
+    const messages4 = {
+        gina: 'Street performers here are awesome!',
+        henry: 'Plenty of benches to sit',
+        irene: 'Fountain is beautiful at night',
+        jack: 'Food trucks on Fridays',
+        kate: 'Holiday market every December'
+    };
+    const marks4 = users4.map((name, idx) => ({
+        placeId: 'P4', lat: p4.lat, lng: p4.lng, title: 'Central Plaza', address: '1 Main Sq', createdBy: name,
+        message: messages4[name],
+        userPhotoUrl: userAvatar(40+idx), userPhotos: Array.from({length:8},(_,i)=>userPhoto(name, i+1)),
+        placePhotoUrl: placePic('central-plaza'), placePhotos: Array.from({length:10},(_,i)=>placePic(`central-plaza-${i+1}`, 320, 200))
+    }));
 
     // 5) No placeId; proximity cluster (~10m radius)
     const base5 = jitter(160);
     const prox = [0, 6, 9].map((r, i) => {
         const p = jitter(10); // within ~10m
-        return { lat: p.lat, lng: p.lng, title: 'Mystery Spot', address: 'Unknown Rd', createdBy: `user_${i+1}`, userPhotoUrl: userPic(60+i), placePhotoUrl: placePic('mystery-spot') };
+        const uname = `user_${i+1}`;
+        return { lat: p.lat, lng: p.lng, title: 'Mystery Spot', address: 'Unknown Rd', createdBy: uname, message: `I found clue #${i+1}`,
+            userPhotoUrl: userAvatar(60+i), userPhotos: Array.from({length:5},(_,k)=>userPhoto(uname, k+1)),
+            placePhotoUrl: placePic('mystery-spot'), placePhotos: Array.from({length:6},(_,k)=>placePic(`mystery-spot-${k+1}`, 320, 200)) };
     });
 
     return [m1, m2a, m2b, m3a, m3b, m3c, ...marks4, ...prox];
