@@ -586,102 +586,203 @@ function renderMarks(marks) {
             sharedInfoWindow = new google.maps.InfoWindow();
         }
 
-        marks.forEach(m => {
-            const pos = { lat: Number(m.lat), lng: Number(m.lng) };
-            // Prepare photos early to pick first user image for marker icon
-            const userPhotosArr = [];
-            if (Array.isArray(m.userPhotoUrls) && m.userPhotoUrls.length) userPhotosArr.push(...m.userPhotoUrls);
-            if (m.userPhotoUrl) userPhotosArr.push(m.userPhotoUrl);
-            let uniqueUser = [...new Set(userPhotosArr.filter(Boolean))];
-            // Prefer non-avatar if available
-            const avatarPath = '/images/user-avatar.svg';
-            if (uniqueUser.length > 1) {
-                uniqueUser = uniqueUser.filter(u => u !== avatarPath);
+        // Group marks by placeId first; fallback to proximity (<= ~25m)
+        const groups = [];
+        const AVATAR = '/images/user-avatar.svg';
+        const PLACE_FALLBACK = '/images/place-photo.svg';
+        const toNum = v => (v === null || v === undefined || v === '' ? null : Number(v));
+        const haversineMeters = (a, b) => {
+            const R = 6371000; // meters
+            const dLat = (b.lat - a.lat) * Math.PI / 180;
+            const dLng = (b.lng - a.lng) * Math.PI / 180;
+            const s1 = Math.sin(dLat/2);
+            const s2 = Math.sin(dLng/2);
+            const aa = s1*s1 + Math.cos(a.lat*Math.PI/180) * Math.cos(b.lat*Math.PI/180) * s2*s2;
+            const c = 2 * Math.atan2(Math.sqrt(aa), Math.sqrt(1-aa));
+            return R * c;
+        };
+        const findGroupIndex = (mark) => {
+            const pid = mark.placeId || mark.place_id || null;
+            if (pid) {
+                const idx = groups.findIndex(g => g.placeId && g.placeId === pid);
+                if (idx !== -1) return idx;
             }
-            if (!uniqueUser.length) uniqueUser.push(avatarPath);
+            // proximity fallback (~25m)
+            const pos = { lat: toNum(mark.lat), lng: toNum(mark.lng) };
+            for (let i = 0; i < groups.length; i++) {
+                if (!groups[i].placeId) {
+                    if (haversineMeters(pos, groups[i].pos) <= 25) return i;
+                }
+            }
+            return -1;
+        };
 
-            const placePhotosArr = [];
-            if (Array.isArray(m.placePhotoUrls) && m.placePhotoUrls.length) placePhotosArr.push(...m.placePhotoUrls);
-            if (m.placePhotoUrl) placePhotosArr.push(m.placePhotoUrl);
-            const uniquePlace = [...new Set(placePhotosArr.filter(Boolean))];
-            if (!uniquePlace.length) uniquePlace.push('/images/place-photo.svg');
+        marks.forEach(m => {
+            const pos = { lat: toNum(m.lat), lng: toNum(m.lng) };
+            const idx = findGroupIndex(m);
+            // Collect photos
+            const userArr = [];
+            if (Array.isArray(m.userPhotoUrls) && m.userPhotoUrls.length) userArr.push(...m.userPhotoUrls);
+            if (m.userPhotoUrl) userArr.push(m.userPhotoUrl);
+            let userPhotos = [...new Set(userArr.filter(Boolean))];
+            if (userPhotos.length > 1) userPhotos = userPhotos.filter(u => u !== AVATAR);
+            if (!userPhotos.length) userPhotos.push(AVATAR);
 
-            // Always render a custom overlay with overlapping circular images (place + user)
-            // Create the marker with a transparent icon to preserve hit-testing
+            const placeArr = [];
+            if (Array.isArray(m.placePhotoUrls) && m.placePhotoUrls.length) placeArr.push(...m.placePhotoUrls);
+            if (m.placePhotoUrl) placeArr.push(m.placePhotoUrl);
+            let placePhotos = [...new Set(placeArr.filter(Boolean))];
+            if (!placePhotos.length) placePhotos.push(PLACE_FALLBACK);
+
+            const entry = {
+                mark: m,
+                userPhotos,
+                placePhotos,
+                createdBy: m.createdBy || null,
+                title: m.title || null,
+                address: m.address || null
+            };
+
+            if (idx === -1) {
+                groups.push({
+                    placeId: m.placeId || m.place_id || null,
+                    pos: { ...pos },
+                    items: [entry]
+                });
+            } else {
+                const g = groups[idx];
+                g.items.push(entry);
+                // update centroid for proximity groups
+                if (!g.placeId) {
+                    const n = g.items.length;
+                    g.pos = {
+                        lat: g.pos.lat + (pos.lat - g.pos.lat) / n,
+                        lng: g.pos.lng + (pos.lng - g.pos.lng) / n
+                    };
+                }
+            }
+        });
+
+        // Render one overlay per group
+        groups.forEach(g => {
+            const pos = g.pos;
+            // Determine base place photo
+            let basePlace = PLACE_FALLBACK;
+            for (const it of g.items) { if (it.placePhotos && it.placePhotos[0]) { basePlace = it.placePhotos[0]; break; } }
+            // Build user list (unique by createdBy if available)
+            const users = [];
+            const seenUsers = new Set();
+            g.items.forEach(it => {
+                const key = it.createdBy || (it.userPhotos && it.userPhotos[0]) || Math.random().toString(36).slice(2);
+                if (!seenUsers.has(key)) {
+                    seenUsers.add(key);
+                    users.push({
+                        name: it.createdBy || null,
+                        photo: (it.userPhotos && it.userPhotos[0]) || AVATAR
+                    });
+                }
+            });
+
             const transparentIcon = {
                 url: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAAAwCAYAAAB9DqNwAAAAC0lEQVR4nO3BMQEAAADCoPdPbQ43oAAAAAAK4wAAAKS3XrQAAQ==',
-                size: new google.maps.Size(64, 48),
-                scaledSize: new google.maps.Size(64, 48),
+                size: new google.maps.Size(64, 64),
+                scaledSize: new google.maps.Size(64, 64),
                 origin: new google.maps.Point(0, 0),
-                anchor: new google.maps.Point(32, 40)
+                anchor: new google.maps.Point(32, 56)
             };
 
             const mk = new google.maps.Marker({
                 position: pos,
                 map: map,
                 icon: transparentIcon,
-                title: m.title || 'Saved mark',
+                title: g.items[0]?.title || 'Saved place',
                 clickable: true,
                 optimized: false,
                 zIndex: 100
             });
 
-            // Build overlay DOM: two circles overlapped; user on top casting shadow over place
-            const labelDiv = document.createElement('div');
-            labelDiv.style.position = 'absolute';
-            labelDiv.style.width = '64px';
-            labelDiv.style.height = '48px';
-            labelDiv.style.pointerEvents = 'auto';
-            labelDiv.style.cursor = 'pointer';
-            labelDiv.style.zIndex = '9999';
+            // Overlay container sized to fit base + chips
+            const container = document.createElement('div');
+            container.style.position = 'absolute';
+            container.style.width = '72px';
+            container.style.height = '64px';
+            container.style.pointerEvents = 'auto';
+            container.style.cursor = 'pointer';
+            container.style.zIndex = '9999';
 
-            // Base (place) circle
-            const placeCircle = document.createElement('div');
-            placeCircle.style.position = 'absolute';
-            placeCircle.style.left = '8px';
-            placeCircle.style.top = '8px';
-            placeCircle.style.width = '40px';
-            placeCircle.style.height = '40px';
-            placeCircle.style.borderRadius = '50%';
-            placeCircle.style.backgroundImage = `url(${uniquePlace[0] || '/images/place-photo.svg'})`;
-            placeCircle.style.backgroundSize = 'cover';
-            placeCircle.style.backgroundPosition = 'center';
-            placeCircle.style.boxShadow = '0 1px 2px rgba(0,0,0,0.25)';
+            // Base place circle 48px centered near bottom
+            const base = document.createElement('div');
+            base.style.position = 'absolute';
+            base.style.left = '12px';
+            base.style.top = '16px';
+            base.style.width = '48px';
+            base.style.height = '48px';
+            base.style.borderRadius = '50%';
+            base.style.backgroundImage = `url(${basePlace})`;
+            base.style.backgroundSize = 'cover';
+            base.style.backgroundPosition = 'center';
+            base.style.boxShadow = '0 2px 4px rgba(0,0,0,0.25)';
+            base.style.overflow = 'hidden';
+            base.style.zIndex = '1';
+            container.appendChild(base);
 
-            // Top (user) circle, overlapping with shadow
-            const userCircle = document.createElement('div');
-            userCircle.style.position = 'absolute';
-            userCircle.style.left = '24px'; // overlap on the right
-            userCircle.style.top = '0px';   // slightly above to emphasize layering
-            userCircle.style.width = '40px';
-            userCircle.style.height = '40px';
-            userCircle.style.borderRadius = '50%';
-            userCircle.style.backgroundImage = `url(${uniqueUser[0] || avatarPath})`;
-            userCircle.style.backgroundSize = 'cover';
-            userCircle.style.backgroundPosition = 'center';
-            // Stronger shadow so it appears above the place image
-            userCircle.style.boxShadow = '0 4px 8px rgba(0,0,0,0.35)';
-            userCircle.style.zIndex = '2';
+            // Helper to create a chip
+            const makeChip = (sizePx, leftPx, topPx, photoUrl, isCounter = false, text = '') => {
+                const chip = document.createElement('div');
+                chip.style.position = 'absolute';
+                chip.style.width = `${sizePx}px`;
+                chip.style.height = `${sizePx}px`;
+                chip.style.left = `${leftPx}px`;
+                chip.style.top = `${topPx}px`;
+                chip.style.borderRadius = '50%';
+                chip.style.boxShadow = '0 4px 8px rgba(0,0,0,0.35), 0 0 0 2px #fff';
+                chip.style.overflow = 'hidden';
+                chip.style.zIndex = '3';
+                if (isCounter) {
+                    chip.style.background = '#2b2f36';
+                    chip.style.color = '#fff';
+                    chip.style.display = 'flex';
+                    chip.style.alignItems = 'center';
+                    chip.style.justifyContent = 'center';
+                    chip.style.fontSize = '12px';
+                    chip.style.fontWeight = '700';
+                    chip.textContent = text;
+                } else {
+                    chip.style.backgroundImage = `url(${photoUrl})`;
+                    chip.style.backgroundSize = 'cover';
+                    chip.style.backgroundPosition = 'center';
+                }
+                return chip;
+            };
 
-            // Ensure both are circles even if images have transparency
-            placeCircle.style.overflow = 'hidden';
-            userCircle.style.overflow = 'hidden';
+            // Place up to 3 user chips bottom-right cascade
+            const maxChips = 3;
+            const extra = Math.max(0, users.length - maxChips);
+            const chips = users.slice(0, maxChips).map(u => u.photo);
+            // Sizes and offsets relative to container
+            const layout = [
+                { size: 20, left: 40, top: 36 },
+                { size: 24, left: 32, top: 28 },
+                { size: 28, left: 24, top: 20 }
+            ];
+            for (let i = 0; i < chips.length; i++) {
+                const cfg = layout[i];
+                const node = (extra > 0 && i === chips.length - 1)
+                    ? makeChip(cfg.size, cfg.left, cfg.top, '', true, extra > 99 ? '99+' : `+${extra}`)
+                    : makeChip(cfg.size, cfg.left, cfg.top, chips[i]);
+                container.appendChild(node);
+            }
 
-            // Append to container
-            labelDiv.appendChild(placeCircle);
-            labelDiv.appendChild(userCircle);
-
-            // Create overlay
             const labelOverlay = new google.maps.OverlayView();
             labelOverlay.onAdd = function() {
-                this.div = labelDiv;
+                this.div = container;
                 const panes = this.getPanes();
                 panes.overlayMouseTarget.appendChild(this.div);
                 try {
                     const handler = (ev) => {
                         try { ev && ev.preventDefault && ev.preventDefault(); } catch (_) {}
                         try { ev && ev.stopPropagation && ev.stopPropagation(); } catch (_) {}
-                        try { showMarkInfo(); } catch (_) {}
+                        try { showGroupInfo(); } catch (_) {}
                     };
                     const handlerDown = (ev) => { try { ev && ev.preventDefault && ev.preventDefault(); ev && ev.stopPropagation && ev.stopPropagation(); } catch (_) {} };
                     this._listeners = [
@@ -693,17 +794,14 @@ function renderMarks(marks) {
                     ];
                 } catch (_) { /* ignore */ }
             };
-
             labelOverlay.draw = function() {
                 const projection = this.getProjection();
                 const position = projection.fromLatLngToDivPixel(pos);
                 if (position) {
-                    // Center the overlay horizontally on the marker and place it just above the point
-                    labelDiv.style.left = (position.x - 32) + 'px';
-                    labelDiv.style.top = (position.y - 48) + 'px';
+                    container.style.left = (position.x - 36) + 'px';
+                    container.style.top = (position.y - 64) + 'px';
                 }
             };
-
             labelOverlay.onRemove = function() {
                 try {
                     if (this._listeners && this._listeners.length) {
@@ -720,11 +818,8 @@ function renderMarks(marks) {
                     this.div = null;
                 } catch (_) { /* ignore */ }
             };
-
-            // Attach to map and keep references for cleanup
             labelOverlay.setMap(map);
             mk.labelOverlay = labelOverlay;
-
             const redraw = () => { try { labelOverlay.draw(); } catch (_) {} };
             labelOverlay._mapListeners = [
                 google.maps.event.addListener(map, 'bounds_changed', redraw),
@@ -734,21 +829,32 @@ function renderMarks(marks) {
             ];
             try { google.maps.event.addListenerOnce(map, 'idle', redraw); } catch (_) {}
 
-            const showMarkInfo = () => {
+            const showGroupInfo = () => {
                 try { console.debug('Opening mark info at', pos); } catch (_) {}
-                const title = m.title ? `<div style=\"font-weight:600;\">${escapeHtml(m.title)}</div>` : '';
-                const addr = m.address ? `<div style=\"color:#6c757d; font-size:12px;\">${escapeHtml(m.address)}</div>` : '';
-                const note = m.note ? `<div style=\"margin-top:6px;\">${escapeHtml(m.note)}</div>` : '';
-                const byName = m.createdBy ? escapeHtml(m.createdBy) : '';
-                const by = byName
-                    ? `<div style=\"color:#6c757d; font-size:12px; margin-top:4px;\">By: <a href=\"/user/${encodeURIComponent(byName)}\" style=\"text-decoration:none;\">${byName}</a></div>`
-                    : '';
-                // uniqueUser and uniquePlace already prepared above
-
+                const firstWith = (prop) => {
+                    for (const it of g.items) if (it[prop]) return it[prop];
+                    return null;
+                };
+                const titleVal = firstWith('title');
+                const addrVal = firstWith('address');
+                const title = titleVal ? `<div style=\"font-weight:600;\">${escapeHtml(titleVal)}</div>` : '';
+                const addr = addrVal ? `<div style=\"color:#6c757d; font-size:12px;\">${escapeHtml(addrVal)}</div>` : '';
                 const thumbHtml = (url) => `<img class=\"mm-thumb\" src=\"${url}\" alt=\"Photo\" style=\"width:72px;height:72px;border-radius:8px;object-fit:cover;border:1px solid #e9ecef;cursor:pointer;\"/>`;
-                const userStrip = `<div class=\"mm-scroll\" style=\"display:flex; gap:8px; overflow-x:auto; padding-bottom:4px; margin:8px 0;\">${uniqueUser.map(thumbHtml).join('')}</div>`;
-                const placeStrip = `<div class=\"mm-scroll\" style=\"display:flex; gap:8px; overflow-x:auto; padding-bottom:4px; margin:8px 0;\">${uniquePlace.map(thumbHtml).join('')}</div>`;
-                const content = `<div style=\"max-width:320px;\">${title}${addr}${userStrip}${placeStrip}${note}${by}</div>`;
+                // Gather unique lists for strips
+                const allUserUrls = [...new Set(g.items.flatMap(it => it.userPhotos))];
+                const allPlaceUrls = [...new Set(g.items.flatMap(it => it.placePhotos))];
+                const userStrip = `<div class=\"mm-scroll\" style=\"display:flex; gap:8px; overflow-x:auto; padding-bottom:4px; margin:8px 0;\">${allUserUrls.map(thumbHtml).join('')}</div>`;
+                const placeStrip = `<div class=\"mm-scroll\" style=\"display:flex; gap:8px; overflow-x:auto; padding-bottom:4px; margin:8px 0;\">${allPlaceUrls.map(thumbHtml).join('')}</div>`;
+                // By section: show single user name with link when exactly one user in this group
+                let bySection = '';
+                try {
+                    const uniqueNames = [...new Set(g.items.map(it => it.createdBy).filter(Boolean))];
+                    if (uniqueNames.length === 1) {
+                        const name = uniqueNames[0];
+                        bySection = `<div style=\"color:#6c757d; font-size:12px; margin-top:4px;\">By: <a href=\"/user/${encodeURIComponent(name)}\" style=\"text-decoration:none;\">${escapeHtml(name)}</a></div>`;
+                    }
+                } catch (_) { /* ignore */ }
+                const content = `<div style=\"max-width:320px;\">${title}${addr}${userStrip}${placeStrip}${bySection}</div>`;
                 try { sharedInfoWindow.close(); } catch (_) {}
                 sharedInfoWindow.setContent(content);
                 // Anchor to the marker for precise placement
@@ -759,7 +865,7 @@ function renderMarks(marks) {
                         const container = document.querySelector('.gm-style-iw, .gm-style-iw-c')?.parentElement || document.body;
                         const strips = container.querySelectorAll('.mm-scroll');
                         if (strips[0]) {
-                            const userUrls = uniqueUser.slice();
+                            const userUrls = allUserUrls.slice();
                             strips[0].querySelectorAll('.mm-thumb').forEach((el, idx) => {
                                 el.addEventListener('click', () => {
                                     try { window.MapMe && typeof window.MapMe.openPhotoViewer === 'function' ? window.MapMe.openPhotoViewer(userUrls, idx) : openPhotoViewer(userUrls, idx); } catch (_) {}
@@ -767,7 +873,7 @@ function renderMarks(marks) {
                             });
                         }
                         if (strips[1]) {
-                            const placeUrls = uniquePlace.slice();
+                            const placeUrls = allPlaceUrls.slice();
                             strips[1].querySelectorAll('.mm-thumb').forEach((el, idx) => {
                                 el.addEventListener('click', () => {
                                     try { window.MapMe && typeof window.MapMe.openPhotoViewer === 'function' ? window.MapMe.openPhotoViewer(placeUrls, idx) : openPhotoViewer(placeUrls, idx); } catch (_) {}
@@ -778,8 +884,7 @@ function renderMarks(marks) {
                 }, 0);
             };
 
-            mk.addListener('click', showMarkInfo);
-
+            mk.addListener('click', showGroupInfo);
             savedMarkers.push(mk);
         });
     } catch (e) {
