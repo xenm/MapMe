@@ -728,6 +728,47 @@ function renderMarks(marks) {
             base.style.zIndex = '1';
             container.appendChild(base);
 
+            // Hover label (name/title) shown above the icon
+            const distinctNames = Array.from(new Set(g.items.map(it => it.createdBy).filter(Boolean)));
+            // Prefer the place name/title whenever available
+            const getPlaceTitle = () => {
+                for (const it of g.items) {
+                    const t = it.title || (it.mark && (it.mark.placeName || it.mark.name || it.mark.title));
+                    if (t) return t;
+                }
+                return null;
+            };
+            let displayLabel = getPlaceTitle();
+            if (!displayLabel) {
+                if (distinctNames.length > 1) displayLabel = `${distinctNames.length} users`;
+                else if (distinctNames.length === 1) displayLabel = distinctNames[0];
+                else displayLabel = 'Saved place';
+            }
+
+            const nameLabel = document.createElement('div');
+            nameLabel.textContent = displayLabel;
+            nameLabel.style.position = 'absolute';
+            nameLabel.style.left = '50%';
+            nameLabel.style.top = '-6px';
+            nameLabel.style.transform = 'translateX(-50%)';
+            nameLabel.style.maxWidth = '160px';
+            nameLabel.style.whiteSpace = 'nowrap';
+            nameLabel.style.textOverflow = 'ellipsis';
+            nameLabel.style.overflow = 'hidden';
+            nameLabel.style.padding = '2px 6px';
+            nameLabel.style.fontSize = '12px';
+            nameLabel.style.fontWeight = '600';
+            nameLabel.style.color = '#111827';
+            nameLabel.style.background = 'rgba(255,255,255,0.95)';
+            nameLabel.style.border = '1px solid #e5e7eb';
+            nameLabel.style.borderRadius = '6px';
+            nameLabel.style.boxShadow = '0 2px 8px rgba(0,0,0,0.15)';
+            nameLabel.style.pointerEvents = 'none';
+            nameLabel.style.opacity = '0';
+            nameLabel.style.transition = 'opacity 120ms ease';
+            nameLabel.style.zIndex = '4';
+            container.appendChild(nameLabel);
+
             // Helper to create a chip
             const makeChip = (sizePx, leftPx, topPx, photoUrl, isCounter = false, text = '') => {
                 const chip = document.createElement('div');
@@ -792,7 +833,10 @@ function renderMarks(marks) {
                         google.maps.event.addDomListener(this.div, 'mousedown', handlerDown),
                         google.maps.event.addDomListener(this.div, 'mouseup', handler),
                         google.maps.event.addDomListener(this.div, 'touchstart', handlerDown),
-                        google.maps.event.addDomListener(this.div, 'touchend', handler)
+                        google.maps.event.addDomListener(this.div, 'touchend', handler),
+                        // Hover to show/hide name label
+                        google.maps.event.addDomListener(this.div, 'mouseenter', () => { try { nameLabel.style.opacity = '1'; } catch (_) {} }),
+                        google.maps.event.addDomListener(this.div, 'mouseleave', () => { try { nameLabel.style.opacity = '0'; } catch (_) {} })
                     ];
                 } catch (_) { /* ignore */ }
             };
