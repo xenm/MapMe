@@ -973,3 +973,66 @@ function openPhotoViewer(urls, startIndex = 0) {
 
 window.MapMe = window.MapMe || {};
 window.MapMe.openPhotoViewer = openPhotoViewer;
+
+// ---- Debug helpers to mock multiple users and marks ----
+function _mmCreateMockMarks(center) {
+    const base = center || (map ? map.getCenter() : { lat: 37.7749, lng: -122.4194 });
+    const baseLat = typeof base.lat === 'function' ? base.lat() : base.lat;
+    const baseLng = typeof base.lng === 'function' ? base.lng() : base.lng;
+    const jitter = (meters) => {
+        const dLat = (meters / 111320) * (Math.random() - 0.5);
+        const dLng = (meters / (111320 * Math.cos(baseLat * Math.PI/180))) * (Math.random() - 0.5);
+        return { lat: baseLat + dLat, lng: baseLng + dLng };
+    };
+    const placePic = (seed) => `https://picsum.photos/seed/${encodeURIComponent(seed)}/300/200`;
+    const userPic = (id) => `https://i.pravatar.cc/100?img=${id}`; // stable-ish avatars
+
+    // 1) Single user at P1
+    const p1 = jitter(0);
+    const m1 = {
+        placeId: 'P1',
+        lat: p1.lat, lng: p1.lng,
+        title: 'Cafe Solo', address: '123 Market St',
+        createdBy: 'alice',
+        userPhotoUrl: userPic(5),
+        placePhotoUrl: placePic('cafe-solo')
+    };
+
+    // 2) Two users at same P2
+    const p2 = jitter(40);
+    const m2a = { placeId: 'P2', lat: p2.lat, lng: p2.lng, title: 'Park View', address: '200 Green Rd', createdBy: 'bob', userPhotoUrl: userPic(12), placePhotoUrl: placePic('park-view') };
+    const m2b = { placeId: 'P2', lat: p2.lat, lng: p2.lng, title: 'Park View', address: '200 Green Rd', createdBy: 'charlie', userPhotoUrl: userPic(22), placePhotoUrl: placePic('park-view') };
+
+    // 3) Three users at same P3
+    const p3 = jitter(80);
+    const m3a = { placeId: 'P3', lat: p3.lat, lng: p3.lng, title: 'Sky Bar', address: '45 Sunset Blvd', createdBy: 'dana', userPhotoUrl: userPic(30), placePhotoUrl: placePic('sky-bar') };
+    const m3b = { placeId: 'P3', lat: p3.lat, lng: p3.lng, title: 'Sky Bar', address: '45 Sunset Blvd', createdBy: 'ed', userPhotoUrl: userPic(31), placePhotoUrl: placePic('sky-bar') };
+    const m3c = { placeId: 'P3', lat: p3.lat, lng: p3.lng, title: 'Sky Bar', address: '45 Sunset Blvd', createdBy: 'frank', userPhotoUrl: userPic(32), placePhotoUrl: placePic('sky-bar') };
+
+    // 4) Five users at same P4 (tests +N counter -> +2)
+    const p4 = jitter(120);
+    const users4 = ['gina','henry','irene','jack','kate'];
+    const marks4 = users4.map((name, idx) => ({ placeId: 'P4', lat: p4.lat, lng: p4.lng, title: 'Central Plaza', address: '1 Main Sq', createdBy: name, userPhotoUrl: userPic(40+idx), placePhotoUrl: placePic('central-plaza') }));
+
+    // 5) No placeId; proximity cluster (~10m radius)
+    const base5 = jitter(160);
+    const prox = [0, 6, 9].map((r, i) => {
+        const p = jitter(10); // within ~10m
+        return { lat: p.lat, lng: p.lng, title: 'Mystery Spot', address: 'Unknown Rd', createdBy: `user_${i+1}`, userPhotoUrl: userPic(60+i), placePhotoUrl: placePic('mystery-spot') };
+    });
+
+    return [m1, m2a, m2b, m3a, m3b, m3c, ...marks4, ...prox];
+}
+
+function debugRenderMockMarks() {
+    try {
+        if (!map) { console.warn('Map not initialized yet'); return; }
+        const mocks = _mmCreateMockMarks(map.getCenter());
+        renderMarks(mocks);
+        console.log('Rendered mock marks:', mocks);
+    } catch (e) { console.error('debugRenderMockMarks error', e); }
+}
+
+window.MapMe = window.MapMe || {};
+window.MapMe.debugRenderMockMarks = debugRenderMockMarks;
+window.MapMe._mmCreateMockMarks = _mmCreateMockMarks; // exposed for testing
