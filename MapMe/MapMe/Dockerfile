@@ -1,5 +1,12 @@
-﻿FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS base
-USER $APP_UID
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS base
+ARG APP_UID=64198
+ARG APP_GID=64198
+ARG APP_USER=appuser
+ARG APP_GROUP=appgroup
+RUN set -eux; \
+    if ! getent group ${APP_GID} >/dev/null; then groupadd -g ${APP_GID} ${APP_GROUP}; fi; \
+    if ! id -u ${APP_UID} >/dev/null 2>&1; then useradd -m -u ${APP_UID} -g ${APP_GID} -s /bin/bash ${APP_USER}; fi
+USER ${APP_USER}
 WORKDIR /app
 EXPOSE 8080
 EXPOSE 8081
