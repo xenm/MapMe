@@ -10,6 +10,7 @@ using MapMe.DTOs;
 using MapMe.Models;
 using MapMe.Utils;
 using Microsoft.Azure.Cosmos;
+using System.Net.Http;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -48,7 +49,24 @@ var useCosmos = !string.IsNullOrWhiteSpace(cosmosEndpoint) && !string.IsNullOrWh
 
 if (useCosmos)
 {
-    builder.Services.AddSingleton(sp => new CosmosClient(cosmosEndpoint!, cosmosKey!));
+    builder.Services.AddSingleton(sp =>
+    {
+        // Allow self-signed cert for local emulator endpoints
+        var isLocal = cosmosEndpoint!.Contains("localhost", StringComparison.OrdinalIgnoreCase)
+                    || cosmosEndpoint.Contains("127.0.0.1");
+        var options = new CosmosClientOptions
+        {
+            ConnectionMode = ConnectionMode.Gateway
+        };
+        if (isLocal)
+        {
+            options.HttpClientFactory = () => new HttpClient(new HttpClientHandler
+            {
+                ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
+            });
+        }
+        return new CosmosClient(cosmosEndpoint!, cosmosKey!, options);
+    });
     builder.Services.AddSingleton(new CosmosContextOptions(cosmosDatabase));
     builder.Services.AddSingleton<IUserProfileRepository, CosmosUserProfileRepository>();
     builder.Services.AddSingleton<IDateMarkByUserRepository, CosmosDateMarkByUserRepository>();

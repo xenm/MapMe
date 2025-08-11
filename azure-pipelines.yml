@@ -1,0 +1,111 @@
+# Azure Pipelines for MapMe
+# - Builds with .NET 10
+# - Runs unit tests in parallel
+# - Runs service-level tests using in-memory repositories
+# - Exposes variables for configuration
+# - Designed to be used as a PR validation pipeline to block merges on failure
+
+trigger:
+- main
+
+pr:
+- main
+
+variables:
+  # Adjustable variables (override in pipeline UI/library as needed)
+  buildConfiguration: 'Release'
+  DOTNET_VERSION: '10.0.x'
+  TEST_RESULTS_DIR: 'TestResults'
+  # App-related env vars
+  GOOGLE_MAPS_API_KEY: ''
+
+stages:
+- stage: BuildAndTest
+  displayName: 'Build and Test'
+  jobs:
+  - job: Build
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+    - checkout: self
+      clean: true
+    - task: UseDotNet@2
+      displayName: 'Use .NET $(DOTNET_VERSION)'
+      inputs:
+        packageType: 'sdk'
+        version: '$(DOTNET_VERSION)'
+    - script: |
+        dotnet --info
+      displayName: 'Dotnet Info'
+    - script: |
+        dotnet restore MapMe.sln
+      displayName: 'Restore'
+    - script: |
+        dotnet build MapMe.sln -c $(buildConfiguration) --no-restore
+      displayName: 'Build'
+    - publish: $(Build.SourcesDirectory)
+      artifact: src
+
+  - job: Unit_Tests
+    displayName: 'Unit tests (Category!=Service)'
+    dependsOn: Build
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+    - download: current
+      artifact: src
+    - task: UseDotNet@2
+      displayName: 'Use .NET $(DOTNET_VERSION)'
+      inputs:
+        packageType: 'sdk'
+        version: '$(DOTNET_VERSION)'
+    - script: |
+        cd $(Pipeline.Workspace)/src
+        mkdir -p $(TEST_RESULTS_DIR)
+        dotnet test MapMe/MapMe.Tests/MapMe.Tests.csproj \
+          -c $(buildConfiguration) \
+          --no-build \
+          --logger "trx;LogFileName=$(Pipeline.Workspace)/$(TEST_RESULTS_DIR)/unit-tests.trx" \
+          --results-directory $(Pipeline.Workspace)/$(TEST_RESULTS_DIR) \
+          --filter "Category!=Service"
+      displayName: 'Run unit tests'
+      env:
+        GOOGLE_MAPS_API_KEY: $(GOOGLE_MAPS_API_KEY)
+    - task: PublishTestResults@2
+      displayName: 'Publish Unit Test Results'
+      inputs:
+        testResultsFormat: 'VSTest'
+        testResultsFiles: '$(Pipeline.Workspace)/$(TEST_RESULTS_DIR)/*unit-tests.trx'
+        failTaskOnFailedTests: true
+        testRunTitle: 'MapMe Unit Tests'
+
+  - job: Service_Tests
+    displayName: 'Service tests (In-Memory)'
+    dependsOn: Build
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+    - download: current
+      artifact: src
+    - task: UseDotNet@2
+      displayName: 'Use .NET $(DOTNET_VERSION)'
+      inputs:
+        packageType: 'sdk'
+        version: '$(DOTNET_VERSION)'
+    - script: |
+        cd $(Pipeline.Workspace)/src
+        mkdir -p $(TEST_RESULTS_DIR)
+        dotnet test MapMe/MapMe.Tests/MapMe.Tests.csproj \
+          -c $(buildConfiguration) \
+          --no-build \
+          --logger "trx;LogFileName=$(Pipeline.Workspace)/$(TEST_RESULTS_DIR)/service-tests.trx" \
+          --results-directory $(Pipeline.Workspace)/$(TEST_RESULTS_DIR) \
+          --filter "Category=Service"
+      displayName: 'Run service tests'
+    - task: PublishTestResults@2
+      displayName: 'Publish Service Test Results'
+      inputs:
+        testResultsFormat: 'VSTest'
+        testResultsFiles: '$(Pipeline.Workspace)/$(TEST_RESULTS_DIR)/*service-tests.trx'
+        failTaskOnFailedTests: true
+        testRunTitle: 'MapMe Service Tests'

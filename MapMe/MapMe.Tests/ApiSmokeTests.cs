@@ -1,19 +1,41 @@
 using System.Net.Http.Json;
 using FluentAssertions;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.Extensions.DependencyInjection;
 using MapMe.DTOs;
 using MapMe.Models;
+using MapMe.Repositories;
 using Xunit;
 
 namespace MapMe.Tests;
 
+[Trait("Category", "Service")]
 public class ApiSmokeTests : IClassFixture<WebApplicationFactory<Program>>
 {
     private readonly WebApplicationFactory<Program> _factory;
 
     public ApiSmokeTests(WebApplicationFactory<Program> factory)
     {
-        _factory = factory.WithWebHostBuilder(_ => { });
+        _factory = factory.WithWebHostBuilder(builder =>
+        {
+            builder.ConfigureServices(services =>
+            {
+                // Remove any existing Cosmos DB registrations
+                var cosmosDescriptors = services.Where(d => 
+                    d.ServiceType == typeof(IUserProfileRepository) ||
+                    d.ServiceType == typeof(IDateMarkByUserRepository))
+                    .ToList();
+                
+                foreach (var descriptor in cosmosDescriptors)
+                {
+                    services.Remove(descriptor);
+                }
+                
+                // Register in-memory implementations for testing
+                services.AddSingleton<IUserProfileRepository, InMemoryUserProfileRepository>();
+                services.AddSingleton<IDateMarkByUserRepository, InMemoryDateMarkByUserRepository>();
+            });
+        });
     }
 
     [Fact]

@@ -15,4 +15,9 @@
   <ItemGroup>
     <ProjectReference Include="..\MapMe\MapMe.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="xunit.runner.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
 </Project>
