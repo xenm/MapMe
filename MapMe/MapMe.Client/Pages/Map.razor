@@ -847,7 +847,8 @@
                 userPhotoUrl = m.UserPhotoUrl,
                 userPhotoUrls = m.UserPhotoUrls,
                 placePhotoUrl = m.PlacePhotoUrl,
-                placePhotoUrls = m.PlacePhotoUrls
+                placePhotoUrls = m.PlacePhotoUrls,
+                url = m.Url
             }).ToList();
             await _mapModule.InvokeVoidAsync("renderMarks", payload);
         }

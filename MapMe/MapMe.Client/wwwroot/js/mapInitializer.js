@@ -707,8 +707,9 @@ function renderMarks(marks) {
                 userPhotos,
                 placePhotos,
                 createdBy: m.createdBy || null,
-                title: m.title || null,
-                address: m.address || null
+                title: m.title || m.name || null,
+                address: m.address || null,
+                url: m.url || null
             };
 
             if (idx === -1) {
@@ -951,7 +952,6 @@ function renderMarks(marks) {
                 const addrVal = firstWith('address');
                 const urlVal = firstWith('url') || (g.items[0] && g.items[0].mark && g.items[0].mark.url);
                 
-                // Make title clickable if URL is available
                 const title = titleVal ? 
                     (urlVal ? 
                         `<div style=\"font-weight:600;\"><a href=\"${escapeHtml(urlVal)}\" target=\"_blank\" rel=\"noopener noreferrer\" style=\"color:#0d6efd;text-decoration:none;\">${escapeHtml(titleVal)}<svg style=\"width:12px;height:12px;margin-left:4px;vertical-align:baseline;\" viewBox=\"0 0 24 24\" fill=\"currentColor\"><path d=\"M14,3V5H17.59L7.76,14.83L9.17,16.24L19,6.41V10H21V3M19,19H5V5H12V3H5C3.89,3 3,3.9 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V12H19V19Z\" /></svg></a></div>` : 
@@ -1374,7 +1374,6 @@ function debugRenderMockMarks() {
         if (!map) { console.warn('Map not initialized yet'); return; }
         const mocks = _mmCreateMockMarks(map.getCenter());
         renderMarks(mocks);
-        console.log('Rendered mock marks:', mocks);
     } catch (e) { console.error('debugRenderMockMarks error', e); }
 }
 
