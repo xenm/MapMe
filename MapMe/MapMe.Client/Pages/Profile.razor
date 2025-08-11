@@ -1,0 +1,839 @@
+@page "/profile"
+@using System.Text.Json
+@using MapMe.Client.Models
+@using MapMe.Client.Services
+@inject IJSRuntime Js
+@inject NavigationManager Nav
+@inject UserProfileService ProfileService
+
+<PageTitle>Profile - MapMe</PageTitle>
+
+@if (_loading)
+{
+    <div class="d-flex justify-content-center align-items-center" style="height: 50vh;">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <span class="ms-2">Loading profile...</span>
+    </div>
+}
+else
+{
+    <div class="page">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+            <h1 class="mb-0">My Profile</h1>
+            <div class="d-flex gap-2">
+                @if (_isEditing)
+                {
+                    <button class="btn btn-success" @onclick="SaveProfile">
+                        <i class="bi bi-check-lg"></i> Save Changes
+                    </button>
+                    <button class="btn btn-secondary" @onclick="CancelEdit">
+                        <i class="bi bi-x-lg"></i> Cancel
+                    </button>
+                }
+                else
+                {
+                    <button class="btn btn-primary" @onclick="StartEdit">
+                        <i class="bi bi-pencil"></i> Edit Profile
+                    </button>
+                }
+            </div>
+        </div>
+
+        <!-- Basic Information Card -->
+        <div class="card mb-3">
+            <CardHeader>
+                <CardTitle class="mb-0">Basic Information</CardTitle>
+            </CardHeader>
+            <CardBody>
+                <div class="row g-3">
+                    <div class="col-auto">
+                        <img src="@_avatarUrl" alt="Avatar" style="width:80px;height:80px;border-radius:50%;object-fit:cover;border:1px solid #e9ecef;" />
+                    </div>
+                    <div class="col">
+                        @if (_isEditing)
+                        {
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Display Name</label>
+                                    <input type="text" class="form-control" @bind="_editProfile.DisplayName" placeholder="Enter your display name" />
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Age</label>
+                                    <input type="number" class="form-control" @bind="_editProfile.Age" placeholder="Age" min="18" max="100" />
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Gender</label>
+                                    <select class="form-select" @bind="_editProfile.Gender">
+                                        <option value="">Select...</option>
+                                        <option value="man">Man</option>
+                                        <option value="woman">Woman</option>
+                                        <option value="non-binary">Non-binary</option>
+                                        <option value="other">Other</option>
+                                    </select>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label">Bio</label>
+                                    <textarea class="form-control" rows="3" @bind="_editProfile.Bio" placeholder="Tell us about yourself..." maxlength="500"></textarea>
+                                    <div class="form-text">@((_editProfile.Bio?.Length ?? 0))/500 characters</div>
+                                </div>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="fw-semibold fs-5">@_userProfile.DisplayName</div>
+                            @if (_userProfile.Age.HasValue || !string.IsNullOrWhiteSpace(_userProfile.Gender))
+                            {
+                                <div class="text-muted small">
+                                    @if (_userProfile.Age.HasValue)
+                                    {
+                                        <span>@_userProfile.Age years old</span>
+                                    }
+                                    @if (_userProfile.Age.HasValue && !string.IsNullOrWhiteSpace(_userProfile.Gender))
+                                    {
+                                        <span> • </span>
+                                    }
+                                    @if (!string.IsNullOrWhiteSpace(_userProfile.Gender))
+                                    {
+                                        <span>@_userProfile.Gender</span>
+                                    }
+                                </div>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(_userProfile.Bio))
+                            {
+                                <div class="mt-2">@_userProfile.Bio</div>
+                            }
+                        }
+                    </div>
+                </div>
+            </CardBody>
+        </div>
+
+        <!-- Dating Preferences Card -->
+        @if (_isEditing || (!string.IsNullOrWhiteSpace(_userProfile.LookingFor) || !string.IsNullOrWhiteSpace(_userProfile.RelationshipType)))
+        {
+            <div class="card mb-3">
+                <CardHeader>
+                    <CardTitle class="mb-0">Dating Preferences</CardTitle>
+                </CardHeader>
+                <CardBody>
+                    @if (_isEditing)
+                    {
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Looking For</label>
+                                <select class="form-select" @bind="_editProfile.LookingFor">
+                                    <option value="">Select...</option>
+                                    <option value="men">Men</option>
+                                    <option value="women">Women</option>
+                                    <option value="everyone">Everyone</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Relationship Type</label>
+                                <select class="form-select" @bind="_editProfile.RelationshipType">
+                                    <option value="">Select...</option>
+                                    <option value="long-term">Long-term relationship</option>
+                                    <option value="short-term">Short-term dating</option>
+                                    <option value="casual">Casual dating</option>
+                                    <option value="friends">New friends</option>
+                                    <option value="open">Open to anything</option>
+                                </select>
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="row g-3">
+                            @if (!string.IsNullOrWhiteSpace(_userProfile.LookingFor))
+                            {
+                                <div class="col-md-6">
+                                    <small class="text-muted">Looking for:</small>
+                                    <div>@_userProfile.LookingFor</div>
+                                </div>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(_userProfile.RelationshipType))
+                            {
+                                <div class="col-md-6">
+                                    <small class="text-muted">Relationship type:</small>
+                                    <div>@_userProfile.RelationshipType</div>
+                                </div>
+                            }
+                        </div>
+                    }
+                </CardBody>
+            </div>
+        }
+
+        <!-- Personal Details Card -->
+        @if (_isEditing || (!string.IsNullOrWhiteSpace(_userProfile.Height) || !string.IsNullOrWhiteSpace(_userProfile.Location)))
+        {
+            <div class="card mb-3">
+                <CardHeader>
+                    <CardTitle class="mb-0">Personal Details</CardTitle>
+                </CardHeader>
+                <CardBody>
+                    @if (_isEditing)
+                    {
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label class="form-label">Height</label>
+                                <input type="text" class="form-control" @bind="_editProfile.Height" placeholder="e.g., 5'8&quot; or 173cm" />
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Location</label>
+                                <input type="text" class="form-control" @bind="_editProfile.Location" placeholder="City, Country" />
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Hometown</label>
+                                <input type="text" class="form-control" @bind="_editProfile.Hometown" placeholder="Where you're from" />
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="row g-3">
+                            @if (!string.IsNullOrWhiteSpace(_userProfile.Height))
+                            {
+                                <div class="col-md-4">
+                                    <small class="text-muted">Height:</small>
+                                    <div>@_userProfile.Height</div>
+                                </div>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(_userProfile.Location))
+                            {
+                                <div class="col-md-4">
+                                    <small class="text-muted">Location:</small>
+                                    <div>@_userProfile.Location</div>
+                                </div>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(_userProfile.Hometown))
+                            {
+                                <div class="col-md-4">
+                                    <small class="text-muted">Hometown:</small>
+                                    <div>@_userProfile.Hometown</div>
+                                </div>
+                            }
+                        </div>
+                    }
+                </CardBody>
+            </div>
+        }
+
+        <!-- Professional Information Card -->
+        @if (_isEditing || (!string.IsNullOrWhiteSpace(_userProfile.JobTitle) || !string.IsNullOrWhiteSpace(_userProfile.Education)))
+        {
+            <div class="card mb-3">
+                <CardHeader>
+                    <CardTitle class="mb-0">Professional Information</CardTitle>
+                </CardHeader>
+                <CardBody>
+                    @if (_isEditing)
+                    {
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Job Title</label>
+                                <input type="text" class="form-control" @bind="_editProfile.JobTitle" placeholder="Your job title" />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Company</label>
+                                <input type="text" class="form-control" @bind="_editProfile.Company" placeholder="Company name" />
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">Education</label>
+                                <input type="text" class="form-control" @bind="_editProfile.Education" placeholder="University, degree, etc." />
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="row g-3">
+                            @if (!string.IsNullOrWhiteSpace(_userProfile.JobTitle))
+                            {
+                                <div class="col-md-6">
+                                    <small class="text-muted">Job:</small>
+                                    <div>
+                                        @_userProfile.JobTitle
+                                        @if (!string.IsNullOrWhiteSpace(_userProfile.Company))
+                                        {
+                                            <span class="text-muted"> at @_userProfile.Company</span>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(_userProfile.Education))
+                            {
+                                <div class="col-md-6">
+                                    <small class="text-muted">Education:</small>
+                                    <div>@_userProfile.Education</div>
+                                </div>
+                            }
+                        </div>
+                    }
+                </CardBody>
+            </div>
+        }
+
+        <!-- Activity Statistics Card -->
+        <div class="card mb-3">
+            <CardHeader>
+                <CardTitle class="mb-0">Activity Statistics</CardTitle>
+            </CardHeader>
+            <CardBody>
+                <div class="row g-3 text-center">
+                    <div class="col-6 col-md-3">
+                        <div class="h4 mb-0 text-primary">@_activityStats.TotalDateMarks</div>
+                        <small class="text-muted">Date Marks</small>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="h4 mb-0 text-success">@_activityStats.UniqueCategories</div>
+                        <small class="text-muted">Categories</small>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="h4 mb-0 text-info">@_activityStats.UniqueTags</div>
+                        <small class="text-muted">Tags</small>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="h4 mb-0 text-warning">@_userProfile.Photos.Count</div>
+                        <small class="text-muted">Photos</small>
+                    </div>
+                </div>
+                @if (_activityStats.TotalDateMarks > 0)
+                {
+                    <div class="row g-3 text-center mt-2">
+                        <div class="col-6">
+                            <div class="h5 mb-0 text-secondary">@_activityStats.AverageRating.ToString("F1")</div>
+                            <small class="text-muted">Avg Rating</small>
+                        </div>
+                        <div class="col-6">
+                            <div class="h5 mb-0 text-secondary">@((_activityStats.RecommendationRate * 100).ToString("F0"))%</div>
+                            <small class="text-muted">Recommend Rate</small>
+                        </div>
+                    </div>
+                }
+            </CardBody>
+        </div>
+
+        <!-- Photos Card -->
+        <div class="card mb-3">
+            <CardHeader>
+                <CardTitle class="mb-0">Photos (@_userProfile.Photos.Count)</CardTitle>
+            </CardHeader>
+            <CardBody>
+                @if (_userProfile.Photos.Count > 0)
+                {
+                    <div class="row g-2">
+                        @for (int i = 0; i < _userProfile.Photos.Count; i++)
+                        {
+                            var photo = _userProfile.Photos[i];
+                            var index = i; // Capture for lambda
+                            <div class="col-6 col-md-4 col-lg-3">
+                                <img src="@photo.Url" @onclick="() => OpenLightbox(index)" 
+                                     class="img-fluid rounded" 
+                                     style="width:100%;height:140px;object-fit:cover;cursor:pointer;border:1px solid #e9ecef;" />
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="text-muted">No photos available.</div>
+                }
+            </CardBody>
+        </div>
+
+        <!-- Interests & Preferences Card -->
+        @if (_dateMarks.Any())
+        {
+            var allCategories = _dateMarks.SelectMany(m => m.Categories ?? new List<string>()).Distinct().ToList();
+            var allTags = _dateMarks.SelectMany(m => m.Tags ?? new List<string>()).Distinct().ToList();
+            var allQualities = _dateMarks.SelectMany(m => m.Qualities ?? new List<string>()).Distinct().ToList();
+            
+            @if (allCategories.Any() || allTags.Any() || allQualities.Any())
+            {
+                <div class="card mb-3">
+                    <CardHeader>
+                        <CardTitle class="mb-0">Interests & Preferences</CardTitle>
+                    </CardHeader>
+                    <CardBody>
+                        @if (allCategories.Any())
+                        {
+                            <div class="mb-3">
+                                <h6 class="text-muted">Categories</h6>
+                                @foreach (var category in allCategories.Take(10))
+                                {
+                                    <span class="badge bg-primary me-1 mb-1">@category</span>
+                                }
+                            </div>
+                        }
+                        @if (allTags.Any())
+                        {
+                            <div class="mb-3">
+                                <h6 class="text-muted">Tags</h6>
+                                @foreach (var tag in allTags.Take(10))
+                                {
+                                    <span class="badge bg-secondary me-1 mb-1">#@tag</span>
+                                }
+                            </div>
+                        }
+                        @if (allQualities.Any())
+                        {
+                            <div class="mb-3">
+                                <h6 class="text-muted">Qualities</h6>
+                                @foreach (var quality in allQualities.Take(10))
+                                {
+                                    <span class="badge bg-success me-1 mb-1">@quality</span>
+                                }
+                            </div>
+                        }
+                    </CardBody>
+                </div>
+            }
+        }
+
+        <!-- Date Marks Card -->
+        <div class="card">
+            <CardHeader>
+                <CardTitle class="mb-0">My Date Marks (@_dateMarks.Count)</CardTitle>
+            </CardHeader>
+            <CardBody>
+                @if (_dateMarks.Count > 0)
+                {
+                    <div class="list-group list-group-flush">
+                        @foreach (var dateMark in _dateMarks.Take(20))
+                        {
+                            <div class="list-group-item px-0">
+                                <div class="d-flex align-items-start">
+                                    @if (!string.IsNullOrWhiteSpace(dateMark.PlacePhotoUrl))
+                                    {
+                                        <img src="@dateMark.PlacePhotoUrl" alt="Place" 
+                                             class="me-3 rounded" 
+                                             style="width:60px;height:60px;object-fit:cover;border:1px solid #e9ecef;" />
+                                    }
+                                    <div class="flex-grow-1">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div>
+                                                @if (!string.IsNullOrWhiteSpace(dateMark.Url))
+                                                {
+                                                    <h6 class="mb-1">
+                                                        <a href="@dateMark.Url" target="_blank" rel="noopener noreferrer" 
+                                                           class="text-decoration-none text-primary">
+                                                            @(dateMark.Name ?? "Unnamed Location")
+                                                            <i class="bi bi-box-arrow-up-right ms-1" style="font-size: 0.8em;"></i>
+                                                        </a>
+                                                    </h6>
+                                                }
+                                                else
+                                                {
+                                                    <h6 class="mb-1">@(dateMark.Name ?? "Unnamed Location")</h6>
+                                                }
+                                                <p class="mb-1 text-muted small">@dateMark.Address</p>
+                                                @if (!string.IsNullOrWhiteSpace(dateMark.Note))
+                                                {
+                                                    <p class="mb-1 small">@dateMark.Note</p>
+                                                }
+                                                @if (dateMark.Categories.Count > 0)
+                                                {
+                                                    <div class="mb-1">
+                                                        @foreach (var category in dateMark.Categories)
+                                                        {
+                                                            <span class="badge bg-primary me-1">@category</span>
+                                                        }
+                                                    </div>
+                                                }
+                                                @if (dateMark.Tags.Count > 0)
+                                                {
+                                                    <div class="mb-1">
+                                                        @foreach (var tag in dateMark.Tags)
+                                                        {
+                                                            <span class="badge bg-secondary me-1">#@tag</span>
+                                                        }
+                                                    </div>
+                                                }
+                                                @if (dateMark.Qualities.Count > 0)
+                                                {
+                                                    <div class="mb-1">
+                                                        @foreach (var quality in dateMark.Qualities)
+                                                        {
+                                                            <span class="badge bg-success me-1">@quality</span>
+                                                        }
+                                                    </div>
+                                                }
+                                                @if (dateMark.VisitDate.HasValue)
+                                                {
+                                                    <small class="text-muted">Visited: @dateMark.VisitDate.Value.ToString("MMM dd, yyyy")</small>
+                                                }
+                                            </div>
+                                            <small class="text-muted">@dateMark.SavedAt.ToString("MMM dd, yyyy")</small>
+                                        </div>
+                                        <div class="d-flex gap-2 mt-2">
+                                            <button class="btn btn-sm btn-outline-primary" 
+                                                    @onclick="() => ViewOnMap(dateMark)">
+                                                <i class="bi bi-geo-alt"></i> View on Map
+                                            </button>
+                                            <button class="btn btn-sm btn-outline-secondary" 
+                                                    @onclick="() => EditDateMark(dateMark)">
+                                                <i class="bi bi-pencil"></i> Edit
+                                            </button>
+                                            @if (_isEditing)
+                                            {
+                                                <button class="btn btn-sm btn-outline-danger" 
+                                                        @onclick="() => DeleteDateMark(dateMark)">
+                                                    <i class="bi bi-trash"></i> Delete
+                                                </button>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                    
+                    @if (_dateMarks.Count > 20)
+                    {
+                        <div class="mt-3 text-center">
+                            <small class="text-muted">Showing 20 of @_dateMarks.Count Date Marks</small>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="text-center py-4">
+                        <i class="bi bi-geo-alt text-muted" style="font-size: 3rem;"></i>
+                        <h5 class="mt-3 text-muted">No Date Marks Yet</h5>
+                        <p class="text-muted">Start exploring and create your first Date Mark!</p>
+                        <a href="/map" class="btn btn-primary">Go to Map</a>
+                    </div>
+                }
+            </CardBody>
+        </div>
+    </div>
+}
+
+<!-- Date Mark Edit Modal -->
+<div class="modal fade" id="editDateMarkModal" tabindex="-1" aria-labelledby="editDateMarkModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editDateMarkModalLabel">Edit Date Mark</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form>
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label">Place Name</label>
+                            <input type="text" class="form-control" @bind="_editingDateMark.Name" placeholder="Place name" />
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Address</label>
+                            <input type="text" class="form-control" @bind="_editingDateMark.Address" placeholder="Address" readonly />
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Note</label>
+                            <textarea class="form-control" rows="3" @bind="_editingDateMark.Note" placeholder="Add your notes about this place..."></textarea>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Categories (comma-separated)</label>
+                            <input type="text" class="form-control" @bind="_categoriesText" placeholder="restaurant, coffee, casual" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Tags (comma-separated)</label>
+                            <input type="text" class="form-control" @bind="_tagsText" placeholder="cozy, wifi, outdoor" />
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Qualities (comma-separated)</label>
+                            <input type="text" class="form-control" @bind="_qualitiesText" placeholder="great service, good food, clean" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Rating</label>
+                            <select class="form-select" @bind="_editingDateMark.Rating">
+                                <option value="">No rating</option>
+                                <option value="1">⭐ 1 star</option>
+                                <option value="2">⭐⭐ 2 stars</option>
+                                <option value="3">⭐⭐⭐ 3 stars</option>
+                                <option value="4">⭐⭐⭐⭐ 4 stars</option>
+                                <option value="5">⭐⭐⭐⭐⭐ 5 stars</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Visit Date</label>
+                            <input type="date" class="form-control" @oninput="VisitDateChanged" value="@(_editingDateMark.VisitDate?.ToString("yyyy-MM-dd") ?? "")" />
+                        </div>
+                        <div class="col-12">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" @bind="_editingDateMark.WouldRecommend" id="wouldRecommend">
+                                <label class="form-check-label" for="wouldRecommend">
+                                    Would recommend this place
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Visibility</label>
+                            <select class="form-select" @bind="_editingDateMark.Visibility">
+                                <option value="public">Public</option>
+                                <option value="friends">Friends only</option>
+                                <option value="private">Private</option>
+                            </select>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" @onclick="SaveDateMarkChanges">Save Changes</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private bool _loading = true;
+    private UserProfile _userProfile = new();
+    private UserProfile _editProfile = new();
+    private string _avatarUrl = "";
+    private ActivityStatistics _activityStats = new();
+    private List<DateMark> _dateMarks = new();
+    private bool _isEditing = false;
+    private DateMark _editingDateMark = new();
+    private string _categoriesText = "";
+    private string _tagsText = "";
+    private string _qualitiesText = "";
+    private string _visitDateText = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadProfileData();
+    }
+
+    private async Task LoadProfileData()
+    {
+        _loading = true;
+
+        try
+        {
+            // Load current user profile using the service
+            _userProfile = await ProfileService.GetCurrentUserProfileAsync();
+            
+            // Load activity statistics using the service
+            var userActivityStats = await ProfileService.GetUserActivityStatsAsync(_userProfile.UserId);
+            _activityStats = new ActivityStatistics
+            {
+                TotalDateMarks = userActivityStats.TotalDateMarks,
+                UniqueCategories = userActivityStats.UniqueCategories,
+                UniqueTags = userActivityStats.UniqueTags,
+                UniqueQualities = userActivityStats.UniqueQualities,
+                AverageRating = userActivityStats.AverageRating,
+                RecommendationRate = userActivityStats.RecommendationRate
+            };
+            
+            // Load user's Date Marks using the service
+            _dateMarks = await ProfileService.GetUserDateMarksAsync(_userProfile.UserId);
+
+            // Set avatar URL from profile photos
+            _avatarUrl = _userProfile.Photos.FirstOrDefault()?.Url ?? "/images/user-avatar.svg";
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading profile data: {ex.Message}");
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private void StartEdit()
+    {
+        _isEditing = true;
+        _editProfile = new UserProfile
+        {
+            Id = _userProfile.Id,
+            UserId = _userProfile.UserId,
+            DisplayName = _userProfile.DisplayName,
+            Age = _userProfile.Age,
+            Gender = _userProfile.Gender,
+            Bio = _userProfile.Bio,
+            LookingFor = _userProfile.LookingFor,
+            RelationshipType = _userProfile.RelationshipType,
+            Height = _userProfile.Height,
+            Location = _userProfile.Location,
+            Hometown = _userProfile.Hometown,
+            JobTitle = _userProfile.JobTitle,
+            Company = _userProfile.Company,
+            Education = _userProfile.Education,
+            Languages = new List<string>(_userProfile.Languages),
+            Interests = new List<string>(_userProfile.Interests),
+            Hobbies = new List<string>(_userProfile.Hobbies),
+            FavoriteCategories = new List<string>(_userProfile.FavoriteCategories),
+            Lifestyle = _userProfile.Lifestyle,
+            Photos = new List<UserPhoto>(_userProfile.Photos),
+            Visibility = _userProfile.Visibility
+        };
+    }
+
+    private async Task SaveProfile()
+    {
+        try
+        {
+            // Update user profile using the service
+            var success = await ProfileService.SaveCurrentUserProfileAsync(_editProfile);
+            
+            if (success)
+            {
+                _userProfile = _editProfile;
+                _avatarUrl = _userProfile.Photos.FirstOrDefault()?.Url ?? "/images/user-avatar.svg";
+                _isEditing = false;
+                
+                // Reload statistics after saving
+                var userActivityStats = await ProfileService.GetUserActivityStatsAsync(_userProfile.UserId);
+                _activityStats = new ActivityStatistics
+                {
+                    TotalDateMarks = userActivityStats.TotalDateMarks,
+                    UniqueCategories = userActivityStats.UniqueCategories,
+                    UniqueTags = userActivityStats.UniqueTags,
+                    UniqueQualities = userActivityStats.UniqueQualities,
+                    AverageRating = userActivityStats.AverageRating,
+                    RecommendationRate = userActivityStats.RecommendationRate
+                };
+            }
+            else
+            {
+                Console.WriteLine("Failed to save profile");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error saving profile: {ex.Message}");
+        }
+    }
+
+    private void CancelEdit()
+    {
+        _isEditing = false;
+    }
+
+    private void ViewOnMap(DateMark dateMark)
+    {
+        // Navigate to map and center on this location with popup
+        Nav.NavigateTo($"/map?lat={dateMark.Latitude}&lng={dateMark.Longitude}&zoom=15&showPopup=true&placeId={Uri.EscapeDataString(dateMark.PlaceId ?? "")}");
+    }
+
+    private async Task EditDateMark(DateMark dateMark)
+    {
+        _editingDateMark = dateMark;
+        _categoriesText = string.Join(", ", dateMark.Categories);
+        _tagsText = string.Join(", ", dateMark.Tags);
+        _qualitiesText = string.Join(", ", dateMark.Qualities);
+        _visitDateText = dateMark.VisitDate?.ToString("yyyy-MM-dd") ?? "";
+        // Show edit modal
+        await Js.InvokeVoidAsync("eval", "new bootstrap.Modal(document.getElementById('editDateMarkModal')).show()");
+    }
+
+    private async Task DeleteDateMark(DateMark dateMark)
+    {
+        try
+        {
+            var success = await ProfileService.DeleteDateMarkAsync(dateMark.Id);
+            if (success)
+            {
+                _dateMarks.Remove(dateMark);
+                // Reload statistics after deletion
+                var userActivityStats = await ProfileService.GetUserActivityStatsAsync(_userProfile.UserId);
+                _activityStats = new ActivityStatistics
+                {
+                    TotalDateMarks = userActivityStats.TotalDateMarks,
+                    UniqueCategories = userActivityStats.UniqueCategories,
+                    UniqueTags = userActivityStats.UniqueTags,
+                    UniqueQualities = userActivityStats.UniqueQualities,
+                    AverageRating = userActivityStats.AverageRating,
+                    RecommendationRate = userActivityStats.RecommendationRate
+                };
+                StateHasChanged();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error deleting Date Mark: {ex.Message}");
+        }
+    }
+
+    private async Task OpenLightbox(int index)
+    {
+        try
+        {
+            var photoUrls = _userProfile.Photos.Select(p => p.Url).ToList();
+            await Js.InvokeVoidAsync("MapMe.openPhotoViewer", photoUrls, index);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error opening lightbox: {ex.Message}");
+        }
+    }
+
+    private async Task SaveDateMarkChanges()
+    {
+        try
+        {
+            // Parse comma-separated values
+            _editingDateMark.Categories = _categoriesText.Split(',', StringSplitOptions.RemoveEmptyEntries).Select(c => c.Trim()).Where(c => !string.IsNullOrWhiteSpace(c)).ToList();
+            _editingDateMark.Tags = _tagsText.Split(',', StringSplitOptions.RemoveEmptyEntries).Select(t => t.Trim()).Where(t => !string.IsNullOrWhiteSpace(t)).ToList();
+            _editingDateMark.Qualities = _qualitiesText.Split(',', StringSplitOptions.RemoveEmptyEntries).Select(q => q.Trim()).Where(q => !string.IsNullOrWhiteSpace(q)).ToList();
+            
+            // VisitDate is already handled by VisitDateChanged method
+
+            var success = await ProfileService.UpdateDateMarkAsync(_editingDateMark);
+            if (success)
+            {
+                // Update the local list
+                var index = _dateMarks.FindIndex(dm => dm.Id == _editingDateMark.Id);
+                if (index >= 0)
+                {
+                    _dateMarks[index] = _editingDateMark;
+                }
+
+                // Reload statistics after saving
+                var userActivityStats = await ProfileService.GetUserActivityStatsAsync(_userProfile.UserId);
+                _activityStats = new ActivityStatistics
+                {
+                    TotalDateMarks = userActivityStats.TotalDateMarks,
+                    UniqueCategories = userActivityStats.UniqueCategories,
+                    UniqueTags = userActivityStats.UniqueTags,
+                    UniqueQualities = userActivityStats.UniqueQualities,
+                    AverageRating = userActivityStats.AverageRating,
+                    RecommendationRate = userActivityStats.RecommendationRate
+                };
+
+                // Close the modal
+                await Js.InvokeVoidAsync("eval", "bootstrap.Modal.getInstance(document.getElementById('editDateMarkModal')).hide()");
+                StateHasChanged();
+            }
+            else
+            {
+                // Show error message
+                await Js.InvokeVoidAsync("alert", "Failed to save changes. Please try again.");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error saving Date Mark: {ex.Message}");
+            await Js.InvokeVoidAsync("alert", "An error occurred while saving. Please try again.");
+        }
+    }
+
+    private void VisitDateChanged(ChangeEventArgs e)
+    {
+        if (e.Value is string dateText)
+        {
+            if (DateTime.TryParseExact(dateText, "yyyy-MM-dd", null, System.Globalization.DateTimeStyles.None, out DateTime date))
+            {
+                _editingDateMark.VisitDate = date;
+            }
+            else
+            {
+                _editingDateMark.VisitDate = null;
+            }
+        }
+    }
+}

@@ -1,119 +1,272 @@
 # MapMe
 
-A Blazor app (interactive SSR + WebAssembly) with Google Maps integration via JS interop.
+A modern Blazor dating app with Google Maps integration, featuring comprehensive user profiles, location-based date marking, and social discovery features.
 
-## Quick start
+## Features
 
-- Prerequisites: .NET 10 SDK, Node not required.
-- Run (server project):
-  - Rider/VS: run the "MapMe" project
-  - CLI: `dotnet run --project MapMe/MapMe/MapMe.csproj`
-- Dev port (via launchSettings.json):
-  - HTTPS only: https://localhost:8008
+### 🗺️ Interactive Map Experience
+- **Google Maps Integration**: Full-featured map with search, geolocation, and place details
+- **Date Mark Creation**: Click anywhere on the map to create and save memorable date locations
+- **Place Discovery**: Search for locations, get place details, and view photos
+- **Real-time Navigation**: Navigate between map locations with query parameters
+- **Duplicate Prevention**: Prevents creating multiple Date Marks for the same location
+
+### 👤 Comprehensive User Profiles
+- **Tinder-Style Fields**: Complete dating app profile system with:
+  - Basic Info: Display name, age, gender, bio (500 character limit)
+  - Dating Preferences: Looking for (men/women/everyone), relationship type
+  - Personal Details: Height, location, hometown
+  - Professional Info: Job title, company, education
+  - Lifestyle Preferences: Smoking, drinking, exercise, diet, pets, children
+  - Social Info: Languages, interests, hobbies, favorite categories
+- **Photo Management**: Upload, organize, and manage profile photos with captions
+- **Privacy Controls**: Public, friends-only, or private profile visibility settings
+
+### 📊 Activity Statistics
+- **Real-time Metrics**: Track Date Marks, categories, tags, and qualities
+- **Rating System**: 1-5 star ratings and recommendation tracking
+- **Social Analytics**: View activity statistics on both your profile and other users' profiles
+
+### 🧭 Navigation & Discovery
+- **Two Main Screens**: Simplified navigation between Map and Profile
+- **User Discovery**: Browse other users' profiles at `/user/{username}`
+- **Profile Editing**: Full editing capabilities on your own profile page
+- **Unified Layout**: Consistent design between profile viewing and editing modes
+
+## Quick Start
+
+### Prerequisites
+- .NET 10 SDK (preview)
+- Google Maps API key
+- Modern web browser with JavaScript enabled
+
+### Running the Application
+**Using IDE (Rider/Visual Studio):**
+- Open the solution and run the "MapMe" project
+
+**Using CLI:**
+```bash
+dotnet run --project MapMe/MapMe/MapMe.csproj
+```
+
+**Development URL:**
+- HTTPS: https://localhost:8008
 
 ## Configuration
 
-We do not commit secrets. The client fetches the Google Maps key from the server at `/config/maps`.
+### Google Maps API Key Setup
+The application requires a Google Maps API key for map functionality. Keys are never committed to source control.
 
-Server key lookup order (effective):
-1) `GoogleMaps:ApiKey` from configuration (includes User Secrets in Development)
-2) `GOOGLE_MAPS_API_KEY` environment variable
+**Development (Recommended - User Secrets):**
+```bash
+cd MapMe/MapMe/MapMe
+dotnet user-secrets init
+dotnet user-secrets set "GoogleMaps:ApiKey" "your-google-api-key"
+```
 
-Recommended:
-- Development: User Secrets
-  - From `MapMe/MapMe/MapMe`:
-    - `dotnet user-secrets init`
-    - `dotnet user-secrets set "GoogleMaps:ApiKey" "your-google-api-key"`
-- CI/Prod/Containers: Environment variable
-  - `GOOGLE_MAPS_API_KEY=your-google-api-key`
+**Production/CI (Environment Variable):**
+```bash
+export GOOGLE_MAPS_API_KEY="your-google-api-key"
+```
 
-You can also set env vars in Rider Run Configuration (Edit Configurations… → Environment).
+**Key Lookup Order:**
+1. `GoogleMaps:ApiKey` from configuration (includes User Secrets)
+2. `GOOGLE_MAPS_API_KEY` environment variable
 
-## Google Maps integration
+### Google Maps API Requirements
+Enable these APIs in Google Cloud Console:
+- Maps JavaScript API
+- Places API
+- Geocoding API
 
-- JS file: `MapMe/MapMe/MapMe.Client/wwwroot/js/mapInitializer.js`
-  - No API keys in source. The key is passed from Blazor to `initMap` after fetching `/config/maps`.
-- Blazor page: `MapMe/MapMe/MapMe.Client/Pages/Map.razor`
-  - Handles searching and centers the map without re-initializing.
+**Security Configuration:**
+- Restrict API key to your domain/localhost in Google Cloud Console
+- Set API restrictions to only the required Google Maps APIs
 
-## Security notes
+## Architecture
 
-- Do not commit real API keys to source or to `launchSettings.json`.
-- Restrict your Google Maps key in Google Cloud Console (HTTP referrers/origins and API restrictions).
+### Technology Stack
+- **Frontend**: Blazor WebAssembly + Interactive SSR
+- **Backend**: ASP.NET Core (.NET 10)
+- **Data**: In-memory repositories with localStorage persistence
+- **Maps**: Google Maps JavaScript API with Blazor JS Interop
+- **Serialization**: System.Text.Json (following .NET best practices)
+
+### Project Structure
+```
+MapMe/
+├── MapMe/                          # Server project (ASP.NET Core)
+│   ├── Controllers/                # API controllers for DateMarks
+│   ├── Models/                     # Server-side data models
+│   ├── Repositories/               # Data access layer
+│   └── Program.cs                  # Server configuration
+├── MapMe.Client/                   # Client project (Blazor WebAssembly)
+│   ├── Pages/                      # Blazor pages (Map, Profile, User)
+│   ├── Services/                   # Client services (UserProfileService)
+│   ├── Models/                     # Client-side models
+│   └── wwwroot/js/                 # JavaScript interop files
+└── MapMe.Tests/                    # Unit and integration tests
+```
+
+### Key Services
+
+#### UserProfileService
+Central service for profile and DateMark management:
+- **Profile Management**: Create, read, update user profiles
+- **DateMark CRUD**: Full lifecycle management of date locations
+- **Activity Statistics**: Real-time calculation of user metrics
+- **Duplicate Prevention**: Checks for existing DateMarks by location and user
+- **Data Persistence**: localStorage integration with JSON serialization
+
+#### Repository Pattern
+- **IUserProfileRepository**: User profile data access
+- **IDateMarkByUserRepository**: DateMark data access with filtering
+- **In-Memory Implementation**: Fast development and testing
+- **Cosmos DB Implementation**: Production-ready with geospatial queries
+
+## Pages & Navigation
+
+### Map Page (`/`)
+- **Interactive Google Maps**: Click to create Date Marks
+- **Location Search**: Find and navigate to specific places
+- **Current Location**: Geolocation support with fallback
+- **Place Details**: Rich information from Google Places API
+- **Date Mark Management**: Create, edit, and view saved locations
+
+### Profile Page (`/profile`)
+- **Personal Dashboard**: View and edit your complete profile
+- **Photo Management**: Upload, organize, and manage profile photos
+- **DateMark History**: View all your saved locations with map navigation
+- **Activity Statistics**: Real-time metrics and achievements
+- **Privacy Settings**: Control profile visibility
+
+### User Page (`/user/{username}`)
+- **Public Profiles**: View other users' profiles (read-only)
+- **Social Discovery**: Browse photos, interests, and Date Marks
+- **Activity Insights**: View other users' statistics and preferences
+- **Map Integration**: Navigate to users' Date Mark locations
+
+## Data Models
+
+### UserProfile
+Complete dating app profile with:
+- Personal information (name, age, gender, bio)
+- Dating preferences and relationship goals
+- Professional and lifestyle details
+- Photo collection with metadata
+- Privacy and visibility settings
+
+### DateMark
+Location-based memories with:
+- Geographic coordinates and place details
+- Categories, tags, and qualities for organization
+- Ratings and recommendations
+- Visit dates and creation timestamps
+- Privacy controls and sharing settings
+
+### ActivityStatistics
+Real-time user metrics:
+- Total Date Marks and unique locations
+- Category and tag diversity
+- Average ratings and recommendation rates
+- Social engagement indicators
+
+## JavaScript Integration
+
+### Map Initialization (`mapInitializer.js`)
+- **Secure API Loading**: Fetches Google Maps key from server
+- **Interactive Features**: Click handlers, marker management, search
+- **Real User Data**: Integrates with Blazor for authentic profile information
+- **Photo Integration**: Displays real user photos in map popups
+- **Place Discovery**: Rich place details with photos and reviews
+
+### Blazor JS Interop
+- **Bidirectional Communication**: C# ↔ JavaScript integration
+- **Real-time Updates**: Map state synchronization with Blazor components
+- **User Profile Hooks**: JavaScript access to real user profile data
+- **Photo Viewer**: Lightbox integration for photo galleries
+
+## Security & Privacy
+
+### Data Protection
+- **No API Keys in Source**: All secrets managed via configuration
+- **Client-side Storage**: User data stored locally with JSON serialization
+- **Privacy Controls**: Granular visibility settings for profiles and Date Marks
+
+### Best Practices
+- **HTTPS Only**: Secure communication in all environments
+- **API Key Restrictions**: Google Maps keys restricted by domain and API
+- **Input Validation**: Comprehensive validation on both client and server
+- **Error Handling**: Graceful degradation and user-friendly error messages
+
+## Development
+
+### Running Tests
+```bash
+# Unit tests
+dotnet test MapMe.Tests/
+
+# Service-level integration tests
+./test-service.sh
+```
+
+### Building for Production
+```bash
+dotnet publish -c Release
+```
+
+### Code Quality
+- **Nullable Reference Types**: Enabled for better null safety
+- **.NET 10 Features**: Latest C# language features and performance improvements
+- **System.Text.Json**: Modern JSON serialization following .NET best practices
+- **Responsive Design**: Bootstrap-based UI with mobile-first approach
 
 ## Troubleshooting
 
-- Port in use: another dev process may be bound to 5260/7160. Kill it or change the profile URLs.
-- `HttpClient` injection error in WASM/SSR:
-  - Client: `MapMe.Client/Program.cs` registers `HttpClient` with BaseAddress.
-  - Server: `MapMe/Program.cs` registers `HttpClient` for SSR and adds `IHttpContextAccessor`.
+### Common Issues
 
-## Project layout
+**Port Already in Use:**
+- Kill existing processes on ports 5260/7160 or update `launchSettings.json`
 
-- `MapMe/MapMe/MapMe` — server (host) project
-- `MapMe/MapMe/MapMe.Client` — Blazor client project
+**Google Maps Not Loading:**
+- Verify API key is correctly configured
+- Check Google Cloud Console for API restrictions
+- Ensure required APIs are enabled
 
-## Data flow overview
+**Profile Data Not Persisting:**
+- Check browser localStorage permissions
+- Verify UserProfileService is registered in DI container
+- Check browser console for serialization errors
 
-- Entities
-  - UserProfile: profile metadata, preferences, photos
-  - DateMark: user’s saved place/date with geo, categories/tags/qualities, notes
-- Storage (phased)
-  - Phase 1: In-memory repositories for local development
-  - Phase 2: Azure Cosmos DB
-    - Users (PK: /id)
-    - DateMarksByUser (PK: /userId)
-    - DateMarksGeo (PK: /geoHashPrefix) via Change Feed projection
-- Search
-  - Structured filters (categories/tags/qualities/time/geo): Cosmos
-  - Full-text (notes/place name): Azure AI Search (planned)
+**Map Click Not Working:**
+- Ensure JavaScript files are loaded correctly
+- Check browser console for JS errors
+- Verify Blazor JS interop is functioning
 
-## API endpoints
-
-- Profiles
-  - POST /api/profiles
-  - GET /api/profiles/{id}
-- Date marks
-  - POST /api/datemarks
-  - GET /api/users/{userId}/datemarks?from&to&categories[]&tags[]&qualities[]
-- Map (prototype)
-  - GET /api/map/datemarks?lat&lng&radiusMeters&categories[]&tags[]&qualities[]
-
-See docs/manual-testing.md for sample curl commands.
-
-## Cosmos DB configuration
-
-Provide these settings to switch from in-memory to Cosmos repositories:
-
-```
-Cosmos:Endpoint = https://<your-account>.documents.azure.com:443/
-Cosmos:Key = <your-key>
-Cosmos:Database = mapme
+### Debug Mode
+Enable detailed logging by setting environment variable:
+```bash
+export ASPNETCORE_ENVIRONMENT=Development
 ```
 
-Recommended: use User Secrets in Development
+## Contributing
 
-```
-dotnet user-secrets --project MapMe/MapMe/MapMe set "Cosmos:Endpoint" "https://..."
-dotnet user-secrets --project MapMe/MapMe/MapMe set "Cosmos:Key" "..."
-dotnet user-secrets --project MapMe/MapMe/MapMe set "Cosmos:Database" "mapme"
-```
+### Development Setup
+1. Clone the repository
+2. Configure Google Maps API key (see Configuration section)
+3. Run `dotnet restore` to restore packages
+4. Run the application using your preferred method
 
-## Testing
+### Code Style
+- Follow .NET coding conventions
+- Use System.Text.Json for serialization
+- Implement proper error handling and logging
+- Write unit tests for new features
 
-- Manual testing scenarios: docs/manual-testing.md
-- Automated tests (xUnit): MapMe.Tests project
-  - Unit: normalization utilities, repositories
-  - Service-level: minimal API endpoints via WebApplicationFactory
+## License
 
-Run tests:
+This project is for educational and demonstration purposes. Please ensure you comply with Google Maps API terms of service when using this application.
 
-```
-dotnet test MapMe.sln -v minimal
-```
+---
 
-## .NET and JSON
-
-- Target framework: .NET 10
-- Serialization: System.Text.Json
-
+**MapMe** - Where every location tells a story. 🗺️💕

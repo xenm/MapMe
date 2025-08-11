@@ -181,7 +181,7 @@ export async function initMap(dotNetHelper, elementId, lat, lng, zoom, mapType, 
         });
 
         // Small prompt before opening the full dialog
-        const showDateProposalPrompt = ({ position, title, address, photos, isAdvanced = false, onConfirm }) => {
+        const showDateProposalPrompt = ({ position, title, address, photos, url, isAdvanced = false, onConfirm }) => {
             try {
                 if (!sharedInfoWindow) {
                     sharedInfoWindow = new google.maps.InfoWindow();
@@ -191,9 +191,17 @@ export async function initMap(dotNetHelper, elementId, lat, lng, zoom, mapType, 
                 const imgs = list
                     .map(u => `<img class=\"mm-thumb\" src=\"${u}\" style=\"width:72px;height:72px;border-radius:6px;object-fit:cover;border:1px solid #e9ecef;cursor:pointer;\"/>`) 
                     .join('');
+                
+                // Make title clickable if URL is available
+                const titleHtml = title ? 
+                    (url ? 
+                        `<div style=\"font-weight:600;margin-bottom:2px;\"><a href=\"${safe(url)}\" target=\"_blank\" rel=\"noopener noreferrer\" style=\"color:#0d6efd;text-decoration:none;\">${safe(title)}<svg style=\"width:12px;height:12px;margin-left:4px;vertical-align:baseline;\" viewBox=\"0 0 24 24\" fill=\"currentColor\"><path d=\"M14,3V5H17.59L7.76,14.83L9.17,16.24L19,6.41V10H21V3M19,19H5V5H12V3H5C3.89,3 3,3.9 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V12H19V19Z\" /></svg></a></div>` : 
+                        `<div style=\"font-weight:600;margin-bottom:2px;\">${safe(title)}</div>`) : 
+                    '';
+                
                 const content = `
                   <div style="min-width:220px; max-width:320px;">
-                    ${title ? `<div style=\"font-weight:600;margin-bottom:2px;\">${safe(title)}</div>` : ''}
+                    ${titleHtml}
                     ${address ? `<div style=\"color:#6c757d;font-size:12px;margin-bottom:6px;\">${safe(address)}</div>` : ''}
                     <div class=\"mm-scroll\" style=\"display:flex; gap:8px; overflow-x:auto; padding-bottom:4px; margin:6px 0;\">${imgs}</div>
                     <div style="display:flex; gap:8px; align-items:center;">
@@ -223,6 +231,14 @@ export async function initMap(dotNetHelper, elementId, lat, lng, zoom, mapType, 
                             el.addEventListener('click', () => {
                                 try { window.MapMe && typeof window.MapMe.openPhotoViewer === 'function' ? window.MapMe.openPhotoViewer(urls, idx) : openPhotoViewer(urls, idx); } catch (_) {}
                             }, { once: true });
+                        });
+                        // Handle Google Maps links in creation popup
+                        const titleLinks = container.querySelectorAll('a[href*="google"], a[href*="maps"], a[target="_blank"]');
+                        titleLinks.forEach(link => {
+                            link.addEventListener('click', (e) => {
+                                e.stopPropagation(); // Prevent popup from closing
+                                // Let the default link behavior proceed (opening in new tab)
+                            });
                         });
                     } catch (_) {}
                     if (createBtn) {
@@ -346,12 +362,13 @@ export async function initMap(dotNetHelper, elementId, lat, lng, zoom, mapType, 
                                         title: details.name || 'Selected place',
                                         address: details.address || '',
                                         photos: photoUrls,
+                                        url: details.url,
                                         isAdvanced: false, // Mark as non-advanced dialog
                                         onConfirm: () => {
                                             // Move marker after confirm
                                             marker.setPosition(new google.maps.LatLng(loc.lat, loc.lng));
                                             if (dotNetHelper) {
-                                                dotNetHelper.invokeMethodAsync('OnPlaceDetails', details);
+                                                dotNetHelper.invokeMethodAsync('OnPlaceDetailsAsync', details);
                                             }
                                         }
                                     });
@@ -377,15 +394,15 @@ export async function initMap(dotNetHelper, elementId, lat, lng, zoom, mapType, 
                                                     }).filter(Boolean);
                                                 }
                                             } catch (_) {}
-                                            showDateProposalPrompt({ position: pos, title, address, photos: thumbs, onConfirm: () => {
+                                            showDateProposalPrompt({ position: pos, title, address, photos: thumbs, url: null, onConfirm: () => {
                                                 marker.setPosition(pos);
-                                                if (dotNetHelper) { dotNetHelper.invokeMethodAsync('OnMapClick', pos.lat(), pos.lng()); }
+                                                if (dotNetHelper) { dotNetHelper.invokeMethodAsync('OnMapClickAsync', pos.lat(), pos.lng()); }
                                             }});
                                         });
                                     } else {
-                                        showDateProposalPrompt({ position: pos, title, address, photos: [], onConfirm: () => {
+                                        showDateProposalPrompt({ position: pos, title, address, photos: [], url: null, onConfirm: () => {
                                             marker.setPosition(pos);
-                                            if (dotNetHelper) { dotNetHelper.invokeMethodAsync('OnMapClick', pos.lat(), pos.lng()); }
+                                            if (dotNetHelper) { dotNetHelper.invokeMethodAsync('OnMapClickAsync', pos.lat(), pos.lng()); }
                                         }});
                                     }
                                 });
@@ -432,10 +449,11 @@ export async function initMap(dotNetHelper, elementId, lat, lng, zoom, mapType, 
                             title: 'Selected location',
                             address: '',
                             photos: [],
+                            url: null,
                             onConfirm: () => {
                                 marker.setPosition(pos);
                                 if (dotNetHelper) {
-                                    dotNetHelper.invokeMethodAsync('OnMapClick', pos.lat(), pos.lng());
+                                    dotNetHelper.invokeMethodAsync('OnMapClickAsync', pos.lat(), pos.lng());
                                 }
                             }
                         });
@@ -449,7 +467,7 @@ export async function initMap(dotNetHelper, elementId, lat, lng, zoom, mapType, 
             marker.addListener('dragend', (e) => {
                 const pos = marker.getPosition();
                 if (dotNetHelper) {
-                    dotNetHelper.invokeMethodAsync('OnMarkerDragEnd', pos.lat(), pos.lng());
+                    dotNetHelper.invokeMethodAsync('OnMarkerDragEndAsync', pos.lat(), pos.lng());
                 }
             });
         };
@@ -556,6 +574,54 @@ window.MapMe.storage = {
 window.MapMe.reverseGeocode = reverseGeocode;
 export { reverseGeocode };
 
+// Function to show popup for a specific location (called from Blazor)
+function showPopupForLocation(lat, lng, placeId) {
+    if (!mapsApiLoaded || !map || !savedMarkers) {
+        console.warn('Map not ready for showing popup');
+        return;
+    }
+    
+    try {
+        // Find the marker that matches this location and placeId
+        const targetMarker = savedMarkers.find(marker => {
+            if (!marker.labelOverlay) return false;
+            
+            // Check if this marker is at the same location (within small tolerance)
+            const markerPos = marker.getPosition();
+            if (!markerPos) return false;
+            
+            const latDiff = Math.abs(markerPos.lat() - lat);
+            const lngDiff = Math.abs(markerPos.lng() - lng);
+            const tolerance = 0.0001; // ~10 meters
+            
+            return latDiff < tolerance && lngDiff < tolerance;
+        });
+        
+        if (targetMarker && targetMarker.labelOverlay) {
+            // Simulate a click on the marker to show the popup
+            const container = targetMarker.labelOverlay.div;
+            if (container) {
+                // Trigger the click event that shows the popup
+                const clickEvent = new MouseEvent('click', {
+                    bubbles: true,
+                    cancelable: true,
+                    view: window
+                });
+                container.dispatchEvent(clickEvent);
+            }
+        } else {
+            console.warn('Could not find marker for location:', lat, lng, placeId);
+        }
+    } catch (error) {
+        console.error('Error showing popup for location:', error);
+    }
+}
+
+// Make it available globally
+window.MapMe = window.MapMe || {};
+window.MapMe.showPopupForLocation = showPopupForLocation;
+export { showPopupForLocation };
+
 // Render a collection of saved marks on the map using user's first photo as the marker icon
 function renderMarks(marks) {
     if (!mapsApiLoaded || !map) {
@@ -622,16 +688,16 @@ function renderMarks(marks) {
             const idx = findGroupIndex(m);
             // Collect photos
             const userArr = [];
-            if (Array.isArray(m.userPhotoUrls) && m.userPhotoUrls.length) userArr.push(...m.userPhotoUrls);
-            if (Array.isArray(m.userPhotos) && m.userPhotos.length) userArr.push(...m.userPhotos);
+            if (Array.isArray(m.userPhotoUrls) && m.userPhotoUrls.length > 0) userArr.push(...m.userPhotoUrls);
+            if (Array.isArray(m.userPhotos) && m.userPhotos.length > 0) userArr.push(...m.userPhotos);
             if (m.userPhotoUrl) userArr.push(m.userPhotoUrl);
             let userPhotos = [...new Set(userArr.filter(Boolean))];
             if (userPhotos.length > 1) userPhotos = userPhotos.filter(u => u !== AVATAR);
             if (!userPhotos.length) userPhotos.push(AVATAR);
 
             const placeArr = [];
-            if (Array.isArray(m.placePhotoUrls) && m.placePhotoUrls.length) placeArr.push(...m.placePhotoUrls);
-            if (Array.isArray(m.placePhotos) && m.placePhotos.length) placeArr.push(...m.placePhotos);
+            if (Array.isArray(m.placePhotoUrls) && m.placePhotoUrls.length > 0) placeArr.push(...m.placePhotoUrls);
+            if (Array.isArray(m.placePhotos) && m.placePhotos.length > 0) placeArr.push(...m.placePhotos);
             if (m.placePhotoUrl) placeArr.push(m.placePhotoUrl);
             let placePhotos = [...new Set(placeArr.filter(Boolean))];
             if (!placePhotos.length) placePhotos.push(PLACE_FALLBACK);
@@ -641,8 +707,9 @@ function renderMarks(marks) {
                 userPhotos,
                 placePhotos,
                 createdBy: m.createdBy || null,
-                title: m.title || null,
-                address: m.address || null
+                title: m.title || m.name || null,
+                address: m.address || null,
+                url: m.url || null
             };
 
             if (idx === -1) {
@@ -883,30 +950,38 @@ function renderMarks(marks) {
                 };
                 const titleVal = firstWith('title');
                 const addrVal = firstWith('address');
-                const title = titleVal ? `<div style=\"font-weight:600;\">${escapeHtml(titleVal)}</div>` : '';
-                const addr = addrVal ? `<div style=\"color:#6c757d; font-size:12px;\">${escapeHtml(addrVal)}</div>` : '';
-                const thumbHtml = (url) => `<img class=\"mm-thumb\" src=\"${url}\" alt=\"Photo\" style=\"width:72px;height:72px;border-radius:8px;object-fit:cover;border:1px solid #e9ecef;cursor:pointer;\"/>`;
+                const urlVal = firstWith('url') || (g.items[0] && g.items[0].mark && g.items[0].mark.url);
+                
+                const title = titleVal ? 
+                    (urlVal ? 
+                        `<div style=\"font-weight:600;\"><a href=\"${escapeHtml(urlVal)}\" target=\"_blank\" rel=\"noopener noreferrer\" style=\"color:#0d6efd;text-decoration:none;\">${escapeHtml(titleVal)}<svg style=\"width:12px;height:12px;margin-left:4px;vertical-align:baseline;\" viewBox=\"0 0 24 24\" fill=\"currentColor\"><path d=\"M14,3V5H17.59L7.76,14.83L9.17,16.24L19,6.41V10H21V3M19,19H5V5H12V3H5C3.89,3 3,3.9 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V12H19V19Z\" /></svg></a></div>` : 
+                        `<div style=\"font-weight:600;\">${escapeHtml(titleVal)}</div>`) : 
+                    '';
+                const addr = addrVal ? `<div style=\"color:#6c757d;font-size:12px;margin-bottom:6px;\">${escapeHtml(addrVal)}</div>` : '';
+                const thumbHtml = (url) => `<img class=\"mm-thumb\" src=\"${url}\" alt=\"\" style=\"width:72px;height:72px;border-radius:8px;object-fit:cover;border:1px solid #e9ecef;cursor:pointer;\"/>`;
                 // Build sections: first place images, then for each user: their images, name link and message
                 const placeUrls = [...new Set(g.items.flatMap(it => it.placePhotos).filter(Boolean))];
-                const byUser = new Map(); // name -> { urls:Set, messages:Set, avatar:string }
+                const byUser = new Map(); // name -> { urls:Set, messages:Set, avatar:string, dateMarks:[] }
                 for (const it of g.items) {
                     const name = it.createdBy || 'Unknown';
-                    if (!byUser.has(name)) byUser.set(name, { urls: new Set(), messages: new Set(), avatar: null });
+                    if (!byUser.has(name)) byUser.set(name, { urls: new Set(), messages: new Set(), avatar: null, dateMarks: [] });
                     const entry = byUser.get(name);
                     (it.userPhotos || []).forEach(u => { if (u) entry.urls.add(u); });
                     const src = it.mark || {};
                     const msg = src.message || src.userMessage || src.note || src.comment || src.caption || src.description || src.text || src.msg || null;
                     if (msg) entry.messages.add(msg);
                     if (!entry.avatar) entry.avatar = (it.userPhotos && it.userPhotos[0]) || src.userPhotoUrl || '/images/user-avatar.svg';
+                    // Store the full DateMark data for editing
+                    entry.dateMarks.push(src);
                 }
-                const userSections = Array.from(byUser.entries()).map(([name, val]) => ({ name, urls: Array.from(val.urls), messages: Array.from(val.messages), avatar: val.avatar }));
+                const userSections = Array.from(byUser.entries()).map(([name, val]) => ({ name, urls: Array.from(val.urls), messages: Array.from(val.messages), avatar: val.avatar, dateMarks: val.dateMarks }));
                 // Optional: sort users alphabetically for consistent order
                 userSections.sort((a,b) => a.name.localeCompare(b.name));
 
                 const sections = [];
                 if (placeUrls.length) sections.push({ type: 'place', label: 'Place photos', urls: placeUrls });
                 for (const us of userSections) {
-                    sections.push({ type: 'user', label: us.name, urls: us.urls, messages: us.messages, avatar: us.avatar });
+                    sections.push({ type: 'user', label: us.name, urls: us.urls, messages: us.messages, avatar: us.avatar, dateMarks: us.dateMarks });
                 }
 
                 const sectionsHtml = sections.map((sec, idx) => {
@@ -916,10 +991,22 @@ function renderMarks(marks) {
                     let msgHtml = '';
                     if (sec.type === 'user' && Array.isArray(sec.messages) && sec.messages.length) {
                         const items = sec.messages.map(m => `<li>${escapeHtml(m)}</li>`).join('');
-                        msgHtml = `<ul style=\"color:#6c757d;font-size:12px;margin:2px 0 4px;padding-left:16px;\">${items}</ul>`;
+                        msgHtml = `<ul style=\"color:#6b7280;font-size:12px;margin:2px 0 4px;padding-left:16px;\">${items}</ul>`;
+                    }
+                    // Add edit button for current user's Date Marks
+                    let editButtonHtml = '';
+                    if (sec.type === 'user' && sec.dateMarks && sec.dateMarks.length > 0) {
+                        // Check if this is the current user (we'll use a simple check for now)
+                        const isCurrentUser = window.MapMe && window.MapMe.currentUser && window.MapMe.currentUser === sec.label;
+                        if (isCurrentUser) {
+                            const dateMarkId = sec.dateMarks[0].id || sec.dateMarks[0].Id;
+                            if (dateMarkId) {
+                                editButtonHtml = `<div style=\"margin:6px 0;\"><button class=\"mm-edit-btn\" data-datemark-id=\"${dateMarkId}\" style=\"background:#007bff;color:white;border:none;padding:4px 8px;border-radius:4px;font-size:12px;cursor:pointer;\">✏️ Edit Date Mark</button></div>`;
+                            }
+                        }
                     }
                     const strip = `<div class=\"mm-scroll\" data-sec-idx=\"${idx}\" style=\"display:flex; gap:8px; overflow-x:auto; padding-bottom:4px; margin:6px 0;\">${sec.urls.map(thumbHtml).join('')}</div>`;
-                    return `<div class=\"mm-sec\">${heading}${msgHtml}${strip}</div>`;
+                    return `<div class=\"mm-sec\">${heading}${msgHtml}${editButtonHtml}${strip}</div>`;
                 }).join('');
                 const content = `<div style=\"max-width:320px; max-height:360px; overflow:auto;\">${title}${addr}${sectionsHtml}</div>`;
                 try { sharedInfoWindow.close(); } catch (_) {}
@@ -956,7 +1043,7 @@ function renderMarks(marks) {
                                     <img src=\"${avatar || '/images/user-avatar.svg'}\" alt=\"${escapeHtml(username)}\" style=\"width:40px;height:40px;border-radius:50%;object-fit:cover;\">
                                     <div>
                                       <div style=\"font-weight:700;\" class=\"mm-pop-name\">${escapeHtml(username)}</div>
-                                      <div style=\"color:#6c757d;font-size:12px;\" class=\"mm-pop-handle\">@${escapeHtml(username)}</div>
+                                      <div style=\"color:#6b7280;font-size:12px;\" class=\"mm-pop-handle\">@${escapeHtml(username)}</div>
                                     </div>
                                   </div>
                                   <div class=\"mm-pop-body\" style=\"font-size:12px;color:#374151;\">Loading profile…</div>
@@ -1003,7 +1090,7 @@ function renderMarks(marks) {
                                 if (photosEl) {
                                     const urls = Array.isArray(profile.recentPhotos) ? profile.recentPhotos.slice(0, 10) : [];
                                     if (urls.length) {
-                                        photosEl.innerHTML = urls.map(u => `<img src=\"${u}\" alt=\"\" style=\"width:44px;height:44px;border-radius:6px;object-fit:cover;border:1px solid #e5e7eb;\"/>`).join('');
+                                        photosEl.innerHTML = urls.map(u => `<img src=\"${u}\" alt=\"\" style=\"width:44px;height:44px;border-radius:6px;object-fit:cover;border:1px solid #e9ecef;\"/>`).join('');
                                     } else {
                                         photosEl.style.display = 'none';
                                     }
@@ -1023,6 +1110,35 @@ function renderMarks(marks) {
                             a.addEventListener('mouseenter', () => showPopover(a, username, avatar));
                             a.addEventListener('mouseleave', () => hidePopover(150));
                             a.addEventListener('click', (e) => { e.preventDefault(); showPopover(a, username, avatar); });
+                        });
+
+                        // Add event handlers for edit buttons
+                        container.querySelectorAll('.mm-edit-btn').forEach(btn => {
+                            const dateMarkId = btn.getAttribute('data-datemark-id');
+                            btn.addEventListener('click', (e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                try {
+                                    // Call the Blazor component to handle editing
+                                    if (window.MapMe && window.MapMe.editDateMark) {
+                                        window.MapMe.editDateMark(dateMarkId);
+                                    } else {
+                                        // Fallback: navigate to edit page
+                                        window.location.href = `/map?edit=${encodeURIComponent(dateMarkId)}`;
+                                    }
+                                } catch (err) {
+                                    console.error('Error editing Date Mark:', err);
+                                }
+                            });
+                        });
+
+                        // Handle Google Maps links in popup titles
+                        const titleLinks = container.querySelectorAll('a[href*="google"], a[href*="maps"], a[target="_blank"]');
+                        titleLinks.forEach(link => {
+                            link.addEventListener('click', (e) => {
+                                e.stopPropagation(); // Prevent marker click handler from interfering
+                                // Let the default link behavior proceed (opening in new tab)
+                            });
                         });
                     } catch (_) { /* ignore */ }
                 }, 0);
@@ -1139,51 +1255,48 @@ async function getUserProfile(username, avatarUrl) {
     try {
         const key = (username || '').toLowerCase();
         if (_mmProfileCache.has(key)) return _mmProfileCache.get(key);
-        // 1) App-provided hook
+        
+        // 1) App-provided hook - use the Blazor UserProfileService
         if (window.MapMe && typeof window.MapMe.getUserProfile === 'function') {
             const prof = await window.MapMe.getUserProfile(username);
-            if (prof) { _mmProfileCache.set(key, prof); return prof; }
+            if (prof) { 
+                _mmProfileCache.set(key, prof); 
+                return prof; 
+            }
         }
-        // 2) REST API fallback
+        
+        // 2) REST API fallback (if implemented)
         try {
             const res = await fetch(`/api/users/${encodeURIComponent(username)}`);
             if (res.ok) {
-                const data = await res.json();
-                const prof = {
-                    fullName: data.fullName || data.name || username,
-                    username: data.username || username,
-                    bio: data.bio || '',
-                    location: data.location || data.city || '',
-                    website: data.website || data.url || '',
-                    joinedAt: data.joinedAt || data.createdAt || '',
-                    followers: data.followersCount ?? data.followers ?? null,
-                    following: data.followingCount ?? data.following ?? null,
-                    photosCount: data.photosCount ?? null,
-                    interests: Array.isArray(data.interests) ? data.interests : [] ,
-                    avatar: data.avatar || avatarUrl || '/images/user-avatar.svg'
-                };
+                const prof = await res.json();
                 _mmProfileCache.set(key, prof);
                 return prof;
             }
-        } catch (_) { /* ignore network errors; fall back to mock */ }
-        // 3) Mock data
+        } catch (_) {}
+        
+        // 3) Default fallback with minimal real data
         const prof = {
-            fullName: username.charAt(0).toUpperCase() + username.slice(1),
-            username,
-            bio: 'Traveler. Food lover. Always marking new places.',
-            location: 'Somewhere on Earth',
-            website: 'https://example.com',
-            joinedAt: 'Jan 2024',
-            followers: Math.floor(Math.random()*900)+100,
-            following: Math.floor(Math.random()*300)+50,
-            photosCount: Math.floor(Math.random()*120)+20,
-            interests: ['coffee', 'parks', 'nightlife'],
+            fullName: username || 'Unknown User',
+            username: username || 'unknown',
+            bio: 'MapMe user',
+            location: 'Location not specified',
+            website: null,
+            joinedAt: 'Recently',
+            followers: 0,
+            following: 0,
+            photosCount: 0,
+            interests: [],
             avatar: avatarUrl || '/images/user-avatar.svg'
         };
         _mmProfileCache.set(key, prof);
         return prof;
     } catch (_) {
-        return { fullName: username, username, avatar: avatarUrl || '/images/user-avatar.svg' };
+        return { 
+            fullName: username || 'Unknown User', 
+            username: username || 'unknown', 
+            avatar: avatarUrl || '/images/user-avatar.svg' 
+        };
     }
 }
 
@@ -1261,7 +1374,6 @@ function debugRenderMockMarks() {
         if (!map) { console.warn('Map not initialized yet'); return; }
         const mocks = _mmCreateMockMarks(map.getCenter());
         renderMarks(mocks);
-        console.log('Rendered mock marks:', mocks);
     } catch (e) { console.error('debugRenderMockMarks error', e); }
 }
 

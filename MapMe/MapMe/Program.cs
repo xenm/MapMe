@@ -11,6 +11,7 @@ using MapMe.Models;
 using MapMe.Utils;
 using Microsoft.Azure.Cosmos;
 using System.Net.Http;
+using MapMe.Client.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -77,6 +78,9 @@ else
     builder.Services.AddSingleton<IUserProfileRepository, InMemoryUserProfileRepository>();
     builder.Services.AddSingleton<IDateMarkByUserRepository, InMemoryDateMarkByUserRepository>();
 }
+
+// Register client-side services
+builder.Services.AddScoped<UserProfileService>();
 
 var app = builder.Build();
 

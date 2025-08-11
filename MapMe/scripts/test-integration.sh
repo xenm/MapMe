@@ -10,25 +10,25 @@ cd "$MAPME_DIR"
 
 # Results directory (timestamped) and reporting
 TIMESTAMP=$(date +%Y%m%d-%H%M%S)
-DEFAULT_RESULTS_DIR="$MAPME_DIR/TestResults/Service/$TIMESTAMP"
+DEFAULT_RESULTS_DIR="$MAPME_DIR/TestResults/Integration/$TIMESTAMP"
 TEST_RESULTS_DIR=${TEST_RESULTS_DIR:-$DEFAULT_RESULTS_DIR}
 mkdir -p "$TEST_RESULTS_DIR"
 
 run_tests() {
-  echo "Running Service tests (using in-memory repositories)..."
+  echo "Running Integration tests (API endpoints with in-memory repositories)..."
   dotnet test MapMe.Tests/MapMe.Tests.csproj \
     -c Release \
-    --filter 'Category=Service' \
-    --logger "trx;LogFileName=Service.trx" \
+    --filter 'Category!=Unit' \
+    --logger "trx;LogFileName=Integration.trx" \
     --results-directory "$TEST_RESULTS_DIR"
 
-  echo "Results (.trx): $TEST_RESULTS_DIR/Service.trx"
+  echo "Results (.trx): $TEST_RESULTS_DIR/Integration.trx"
 
   # Check if trxlog2html is available as a dotnet tool
   if dotnet tool list | grep -q trxlog2html; then
     echo "Generating HTML test report via trxlog2html..."
     dotnet trxlog2html \
-      -i "$TEST_RESULTS_DIR/Service.trx" \
+      -i "$TEST_RESULTS_DIR/Integration.trx" \
       -o "$TEST_RESULTS_DIR/test-report.html" || true
     echo "HTML test report: $TEST_RESULTS_DIR/test-report.html"
   else
