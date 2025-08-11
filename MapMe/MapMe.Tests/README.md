@@ -10,21 +10,25 @@ Comprehensive test suite for the MapMe dating application with Google Maps integ
 ### **Clear Separation by Directory & Naming**
 ```
 MapMe.Tests/
-├── Unit/                           # Unit Tests (21 tests)
+├── Unit/                           # 21 Unit Tests
 │   ├── UserProfileService.Unit.Tests.cs
 │   ├── DateMarkBusinessLogic.Unit.Tests.cs
 │   ├── Normalization.Unit.Tests.cs
 │   └── InMemoryRepository.Unit.Tests.cs
-├── Integration/                    # Integration Tests (38 tests)
+├── Integration/                    # 38 Integration Tests
 │   ├── Api.Integration.Tests.cs
 │   ├── ExtendedApi.Integration.Tests.cs
 │   ├── ErrorHandling.Integration.Tests.cs
 │   └── ApiSmoke.Integration.Tests.cs
-└── scripts/                        # Test Execution Scripts
-    ├── test-unit.sh               # Run Unit tests only
-    ├── test-integration.sh        # Run Integration tests only
-    ├── test-service.sh            # Run Integration tests (legacy name)
-    └── test-all.sh               # Run all tests
+└── README.md                       # This documentation
+
+../scripts/                        # Test Execution Scripts
+├── test-unit.sh                   # Run Unit tests only (Shell)
+├── test-integration.sh            # Run Integration tests only (Shell)
+├── test-all.sh                    # Run all tests (Shell)
+├── test-unit.ps1                  # Run Unit tests only (PowerShell)
+├── test-integration.ps1           # Run Integration tests only (PowerShell)
+└── test-all.ps1                   # Run all tests (PowerShell)
 ```
 
 ## 🧪 **Test Categories**
@@ -89,36 +93,75 @@ MapMe.Tests/
 
 ## 🚀 **Running Tests**
 
-### **Quick Commands**
+### **Direct dotnet CLI Usage**
+
+For advanced users who prefer direct CLI commands:
+
 ```bash
 # Run Unit tests only (fast, ~0.4s)
-./scripts/test-unit.sh
 dotnet test MapMe.Tests --filter "Category=Unit"
 
 # Run Integration tests only (~7s)  
-./scripts/test-integration.sh
 dotnet test MapMe.Tests --filter "Category!=Unit"
 
 # Run all tests (~7.5s)
-./scripts/test-all.sh
 dotnet test MapMe.Tests
 
-# Legacy service script (same as integration)
-./scripts/test-service.sh
-```
-
-### **Advanced Filtering Examples**
-```bash
 # Run specific test files
 dotnet test MapMe.Tests --filter "FullyQualifiedName~UserProfileService"
 dotnet test MapMe.Tests --filter "FullyQualifiedName~Api.Integration"
 
-# Run by test categories
-dotnet test MapMe.Tests --filter "Category=Unit"
-dotnet test MapMe.Tests --filter "Category=Service"
-
 # Run specific test methods
 dotnet test MapMe.Tests --filter "FullyQualifiedName~DateMark_FilteringCombinations"
+
+# Custom output and logging
+dotnet test MapMe.Tests --logger "trx;LogFileName=MyTests.trx" --verbosity detailed
+```
+
+### **Test Execution Scripts**
+
+The `../scripts/` directory contains dedicated test execution scripts for different scenarios:
+
+### Shell Scripts (macOS/Linux)
+- **`test-unit.sh`** - Runs only Unit tests (21 tests)
+- **`test-integration.sh`** - Runs only Integration tests (38 tests)  
+- **`test-all.sh`** - Runs all tests (59 tests)
+
+### PowerShell Scripts (Windows/Cross-platform)
+- **`test-unit.ps1`** - Runs only Unit tests (21 tests)
+- **`test-integration.ps1`** - Runs only Integration tests (38 tests)
+- **`test-all.ps1`** - Runs all tests (59 tests)
+
+### Usage Examples
+
+**Shell (macOS/Linux):**
+```bash
+# Run only Unit tests
+./scripts/test-unit.sh
+
+# Run only Integration tests  
+./scripts/test-integration.sh
+
+# Run all tests
+./scripts/test-all.sh
+```
+
+**PowerShell (Windows/Cross-platform):**
+```powershell
+# Run only Unit tests
+./scripts/test-unit.ps1
+
+# Run only Integration tests
+./scripts/test-integration.ps1
+
+# Run all tests
+./scripts/test-all.ps1
+
+# Skip HTML report generation
+./scripts/test-all.ps1 -NoHtml
+
+# Custom output directory
+./scripts/test-unit.ps1 -OutputDir "MyTestResults/Unit"
 ```
 
 ## 📊 **Test Coverage Analysis**

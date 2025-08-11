@@ -9,6 +9,9 @@ x86/
 [Aa][Rr][Mm]/
 [Aa][Rr][Mm]64/
 
+# Test Results
+MapMe/TestResults/
+
 # Visual Studio
 .vs/
 *.user
