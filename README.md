@@ -53,3 +53,67 @@ You can also set env vars in Rider Run Configuration (Edit Configurations… →
 - `MapMe/MapMe/MapMe` — server (host) project
 - `MapMe/MapMe/MapMe.Client` — Blazor client project
 
+## Data flow overview
+
+- Entities
+  - UserProfile: profile metadata, preferences, photos
+  - DateMark: user’s saved place/date with geo, categories/tags/qualities, notes
+- Storage (phased)
+  - Phase 1: In-memory repositories for local development
+  - Phase 2: Azure Cosmos DB
+    - Users (PK: /id)
+    - DateMarksByUser (PK: /userId)
+    - DateMarksGeo (PK: /geoHashPrefix) via Change Feed projection
+- Search
+  - Structured filters (categories/tags/qualities/time/geo): Cosmos
+  - Full-text (notes/place name): Azure AI Search (planned)
+
+## API endpoints
+
+- Profiles
+  - POST /api/profiles
+  - GET /api/profiles/{id}
+- Date marks
+  - POST /api/datemarks
+  - GET /api/users/{userId}/datemarks?from&to&categories[]&tags[]&qualities[]
+- Map (prototype)
+  - GET /api/map/datemarks?lat&lng&radiusMeters&categories[]&tags[]&qualities[]
+
+See docs/manual-testing.md for sample curl commands.
+
+## Cosmos DB configuration
+
+Provide these settings to switch from in-memory to Cosmos repositories:
+
+```
+Cosmos:Endpoint = https://<your-account>.documents.azure.com:443/
+Cosmos:Key = <your-key>
+Cosmos:Database = mapme
+```
+
+Recommended: use User Secrets in Development
+
+```
+dotnet user-secrets --project MapMe/MapMe/MapMe set "Cosmos:Endpoint" "https://..."
+dotnet user-secrets --project MapMe/MapMe/MapMe set "Cosmos:Key" "..."
+dotnet user-secrets --project MapMe/MapMe/MapMe set "Cosmos:Database" "mapme"
+```
+
+## Testing
+
+- Manual testing scenarios: docs/manual-testing.md
+- Automated tests (xUnit): MapMe.Tests project
+  - Unit: normalization utilities, repositories
+  - Service-level: minimal API endpoints via WebApplicationFactory
+
+Run tests:
+
+```
+dotnet test MapMe.sln -v minimal
+```
+
+## .NET and JSON
+
+- Target framework: .NET 10
+- Serialization: System.Text.Json
+
