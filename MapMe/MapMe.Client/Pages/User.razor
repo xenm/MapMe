@@ -373,12 +373,6 @@ else
                                             </div>
                                             <small class="text-muted">@mark.CreatedAt.ToString("MMM dd, yyyy")</small>
                                         </div>
-                                        <div class="d-flex gap-2 mt-2">
-                                            <button class="btn btn-sm btn-outline-primary" 
-                                                    @onclick="() => ViewOnMap(mark)">
-                                                <i class="bi bi-geo-alt"></i> View on Map
-                                            </button>
-                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -481,11 +475,5 @@ else
             Nav.NavigateTo(url, true);
         }
         catch { }
-    }
-
-    private void ViewOnMap(DateMark mark)
-    {
-        // Navigate to map and center on this location
-        Nav.NavigateTo($"/map?lat={mark.Latitude}&lng={mark.Longitude}&zoom=15");
     }
 }
