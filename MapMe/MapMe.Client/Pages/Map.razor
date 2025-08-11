@@ -1,17 +1,20 @@
-@page "/map"
 @page "/"
+@page "/map"
+@using System.Text.Json
+@using MapMe.Client.Models
+@using MapMe.Client.Services
 @using Microsoft.JSInterop
 @using System.Net.Http
 @using System.Net.Http.Json
-@using System.Text.Json
 @using System.Linq
 @using System.Web
 @inject IJSRuntime JsRuntime
 @inject HttpClient Http
 @inject NavigationManager Navigation
+@inject UserProfileService ProfileService
 @implements IAsyncDisposable
 
-<PageTitle>Map</PageTitle>
+<PageTitle>MapMe</PageTitle>
 
 <div class="page">
     <h1>Map</h1>
@@ -65,24 +68,29 @@
 
     @if (_showConfirm)
     {
-        <div class="modal fade show" style="display:block; background: rgba(0,0,0,0.5);" tabindex="-1" role="dialog">
-            <div class="modal-dialog" role="document">
+        <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+            <div class="modal-dialog">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h5 class="modal-title">Save MarkDate</h5>
-                        <button type="button" class="btn-close" aria-label="Close" @onclick="CancelConfirm"></button>
+                        <h5 class="modal-title">Save Location</h5>
+                        <button type="button" class="btn-close" @onclick="CancelConfirm"></button>
                     </div>
                     <div class="modal-body">
-                        <div class="mb-2"><strong>Location</strong></div>
-                        <div class="small text-muted mb-2">@(_pendingGeo?.Name ?? _pendingGeo?.Address ?? ($"Lat {_pendingLat:F5}, Lng {_pendingLng:F5}"))</div>
-                        <div class="mb-2"><strong>Address</strong></div>
-                        <div class="small text-muted mb-3">@_pendingGeo?.Address</div>
-                        <div class="mb-2"><strong>Note</strong></div>
-                        <textarea class="form-control" rows="3" @bind="_pendingNote" placeholder="Add a note..."></textarea>
+                        <div class="mb-3">
+                            <strong>@(_pendingGeo?.Name ?? "Unknown Location")</strong>
+                            @if (!string.IsNullOrWhiteSpace(_pendingGeo?.Address))
+                            {
+                                <div class="text-muted small">@_pendingGeo.Address</div>
+                            }
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Note (optional)</label>
+                            <textarea class="form-control" rows="3" @bind="_pendingNote" placeholder="Add a note about this place..."></textarea>
+                        </div>
                     </div>
                     <div class="modal-footer">
-                        <Button Color="ButtonColor.Secondary" Outline="true" @onclick="CancelConfirm">Cancel</Button>
-                        <Button Color="ButtonColor.Primary" @onclick="ConfirmSaveAsync">Save</Button>
+                        <button type="button" class="btn btn-secondary" @onclick="CancelConfirm">Cancel</button>
+                        <button type="button" class="btn btn-primary" @onclick="ConfirmSave">Save</button>
                     </div>
                 </div>
             </div>
@@ -91,7 +99,7 @@
 
     <div class="card mt-3">
         <CardHeader>
-            <CardTitle class="mb-0">Saved MarkDates (local)</CardTitle>
+            <CardTitle class="mb-0">Saved DateMarks (local)</CardTitle>
         </CardHeader>
         <CardBody>
             @if (_savedMarks.Count == 0)
@@ -101,26 +109,30 @@
             else
             {
                 <ul class="list-group">
-                    @foreach (var m in _savedMarks)
+                    @foreach (var mark in _savedMarks)
                     {
-                        <li class="list-group-item d-flex justify-content-between align-items-start">
-                            <div class="me-2">
-                                <div class="fw-semibold">@(!string.IsNullOrWhiteSpace(m.Name) ? m.Name : $"Lat {m.Latitude:F5}, Lng {m.Longitude:F5}")</div>
-                                <div class="small text-muted">@m.Address</div>
-                                <div class="small">By: <span class="text-muted">@m.CreatedBy</span></div>
-                                @if (!string.IsNullOrWhiteSpace(m.Note))
-                                {
-                                    <div class="small">Note: <span class="text-muted">@m.Note</span></div>
-                                }
-                                <div class="small text-muted">Saved @m.SavedAt.ToLocalTime()</div>
-                                @if (!string.IsNullOrWhiteSpace(m.PlaceId))
-                                {
-                                    <div class="small"><a href="@($"https://www.google.com/maps/place/?q=place_id:{m.PlaceId}")" target="_blank" rel="noopener noreferrer">Open in Google Maps</a></div>
-                                }
-                            </div>
-                            <div class="d-flex gap-2">
-                                <Button Size="ButtonSize.Small" Color="ButtonColor.Primary" Outline="true" @onclick="() => FlyTo(m)">View</Button>
-                                <Button Size="ButtonSize.Small" Color="ButtonColor.Danger" Outline="true" @onclick="() => RemoveMark(m)">Delete</Button>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <strong>@(mark.Name ?? "Unnamed Location")</strong>
+                                    <div class="text-muted small">@mark.Address</div>
+                                    @if (!string.IsNullOrWhiteSpace(mark.Note))
+                                    {
+                                        <div class="small">@mark.Note</div>
+                                    }
+                                    <div class="text-muted small">Created by: @mark.UserId</div>
+                                </div>
+                                <div class="text-end">
+                                    <small class="text-muted">@mark.CreatedAt.ToString("MMM dd, yyyy")</small>
+                                    <div class="mt-1">
+                                        <button class="btn btn-sm btn-outline-primary me-1" @onclick="() => FlyTo(mark)">
+                                            <i class="bi bi-geo-alt"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-danger" @onclick="() => RemoveMark(mark)">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
                         </li>
                     }
@@ -135,39 +147,125 @@
 </div>
 
 @code {
-    // Default fake user images for demo purposes (real-looking images first)
-    private static readonly string DefaultUserAvatar = "/images/user-avatar.svg"; // used only as fallback when none
-    private static readonly List<string> DefaultUserPhotoUrls = new()
-    {
-        "https://i.pravatar.cc/300?img=12",
-        "https://i.pravatar.cc/300?img=32",
-        "https://i.pravatar.cc/300?img=68"
-    };
     private IJSObjectReference? _mapModule;
     private DotNetObjectReference<Map>? _dotNetHelper;
     private double _latitude = 1.3521; // Default to Singapore
     private double _longitude = 103.8198;
-    private int _zoom = 12;
-    private const string MapElementId = "map";
+    private int _zoom = 11;
     private string _mapType = "roadmap";
     private bool _isLoading = true;
     private bool _isDisposed;
     private string _searchQuery = string.Empty;
     private string? _googleMapsApiKey;
-    private const string StorageKey = "markDates";
-    private readonly List<MarkDate> _savedMarks = new();
+    private const string StorageKey = "dateMarks";
+    private readonly List<DateMark> _savedMarks = new();
     private bool _showConfirm;
     private double _pendingLat;
     private double _pendingLng;
     private ReverseGeocodeResult? _pendingGeo;
     private string _pendingNote = string.Empty;
+    private UserProfile _currentUserProfile = new();
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
         {
+            await LoadCurrentUserProfile();
+            await SetupJavaScriptHooks();
             await HandleQueryParameters();
             await InitializeMap();
+        }
+    }
+
+    private async Task LoadCurrentUserProfile()
+    {
+        try
+        {
+            _currentUserProfile = await ProfileService.GetCurrentUserProfileAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading current user profile: {ex.Message}");
+        }
+    }
+
+    private async Task SetupJavaScriptHooks()
+    {
+        try
+        {
+            // Set up JavaScript hook to get user profiles from Blazor
+            var objRef = DotNetObjectReference.Create(this);
+            await JsRuntime.InvokeVoidAsync("eval", $@"
+                window.MapMe = window.MapMe || {{}};
+                window.MapMe._mapInstance = {objRef};
+                window.MapMe.getUserProfile = async function(username) {{
+                    try {{
+                        return await window.MapMe._mapInstance.invokeMethodAsync('GetUserProfileForJS', username);
+                    }} catch (e) {{
+                        console.log('Error getting user profile:', e);
+                        return null;
+                    }}
+                }};
+            ");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error setting up JavaScript hooks: {ex.Message}");
+        }
+    }
+
+    [JSInvokable]
+    public async Task<object?> GetUserProfileForJS(string username)
+    {
+        try
+        {
+            // Get real user profile data using the UserProfileService
+            var userProfile = await ProfileService.GetUserProfileAsync(username);
+            if (userProfile != null)
+            {
+                var activityStats = await ProfileService.GetUserActivityStatsAsync(userProfile.UserId);
+                
+                return new
+                {
+                    fullName = userProfile.DisplayName ?? username,
+                    username = username,
+                    bio = userProfile.Bio ?? "MapMe user",
+                    location = userProfile.Location ?? "Location not specified",
+                    website = (string?)null,
+                    joinedAt = userProfile.CreatedAt.ToString("MMM yyyy"),
+                    followers = 0, // Not implemented yet
+                    following = 0, // Not implemented yet
+                    photosCount = userProfile.Photos?.Count ?? 0,
+                    interests = userProfile.Interests?.Take(5).ToArray() ?? new string[0],
+                    avatar = userProfile.Photos?.FirstOrDefault()?.Url ?? "/images/user-avatar.svg",
+                    age = userProfile.Age,
+                    gender = userProfile.Gender,
+                    totalDateMarks = activityStats.TotalDateMarks,
+                    uniqueCategories = activityStats.UniqueCategories,
+                    averageRating = activityStats.AverageRating
+                };
+            }
+            
+            // Fallback for unknown users
+            return new
+            {
+                fullName = username,
+                username = username,
+                bio = "MapMe user",
+                location = "Location not specified",
+                website = (string?)null,
+                joinedAt = "Recently",
+                followers = 0,
+                following = 0,
+                photosCount = 0,
+                interests = new string[0],
+                avatar = "/images/user-avatar.svg"
+            };
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error in GetUserProfileForJS: {ex.Message}");
+            return null;
         }
     }
 
@@ -217,8 +315,8 @@
             try
             {
                 var location = await GetCurrentLocationAsync();
-                _latitude = location.Latitude;
-                _longitude = location.Longitude;
+                _latitude = location.Lat;
+                _longitude = location.Lng;
                 _zoom = 15; // Zoom in more when using current location
             }
             catch (Exception ex)
@@ -230,7 +328,7 @@
             await _mapModule.InvokeVoidAsync(
                 "initMap", 
                 _dotNetHelper, 
-                MapElementId, 
+                "map", 
                 _latitude, 
                 _longitude, 
                 _zoom, 
@@ -274,8 +372,8 @@
             
             return new Location 
             { 
-                Latitude = position.Coords.Latitude, 
-                Longitude = position.Coords.Longitude 
+                Lat = position.Coords.Latitude, 
+                Lng = position.Coords.Longitude 
             };
         }
         catch (JSException jsex)
@@ -284,8 +382,8 @@
             // Return default location (Singapore) if geolocation fails
             return new Location 
             { 
-                Latitude = 1.3521, 
-                Longitude = 103.8198 
+                Lat = 1.3521, 
+                Lng = 103.8198 
             };
         }
         catch (Exception ex)
@@ -294,8 +392,8 @@
             // Return default location (Singapore) if geolocation fails
             return new Location 
             { 
-                Latitude = 1.3521, 
-                Longitude = 103.8198 
+                Lat = 1.3521, 
+                Lng = 103.8198 
             };
         }
     }
@@ -319,8 +417,8 @@
     
     public class Location
     {
-        public double Latitude { get; set; }
-        public double Longitude { get; set; }
+        public double Lat { get; set; }
+        public double Lng { get; set; }
     }
 
     private async Task CenterMap()
@@ -331,9 +429,9 @@
             {
                 // Always recenter to the user's current geolocation
                 var location = await GetCurrentLocationAsync();
-                _latitude = location.Latitude;
-                _longitude = location.Longitude;
-                _zoom = 15; // reasonable zoom for current location
+                _latitude = location.Lat;
+                _longitude = location.Lng;
+                _zoom = 15; // Zoom in more when using current location
 
                 // Set the center on the already-initialized map
                 await _mapModule.InvokeVoidAsync("setCenter",
@@ -384,10 +482,10 @@
                     Console.WriteLine($"Location '{_searchQuery}' not found. Please try a different search term.");
                 }
             }
-            catch (JSException jex)
+            catch (JSException jsex)
             {
-                Console.WriteLine($"JavaScript error during search: {jex.Message}");
-                Console.WriteLine($"Stack trace: {jex.StackTrace}");
+                Console.WriteLine($"JavaScript error during search: {jsex.Message}");
+                Console.WriteLine($"Stack trace: {jsex.StackTrace}");
             }
             catch (Exception ex)
             {
@@ -465,27 +563,6 @@
         public double Lng { get; set; }
     }
 
-    public class MarkDate
-    {
-        public double Latitude { get; set; }
-        public double Longitude { get; set; }
-        public string? Name { get; set; }
-        public string? Address { get; set; }
-        public string? PlaceId { get; set; }
-        public string CreatedBy { get; set; } = "current user";
-        public string? Note { get; set; }
-        public List<string>? Types { get; set; }
-        public string? Url { get; set; }
-        // Store photo_reference values if obtained via backend.
-        public List<string>? PhotoReferences { get; set; }
-        public string? PlacePhotoUrl { get; set; }
-        public List<string>? PlacePhotoUrls { get; set; }
-        public string? UserPhotoUrl { get; set; }
-        // Optional: multiple user photos (first two will be shown in marker bubble)
-        public List<string>? UserPhotoUrls { get; set; }
-        public DateTime SavedAt { get; set; }
-    }
-
     // Called from JS when map is clicked
     [JSInvokable]
     public async Task OnMapClick(double lat, double lng)
@@ -561,7 +638,7 @@
         _pendingGeo = null;
     }
 
-    private async Task ConfirmSaveAsync()
+    private async Task ConfirmSave()
     {
         _showConfirm = false;
         await SaveMarkAsync(_pendingLat, _pendingLng, _pendingNote, _pendingGeo);
@@ -569,7 +646,7 @@
         _pendingGeo = null;
     }
 
-    private async Task SaveMarkAsync(double lat, double lng, string? note = null, ReverseGeocodeResult? geocoded = null)
+    private async Task SaveMarkAsync(double lat, double lng, string note, ReverseGeocodeResult? geocoded)
     {
         try
         {
@@ -577,8 +654,10 @@
                 ? await _mapModule.InvokeAsync<ReverseGeocodeResult>("reverseGeocode", lat, lng)
                 : null;
 
-            var mark = new MarkDate
+            var mark = new DateMark
             {
+                Id = Guid.NewGuid().ToString(),
+                UserId = _currentUserProfile.UserId,
                 Latitude = lat,
                 Longitude = lng,
                 Name = geocoded?.Name,
@@ -590,16 +669,26 @@
                 PhotoReferences = geocoded?.PhotoReferences,
                 PlacePhotoUrl = geocoded?.PlacePhotoUrl,
                 PlacePhotoUrls = geocoded?.PlacePhotoUrls,
-                // Fake current user photos for demo: pick first real image as primary
-                UserPhotoUrl = DefaultUserPhotoUrls.FirstOrDefault() ?? DefaultUserAvatar,
-                UserPhotoUrls = new List<string>(DefaultUserPhotoUrls),
-                SavedAt = DateTime.UtcNow
+                UserPhotoUrl = _currentUserProfile.Photos?.FirstOrDefault()?.Url ?? "/images/user-avatar.svg",
+                UserPhotoUrls = _currentUserProfile.Photos?.Select(p => p.Url).ToList() ?? new List<string>(),
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
             };
 
-            _savedMarks.Insert(0, mark);
-            await PersistMarksAsync();
-            await SyncMarksToMap();
-            StateHasChanged();
+            // Use the ProfileService to save the DateMark with duplicate checking
+            var (success, existingMark) = await ProfileService.SaveDateMarkAsync(mark);
+            
+            if (success)
+            {
+                _savedMarks.Insert(0, mark);
+                await SyncMarksToMap();
+                StateHasChanged();
+            }
+            else if (existingMark != null)
+            {
+                // Duplicate found, navigate to edit the existing mark
+                Navigation.NavigateTo($"/map?lat={existingMark.Latitude}&lng={existingMark.Longitude}&zoom=15&edit={existingMark.Id}");
+            }
         }
         catch (Exception ex)
         {
@@ -611,25 +700,10 @@
     {
         try
         {
-            var json = await JsRuntime.InvokeAsync<string?>("MapMe.storage.load", StorageKey);
-            if (!string.IsNullOrWhiteSpace(json))
-            {
-                var loaded = JsonSerializer.Deserialize<List<MarkDate>>(json) ?? new List<MarkDate>();
-                _savedMarks.Clear();
-                // Backfill fake user photos if missing
-                foreach (var m in loaded)
-                {
-                    if (m.UserPhotoUrls == null || m.UserPhotoUrls.Count == 0)
-                    {
-                        m.UserPhotoUrls = new List<string>(DefaultUserPhotoUrls);
-                    }
-                    if (string.IsNullOrWhiteSpace(m.UserPhotoUrl))
-                    {
-                        m.UserPhotoUrl = m.UserPhotoUrls.FirstOrDefault() ?? DefaultUserAvatar;
-                    }
-                }
-                _savedMarks.AddRange(loaded.OrderByDescending(m => m.SavedAt));
-            }
+            _savedMarks.Clear();
+            var userMarks = await ProfileService.GetUserDateMarksAsync(_currentUserProfile.UserId);
+            _savedMarks.AddRange(userMarks.OrderByDescending(m => m.CreatedAt));
+            await SyncMarksToMap();
         }
         catch (Exception ex)
         {
@@ -637,20 +711,7 @@
         }
     }
 
-    private async Task PersistMarksAsync()
-    {
-        try
-        {
-            var json = JsonSerializer.Serialize(_savedMarks);
-            await JsRuntime.InvokeVoidAsync("MapMe.storage.save", StorageKey, json);
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error persisting marks: {ex.Message}");
-        }
-    }
-
-    private async Task FlyTo(MarkDate mark)
+    private async Task FlyTo(DateMark mark)
     {
         try
         {
@@ -665,12 +726,22 @@
         }
     }
 
-    private async Task RemoveMark(MarkDate mark)
+    private async Task RemoveMark(DateMark mark)
     {
-        _savedMarks.Remove(mark);
-        await PersistMarksAsync();
-        await SyncMarksToMap();
-        StateHasChanged();
+        try
+        {
+            var success = await ProfileService.DeleteDateMarkAsync(mark.Id);
+            if (success)
+            {
+                _savedMarks.Remove(mark);
+                await SyncMarksToMap();
+                StateHasChanged();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error removing mark: {ex.Message}");
+        }
     }
 
     private async Task SyncMarksToMap()
@@ -685,7 +756,7 @@
                 title = !string.IsNullOrWhiteSpace(m.Name) ? m.Name : $"Lat {m.Latitude:F5}, Lng {m.Longitude:F5}",
                 address = m.Address,
                 note = m.Note,
-                createdBy = m.CreatedBy,
+                createdBy = m.UserId,
                 userPhotoUrl = m.UserPhotoUrl,
                 userPhotoUrls = m.UserPhotoUrls,
                 placePhotoUrl = m.PlacePhotoUrl,

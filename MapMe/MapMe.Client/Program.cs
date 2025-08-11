@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
+using MapMe.Client.Services;
 using System;
 using System.Net.Http;
 
@@ -9,5 +10,6 @@ builder.Services.AddScoped(sp => new HttpClient
 {
     BaseAddress = new Uri(builder.HostEnvironment.BaseAddress)
 });
+builder.Services.AddScoped<UserProfileService>();
 
 await builder.Build().RunAsync();

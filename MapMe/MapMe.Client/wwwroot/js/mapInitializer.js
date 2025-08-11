@@ -956,7 +956,7 @@ function renderMarks(marks) {
                                     <img src=\"${avatar || '/images/user-avatar.svg'}\" alt=\"${escapeHtml(username)}\" style=\"width:40px;height:40px;border-radius:50%;object-fit:cover;\">
                                     <div>
                                       <div style=\"font-weight:700;\" class=\"mm-pop-name\">${escapeHtml(username)}</div>
-                                      <div style=\"color:#6c757d;font-size:12px;\" class=\"mm-pop-handle\">@${escapeHtml(username)}</div>
+                                      <div style=\"color:#6b7280;font-size:12px;\" class=\"mm-pop-handle\">@${escapeHtml(username)}</div>
                                     </div>
                                   </div>
                                   <div class=\"mm-pop-body\" style=\"font-size:12px;color:#374151;\">Loading profile…</div>
@@ -1139,51 +1139,48 @@ async function getUserProfile(username, avatarUrl) {
     try {
         const key = (username || '').toLowerCase();
         if (_mmProfileCache.has(key)) return _mmProfileCache.get(key);
-        // 1) App-provided hook
+        
+        // 1) App-provided hook - use the Blazor UserProfileService
         if (window.MapMe && typeof window.MapMe.getUserProfile === 'function') {
             const prof = await window.MapMe.getUserProfile(username);
-            if (prof) { _mmProfileCache.set(key, prof); return prof; }
+            if (prof) { 
+                _mmProfileCache.set(key, prof); 
+                return prof; 
+            }
         }
-        // 2) REST API fallback
+        
+        // 2) REST API fallback (if implemented)
         try {
             const res = await fetch(`/api/users/${encodeURIComponent(username)}`);
             if (res.ok) {
-                const data = await res.json();
-                const prof = {
-                    fullName: data.fullName || data.name || username,
-                    username: data.username || username,
-                    bio: data.bio || '',
-                    location: data.location || data.city || '',
-                    website: data.website || data.url || '',
-                    joinedAt: data.joinedAt || data.createdAt || '',
-                    followers: data.followersCount ?? data.followers ?? null,
-                    following: data.followingCount ?? data.following ?? null,
-                    photosCount: data.photosCount ?? null,
-                    interests: Array.isArray(data.interests) ? data.interests : [] ,
-                    avatar: data.avatar || avatarUrl || '/images/user-avatar.svg'
-                };
+                const prof = await res.json();
                 _mmProfileCache.set(key, prof);
                 return prof;
             }
-        } catch (_) { /* ignore network errors; fall back to mock */ }
-        // 3) Mock data
+        } catch (_) {}
+        
+        // 3) Default fallback with minimal real data
         const prof = {
-            fullName: username.charAt(0).toUpperCase() + username.slice(1),
-            username,
-            bio: 'Traveler. Food lover. Always marking new places.',
-            location: 'Somewhere on Earth',
-            website: 'https://example.com',
-            joinedAt: 'Jan 2024',
-            followers: Math.floor(Math.random()*900)+100,
-            following: Math.floor(Math.random()*300)+50,
-            photosCount: Math.floor(Math.random()*120)+20,
-            interests: ['coffee', 'parks', 'nightlife'],
+            fullName: username || 'Unknown User',
+            username: username || 'unknown',
+            bio: 'MapMe user',
+            location: 'Location not specified',
+            website: null,
+            joinedAt: 'Recently',
+            followers: 0,
+            following: 0,
+            photosCount: 0,
+            interests: [],
             avatar: avatarUrl || '/images/user-avatar.svg'
         };
         _mmProfileCache.set(key, prof);
         return prof;
     } catch (_) {
-        return { fullName: username, username, avatar: avatarUrl || '/images/user-avatar.svg' };
+        return { 
+            fullName: username || 'Unknown User', 
+            username: username || 'unknown', 
+            avatar: avatarUrl || '/images/user-avatar.svg' 
+        };
     }
 }
 
