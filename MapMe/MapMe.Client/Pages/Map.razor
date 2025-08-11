@@ -5,8 +5,10 @@
 @using System.Net.Http.Json
 @using System.Text.Json
 @using System.Linq
+@using System.Web
 @inject IJSRuntime JsRuntime
 @inject HttpClient Http
+@inject NavigationManager Navigation
 @implements IAsyncDisposable
 
 <PageTitle>Map</PageTitle>
@@ -164,7 +166,30 @@
     {
         if (firstRender)
         {
+            await HandleQueryParameters();
             await InitializeMap();
+        }
+    }
+
+    private async Task HandleQueryParameters()
+    {
+        var uri = new Uri(Navigation.Uri);
+        var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
+        
+        if (double.TryParse(query["lat"], out var lat) && 
+            double.TryParse(query["lng"], out var lng))
+        {
+            _latitude = lat;
+            _longitude = lng;
+            
+            if (int.TryParse(query["zoom"], out var zoom))
+            {
+                _zoom = zoom;
+            }
+            else
+            {
+                _zoom = 15; // Default zoom when navigating to specific location
+            }
         }
     }
 
