@@ -1,0 +1,583 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TestRun id="4e5b1445-f67f-46bc-8250-df2a454c8880" name="@Adams-MacBook-Pro 2025-08-12 04:53:37" xmlns="http://microsoft.com/schemas/VisualStudio/TeamTest/2010">
+  <Times creation="2025-08-12T04:53:37.5334730+07:00" queuing="2025-08-12T04:53:37.5334730+07:00" start="2025-08-12T04:53:35.8674030+07:00" finish="2025-08-12T04:53:42.8120180+07:00" />
+  <TestSettings name="default" id="46822aa6-9e63-4845-b55d-8f4b5ecbae11">
+    <Deployment runDeploymentRoot="_Adams-MacBook-Pro_2025-08-12_04_53_37" />
+  </TestSettings>
+  <Results>
+    <UnitTestResult executionId="0e6047d6-4625-4f8a-b7bf-fc022082e93c" testId="a467f50e-8928-ce92-dc48-be7f3d913283" testName="MapMe.Tests.ErrorHandlingIntegrationTests.Profile_Create_WithWrongContentType_ReturnsBadRequest" computerName="Adams-MacBook-Pro" duration="00:00:00.5545487" startTime="2025-08-12T04:53:40.2340840+07:00" endTime="2025-08-12T04:53:40.2340840+07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="0e6047d6-4625-4f8a-b7bf-fc022082e93c" />
+    <UnitTestResult executionId="c70ffddc-16ae-4c0a-8ac2-50befb84a57f" testId="10ba1ee7-a45b-ddd2-1f57-0e6bac1f2f13" testName="MapMe.Tests.NormalizationTests.ToNorm_Filters_Empty_And_Duplicates" computerName="Adams-MacBook-Pro" duration="00:00:00.0002924" startTime="2025-08-12T04:53:36.1760420+07:00" endTime="2025-08-12T04:53:36.1760420+07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="c70ffddc-16ae-4c0a-8ac2-50befb84a57f" />
+    <UnitTestResult executionId="fc5808f6-7a19-49cf-8b49-399861032459" testId="5defb1fc-8974-0a28-9d03-1ee89a1e4938" testName="MapMe.Tests.ExtendedApiIntegrationTests.MapDateMarks_Query_ReturnsEmptyForPrototype" computerName="Adams-MacBook-Pro" duration="00:00:00.4988264" startTime="2025-08-12T04:53:41.3934930+07:00" endTime="2025-08-12T04:53:41.3934930+07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="fc5808f6-7a19-49cf-8b49-399861032459" />
+    <UnitTestResult executionId="413ede7e-6047-40ff-a690-eacb6fde9485" testId="b6bf0b68-ca39-395d-a92c-70d15117ba62" testName="MapMe.Tests.ExtendedApiIntegrationTests.DateMark_Create_WithInvalidData_ReturnsBadRequest" computerName="Adams-MacBook-Pro" duration="00:00:00.4740861" startTime="2025-08-12T04:53:38.8141430+07:00" endTime="2025-08-12T04:53:38.8141430+07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="413ede7e-6047-40ff-a690-eacb6fde9485" />
+    <UnitTestResult executionId="0e420de0-2312-42cc-9c89-984ebcae4fcc" testId="4a9ff9b6-10c5-9acd-4eb9-cab6a86f7b1e" testName="MapMe.Tests.ApiIntegrationTests.DateMark_FilteringByCategories_ReturnsCorrectResults" computerName="Adams-MacBook-Pro" duration="00:00:00.4916750" startTime="2025-08-12T04:53:40.5400410+07:00" endTime="2025-08-12T04:53:40.5400410+07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="0e420de0-2312-42cc-9c89-984ebcae4fcc" />
+    <UnitTestResult executionId="c9976b4a-4037-419a-a189-1cdbed1be288" testId="f55b9f59-f089-88c0-fc75-1f51fa3c7bc5" testName="MapMe.Tests.ApiIntegrationTests.Profile_NotFound_Returns404" computerName="Adams-MacBook-Pro" duration="00:00:00.6429237" startTime="2025-08-12T04:53:38.4199270+07:00" endTime="2025-08-12T04:53:38.4199270+07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="c9976b4a-4037-419a-a189-1cdbed1be288" />
+    <UnitTestResult executionId="f11148a7-7d24-497e-ada2-bbccf78fab00" testId="a349e94b-0008-2e34-76f7-09d9fd6da033" testName="MapMe.Tests.ExtendedApiIntegrationTests.Profile_Create_WithInvalidData_ReturnsBadRequest" computerName="Adams-MacBook-Pro" duration="00:00:00.5454485" startTime="2025-08-12T04:53:39.3597770+07:00" endTime="2025-08-12T04:53:39.3597770+07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="f11148a7-7d24-497e-ada2-bbccf78fab00" />
+    <UnitTestResult executionId="0128b022-17a2-4284-a348-e95cf2fb91e9" testId="e73246bd-9452-0519-22d8-5ecd6b6f4191" testName="MapMe.Tests.InMemoryRepositoryTests.DateMarks_InMemory_Filtering_Works" computerName="Adams-MacBook-Pro" duration="00:00:00.0058527" startTime="2025-08-12T04:53:36.1734480+07:00" endTime="2025-08-12T04:53:36.1734480+07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="0128b022-17a2-4284-a348-e95cf2fb91e9" />
+    <UnitTestResult executionId="03d0fe68-09ed-4805-b82a-e2fdf50fc13e" testId="ce8d9085-257d-d7d4-fda4-d09aafc89d94" testName="MapMe.Tests.InMemoryRepositoryTests.UserProfile_InMemory_Upsert_And_Get" computerName="Adams-MacBook-Pro" duration="00:00:00.0042345" startTime="2025-08-12T04:53:36.1666130+07:00" endTime="2025-08-12T04:53:36.1666210+07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="03d0fe68-09ed-4805-b82a-e2fdf50fc13e" />
+    <UnitTestResult executionId="12713cc5-e57e-4a23-b82f-024dd0c14dd8" testId="bfa49886-b8c5-6319-98bf-738ba44816dc" testName="MapMe.Tests.ErrorHandlingIntegrationTests.DateMark_UnsupportedHttpMethods_ReturnMethodNotAllowed" computerName="Adams-MacBook-Pro" duration="00:00:00.7077673" startTime="2025-08-12T04:53:39.6793920+07:00" endTime="2025-08-12T04:53:39.6793920+07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="12713cc5-e57e-4a23-b82f-024dd0c14dd8" />
+    <UnitTestResult executionId="14b3803b-ab66-4d1f-99a9-f0f93ee716c0" testId="01e8d627-4fef-47ec-1699-619ca36cdd21" testName="MapMe.Tests.ErrorHandlingIntegrationTests.Profile_Create_WithMalformedJson_ReturnsBadRequest" computerName="Adams-MacBook-Pro" duration="00:00:00.2618381" startTime="2025-08-12T04:53:42.0082980+07:00" endTime="2025-08-12T04:53:42.0082980+07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="14b3803b-ab66-4d1f-99a9-f0f93ee716c0" />
+    <UnitTestResult executionId="80e0c8ac-8c75-4a03-a451-7d2de597f4c6" testId="6bdd0e70-ab80-e944-5486-35acf451dd25" testName="MapMe.Tests.ErrorHandlingIntegrationTests.Profile_Create_WithManyPhotos_HandlesCorrectly" computerName="Adams-MacBook-Pro" duration="00:00:00.6686773" startTime="2025-08-12T04:53:37.7906590+07:00" endTime="2025-08-12T04:53:37.7906590+07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="80e0c8ac-8c75-4a03-a451-7d2de597f4c6" />
+    <UnitTestResult executionId="ae07fb69-1fd9-429e-a166-fb86754cad64" testId="918d69b8-0567-3b62-1b94-40477ed61acc" testName="MapMe.Tests.ApiIntegrationTests.DateMarks_EmptyUser_ReturnsEmptyList" computerName="Adams-MacBook-Pro" duration="00:00:00.9477928" startTime="2025-08-12T04:53:37.1080290+07:00" endTime="2025-08-12T04:53:37.1080290+07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="ae07fb69-1fd9-429e-a166-fb86754cad64" />
+    <UnitTestResult executionId="f1b2ba57-7498-4255-b8c7-9beaa85fb827" testId="bcf44575-74ad-aa79-2f26-05e1de5d4e85" testName="MapMe.Tests.ErrorHandlingIntegrationTests.DateMark_Create_WithManyCategories_HandlesCorrectly" computerName="Adams-MacBook-Pro" duration="00:00:00.9616272" startTime="2025-08-12T04:53:37.5100240+07:00" endTime="2025-08-12T04:53:37.5100240+07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="f1b2ba57-7498-4255-b8c7-9beaa85fb827" />
+    <UnitTestResult executionId="06f9fb86-6188-4ed7-bf98-d914ee95449d" testId="a07e639f-bee7-5859-675e-406eb66d6852" testName="MapMe.Tests.ErrorHandlingIntegrationTests.DateMark_Create_WithBoundaryCoordinates_HandlesCorrectly" computerName="Adams-MacBook-Pro" duration="00:00:00.5650006" startTime="2025-08-12T04:53:38.9714940+07:00" endTime="2025-08-12T04:53:38.9714940+07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="06f9fb86-6188-4ed7-bf98-d914ee95449d" />
+    <UnitTestResult executionId="969d7dd5-83e6-401e-867f-d4af304d20e1" testId="2e14b324-12b9-253f-cfa7-357966005c0c" testName="MapMe.Tests.ApiSmokeTests.Profiles_Create_And_Get" computerName="Adams-MacBook-Pro" duration="00:00:00.9574235" startTime="2025-08-12T04:53:37.1178510+07:00" endTime="2025-08-12T04:53:37.1178510+07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="969d7dd5-83e6-401e-867f-d4af304d20e1" />
+    <UnitTestResult executionId="f1d64089-fe95-4187-bf63-5d779a9a4782" testId="69967aec-93ea-5719-8f75-1adce4a52868" testName="MapMe.Tests.ErrorHandlingIntegrationTests.DateMark_Query_WithExtremelyLongQueryString_HandlesGracefully" computerName="Adams-MacBook-Pro" duration="00:00:00.2543340" startTime="2025-08-12T04:53:42.2627890+07:00" endTime="2025-08-12T04:53:42.2627890+07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="f1d64089-fe95-4187-bf63-5d779a9a4782" />
+    <UnitTestResult executionId="42b4125d-6d52-4aee-b136-3d580470823f" testId="e1fcb762-7e2e-ba33-1443-92e761f380e5" testName="MapMe.Tests.ApiIntegrationTests.DateMark_CompleteWorkflow_CreatesAndListsDateMarks" computerName="Adams-MacBook-Pro" duration="00:00:00.4672548" startTime="2025-08-12T04:53:41.5029690+07:00" endTime="2025-08-12T04:53:41.5029690+07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="42b4125d-6d52-4aee-b136-3d580470823f" />
+    <UnitTestResult executionId="0aee3ab3-385c-4c0b-a9fe-16e0ec7aca44" testId="9d132666-049a-2cef-9037-d675521ac78d" testName="MapMe.Tests.ApiIntegrationTests.DateMark_UpdateExisting_ModifiesCorrectly" computerName="Adams-MacBook-Pro" duration="00:00:00.4953794" startTime="2025-08-12T04:53:41.0355670+07:00" endTime="2025-08-12T04:53:41.0355670+07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="0aee3ab3-385c-4c0b-a9fe-16e0ec7aca44" />
+    <UnitTestResult executionId="b4c9ae2c-5908-4243-b8e8-6c4a65230073" testId="de8bf758-b03b-e20e-69c9-ef05dfd4fb46" testName="MapMe.Tests.ExtendedApiIntegrationTests.Profile_Update_ExistingProfile_ModifiesCorrectly" computerName="Adams-MacBook-Pro" duration="00:00:00.5614137" startTime="2025-08-12T04:53:38.3399040+07:00" endTime="2025-08-12T04:53:38.3399040+07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="b4c9ae2c-5908-4243-b8e8-6c4a65230073" />
+    <UnitTestResult executionId="9bed6fe3-05ac-4242-be37-768b3dfe78d5" testId="55b92aa8-a493-9f3f-6289-6a5413f947d4" testName="MapMe.Tests.ErrorHandlingIntegrationTests.DateMark_Create_WithSpecialCharactersInArrays_HandlesCorrectly" computerName="Adams-MacBook-Pro" duration="00:00:00.2615894" startTime="2025-08-12T04:53:42.5245620+07:00" endTime="2025-08-12T04:53:42.5245620+07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="9bed6fe3-05ac-4242-be37-768b3dfe78d5" />
+    <UnitTestResult executionId="546c8003-524b-4553-98b6-670e3abf518b" testId="7d3500f9-fe15-a5db-18f7-7485f3ebb427" testName="MapMe.Tests.ApiIntegrationTests.DateMark_VisibilitySettings_AreRespected(visibility: &quot;private&quot;)" computerName="Adams-MacBook-Pro" duration="00:00:00.5042145" startTime="2025-08-12T04:53:40.0481930+07:00" endTime="2025-08-12T04:53:40.0481930+07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="546c8003-524b-4553-98b6-670e3abf518b" />
+    <UnitTestResult executionId="44a7eabf-f376-40a1-a7d6-3a67747626de" testId="20d3ef96-1ec5-f124-07fc-2c97b341c609" testName="MapMe.Tests.ExtendedApiIntegrationTests.DateMark_Create_WithExtremeCoordinates_HandlesCorrectly" computerName="Adams-MacBook-Pro" duration="00:00:00.4848258" startTime="2025-08-12T04:53:40.3817180+07:00" endTime="2025-08-12T04:53:40.3817180+07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="44a7eabf-f376-40a1-a7d6-3a67747626de" />
+    <UnitTestResult executionId="5580a71c-6651-4f19-8aa9-dfa3f563badd" testId="392b8f8a-ffa2-54af-3387-d04bba9bfdc1" testName="MapMe.Tests.ErrorHandlingIntegrationTests.Profile_UnsupportedHttpMethods_ReturnMethodNotAllowed" computerName="Adams-MacBook-Pro" duration="00:00:00.6370150" startTime="2025-08-12T04:53:41.3811280+07:00" endTime="2025-08-12T04:53:41.3811280+07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="5580a71c-6651-4f19-8aa9-dfa3f563badd" />
+    <UnitTestResult executionId="665a8a4f-a16a-4bff-a168-fb23ed86116c" testId="c10ecd8f-58d2-d7bc-522c-7ee6260aa183" testName="MapMe.Tests.ApiIntegrationTests.DateMark_FilteringByDateRange_ReturnsCorrectResults" computerName="Adams-MacBook-Pro" duration="00:00:00.6686898" startTime="2025-08-12T04:53:37.7768630+07:00" endTime="2025-08-12T04:53:37.7768630+07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="665a8a4f-a16a-4bff-a168-fb23ed86116c" />
+    <UnitTestResult executionId="4378ba85-083e-4d9f-96af-fb2cec721fb5" testId="3d3a8ff1-f9b0-d995-6e04-6725082233ab" testName="MapMe.Tests.ExtendedApiIntegrationTests.DateMark_EmptyArraysAndNulls_HandlesCorrectly" computerName="Adams-MacBook-Pro" duration="00:00:00.9617379" startTime="2025-08-12T04:53:37.5101140+07:00" endTime="2025-08-12T04:53:37.5101140+07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="4378ba85-083e-4d9f-96af-fb2cec721fb5" />
+    <UnitTestResult executionId="1dfe653c-ef70-4007-b827-88487ff4c2c6" testId="17c53a49-97e6-d8f8-98e3-07d519c83924" testName="MapMe.Tests.ExtendedApiIntegrationTests.DateMark_DateRangeEdgeCases_HandlesCorrectly" computerName="Adams-MacBook-Pro" duration="00:00:00.5126463" startTime="2025-08-12T04:53:40.8945140+07:00" endTime="2025-08-12T04:53:40.8945140+07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="1dfe653c-ef70-4007-b827-88487ff4c2c6" />
+    <UnitTestResult executionId="e990fab7-2ce8-4911-b6ed-1154022e26fe" testId="a0564c8c-f64f-d0b7-a0c6-ee73b903133d" testName="MapMe.Tests.ApiIntegrationTests.DateMark_VisibilitySettings_AreRespected(visibility: &quot;friends&quot;)" computerName="Adams-MacBook-Pro" duration="00:00:00.5733817" startTime="2025-08-12T04:53:39.5438610+07:00" endTime="2025-08-12T04:53:39.5438610+07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="e990fab7-2ce8-4911-b6ed-1154022e26fe" />
+    <UnitTestResult executionId="4fb02ea7-7996-4a44-b750-2042c1f1b75c" testId="1f5b834a-1f40-8f0d-974a-558a28b46282" testName="MapMe.Tests.ExtendedApiIntegrationTests.DateMark_FilteringCombinations_ReturnsCorrectResults" computerName="Adams-MacBook-Pro" duration="00:00:00.6561288" startTime="2025-08-12T04:53:37.7783310+07:00" endTime="2025-08-12T04:53:37.7783310+07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="4fb02ea7-7996-4a44-b750-2042c1f1b75c" />
+    <UnitTestResult executionId="fbb8408a-4e05-44e1-8492-cad477910884" testId="15a69689-ac9f-bd90-52e0-f559c0b50dc3" testName="MapMe.Tests.NormalizationTests.ToNorm_Removes_Diacritics_And_Punctuation_And_Lowercases" computerName="Adams-MacBook-Pro" duration="00:00:00.0145938" startTime="2025-08-12T04:53:36.1757230+07:00" endTime="2025-08-12T04:53:36.1757230+07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="fbb8408a-4e05-44e1-8492-cad477910884" />
+    <UnitTestResult executionId="7da8f959-4c81-4010-a591-435818dec463" testId="c30b884c-9a00-2f15-ba4b-f26e812a36f7" testName="MapMe.Tests.ErrorHandlingIntegrationTests.DateMark_Create_WithMalformedJson_ReturnsBadRequest" computerName="Adams-MacBook-Pro" duration="00:00:00.6155369" startTime="2025-08-12T04:53:38.4063860+07:00" endTime="2025-08-12T04:53:38.4063860+07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="7da8f959-4c81-4010-a591-435818dec463" />
+    <UnitTestResult executionId="dd326db9-58b8-4823-b7e3-6fceb1060fda" testId="3fd022d9-ba8a-3de7-f381-3d8f18ee1d21" testName="MapMe.Tests.ErrorHandlingIntegrationTests.Profile_Create_WithSpecialCharacters_HandlesCorrectly" computerName="Adams-MacBook-Pro" duration="00:00:00.3650089" startTime="2025-08-12T04:53:41.7462760+07:00" endTime="2025-08-12T04:53:41.7462760+07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="dd326db9-58b8-4823-b7e3-6fceb1060fda" />
+    <UnitTestResult executionId="eda5a4da-99ea-41ea-8b17-1d22535c6ada" testId="564f5290-a42e-5e74-ba0a-ed0fd97e4c11" testName="MapMe.Tests.ExtendedApiIntegrationTests.ConcurrentOperations_MultipleProfileCreation_HandlesCorrectly" computerName="Adams-MacBook-Pro" duration="00:00:00.5367682" startTime="2025-08-12T04:53:39.8966820+07:00" endTime="2025-08-12T04:53:39.8966820+07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="eda5a4da-99ea-41ea-8b17-1d22535c6ada" />
+    <UnitTestResult executionId="90298e94-6c51-4e1a-9014-73988c583ebe" testId="3632c349-dd2f-3e90-723d-d46b906a7814" testName="MapMe.Tests.ErrorHandlingIntegrationTests.Profile_Create_WithExcessivelyLongStrings_HandlesGracefully" computerName="Adams-MacBook-Pro" duration="00:00:00.2583401" startTime="2025-08-12T04:53:42.7831160+07:00" endTime="2025-08-12T04:53:42.7831160+07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="90298e94-6c51-4e1a-9014-73988c583ebe" />
+    <UnitTestResult executionId="4e6f5c01-734a-447d-9ce6-54dd4b71b64b" testId="f84d9dcb-bf3a-2eb4-ab08-f117a88ef601" testName="MapMe.Tests.ApiIntegrationTests.DateMark_VisibilitySettings_AreRespected(visibility: &quot;public&quot;)" computerName="Adams-MacBook-Pro" duration="00:00:00.5502125" startTime="2025-08-12T04:53:38.9703160+07:00" endTime="2025-08-12T04:53:38.9703160+07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="4e6f5c01-734a-447d-9ce6-54dd4b71b64b" />
+    <UnitTestResult executionId="48e82304-9577-44b2-a5f8-73c10885a7ea" testId="b13c62f0-8540-b317-0628-868ca8f9ca58" testName="MapMe.Tests.ApiSmokeTests.DateMarks_Create_And_List_By_User" computerName="Adams-MacBook-Pro" duration="00:00:00.6585055" startTime="2025-08-12T04:53:37.7766260+07:00" endTime="2025-08-12T04:53:37.7766260+07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="48e82304-9577-44b2-a5f8-73c10885a7ea" />
+    <UnitTestResult executionId="9b380964-86dc-4a20-9a98-b851ad9fd0e6" testId="bd4eda91-769c-68a3-3336-24c5260e11cc" testName="MapMe.Tests.ErrorHandlingIntegrationTests.DateMark_Query_WithInvalidQueryParameters_HandlesGracefully" computerName="Adams-MacBook-Pro" duration="00:00:00.5049394" startTime="2025-08-12T04:53:40.7392030+07:00" endTime="2025-08-12T04:53:40.7392030+07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="9b380964-86dc-4a20-9a98-b851ad9fd0e6" />
+    <UnitTestResult executionId="139cf1b7-e3a5-4448-bc9f-2f70385873dd" testId="43a57797-e8d6-4267-fa5a-c63a5f5d9b4e" testName="MapMe.Tests.ApiIntegrationTests.UserProfile_CompleteWorkflow_CreatesAndRetrievesProfile" computerName="Adams-MacBook-Pro" duration="00:00:00.3580067" startTime="2025-08-12T04:53:41.8611580+07:00" endTime="2025-08-12T04:53:41.8611580+07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="139cf1b7-e3a5-4448-bc9f-2f70385873dd" />
+  </Results>
+  <TestDefinitions>
+    <UnitTest name="MapMe.Tests.ExtendedApiIntegrationTests.DateMark_Create_WithInvalidData_ReturnsBadRequest" storage="/users/adamzaplatilek/github/mapme/mapme/mapme.tests/bin/release/net10.0/mapme.tests.dll" id="b6bf0b68-ca39-395d-a92c-70d15117ba62">
+      <Execution id="413ede7e-6047-40ff-a690-eacb6fde9485" />
+      <TestMethod codeBase="/Users/adamzaplatilek/GitHub/MapMe/MapMe/MapMe.Tests/bin/Release/net10.0/MapMe.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="MapMe.Tests.ExtendedApiIntegrationTests" name="DateMark_Create_WithInvalidData_ReturnsBadRequest" />
+    </UnitTest>
+    <UnitTest name="MapMe.Tests.NormalizationTests.ToNorm_Removes_Diacritics_And_Punctuation_And_Lowercases" storage="/users/adamzaplatilek/github/mapme/mapme/mapme.tests/bin/release/net10.0/mapme.tests.dll" id="15a69689-ac9f-bd90-52e0-f559c0b50dc3">
+      <Execution id="fbb8408a-4e05-44e1-8492-cad477910884" />
+      <TestMethod codeBase="/Users/adamzaplatilek/GitHub/MapMe/MapMe/MapMe.Tests/bin/Release/net10.0/MapMe.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="MapMe.Tests.NormalizationTests" name="ToNorm_Removes_Diacritics_And_Punctuation_And_Lowercases" />
+    </UnitTest>
+    <UnitTest name="MapMe.Tests.ErrorHandlingIntegrationTests.Profile_Create_WithWrongContentType_ReturnsBadRequest" storage="/users/adamzaplatilek/github/mapme/mapme/mapme.tests/bin/release/net10.0/mapme.tests.dll" id="a467f50e-8928-ce92-dc48-be7f3d913283">
+      <Execution id="0e6047d6-4625-4f8a-b7bf-fc022082e93c" />
+      <TestMethod codeBase="/Users/adamzaplatilek/GitHub/MapMe/MapMe/MapMe.Tests/bin/Release/net10.0/MapMe.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="MapMe.Tests.ErrorHandlingIntegrationTests" name="Profile_Create_WithWrongContentType_ReturnsBadRequest" />
+    </UnitTest>
+    <UnitTest name="MapMe.Tests.ExtendedApiIntegrationTests.Profile_Update_ExistingProfile_ModifiesCorrectly" storage="/users/adamzaplatilek/github/mapme/mapme/mapme.tests/bin/release/net10.0/mapme.tests.dll" id="de8bf758-b03b-e20e-69c9-ef05dfd4fb46">
+      <Execution id="b4c9ae2c-5908-4243-b8e8-6c4a65230073" />
+      <TestMethod codeBase="/Users/adamzaplatilek/GitHub/MapMe/MapMe/MapMe.Tests/bin/Release/net10.0/MapMe.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="MapMe.Tests.ExtendedApiIntegrationTests" name="Profile_Update_ExistingProfile_ModifiesCorrectly" />
+    </UnitTest>
+    <UnitTest name="MapMe.Tests.ApiIntegrationTests.DateMark_CompleteWorkflow_CreatesAndListsDateMarks" storage="/users/adamzaplatilek/github/mapme/mapme/mapme.tests/bin/release/net10.0/mapme.tests.dll" id="e1fcb762-7e2e-ba33-1443-92e761f380e5">
+      <Execution id="42b4125d-6d52-4aee-b136-3d580470823f" />
+      <TestMethod codeBase="/Users/adamzaplatilek/GitHub/MapMe/MapMe/MapMe.Tests/bin/Release/net10.0/MapMe.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="MapMe.Tests.ApiIntegrationTests" name="DateMark_CompleteWorkflow_CreatesAndListsDateMarks" />
+    </UnitTest>
+    <UnitTest name="MapMe.Tests.ApiIntegrationTests.DateMark_VisibilitySettings_AreRespected(visibility: &quot;private&quot;)" storage="/users/adamzaplatilek/github/mapme/mapme/mapme.tests/bin/release/net10.0/mapme.tests.dll" id="7d3500f9-fe15-a5db-18f7-7485f3ebb427">
+      <Execution id="546c8003-524b-4553-98b6-670e3abf518b" />
+      <TestMethod codeBase="/Users/adamzaplatilek/GitHub/MapMe/MapMe/MapMe.Tests/bin/Release/net10.0/MapMe.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="MapMe.Tests.ApiIntegrationTests" name="DateMark_VisibilitySettings_AreRespected" />
+    </UnitTest>
+    <UnitTest name="MapMe.Tests.ExtendedApiIntegrationTests.DateMark_Create_WithExtremeCoordinates_HandlesCorrectly" storage="/users/adamzaplatilek/github/mapme/mapme/mapme.tests/bin/release/net10.0/mapme.tests.dll" id="20d3ef96-1ec5-f124-07fc-2c97b341c609">
+      <Execution id="44a7eabf-f376-40a1-a7d6-3a67747626de" />
+      <TestMethod codeBase="/Users/adamzaplatilek/GitHub/MapMe/MapMe/MapMe.Tests/bin/Release/net10.0/MapMe.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="MapMe.Tests.ExtendedApiIntegrationTests" name="DateMark_Create_WithExtremeCoordinates_HandlesCorrectly" />
+    </UnitTest>
+    <UnitTest name="MapMe.Tests.ApiIntegrationTests.UserProfile_CompleteWorkflow_CreatesAndRetrievesProfile" storage="/users/adamzaplatilek/github/mapme/mapme/mapme.tests/bin/release/net10.0/mapme.tests.dll" id="43a57797-e8d6-4267-fa5a-c63a5f5d9b4e">
+      <Execution id="139cf1b7-e3a5-4448-bc9f-2f70385873dd" />
+      <TestMethod codeBase="/Users/adamzaplatilek/GitHub/MapMe/MapMe/MapMe.Tests/bin/Release/net10.0/MapMe.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="MapMe.Tests.ApiIntegrationTests" name="UserProfile_CompleteWorkflow_CreatesAndRetrievesProfile" />
+    </UnitTest>
+    <UnitTest name="MapMe.Tests.ApiSmokeTests.Profiles_Create_And_Get" storage="/users/adamzaplatilek/github/mapme/mapme/mapme.tests/bin/release/net10.0/mapme.tests.dll" id="2e14b324-12b9-253f-cfa7-357966005c0c">
+      <Execution id="969d7dd5-83e6-401e-867f-d4af304d20e1" />
+      <TestMethod codeBase="/Users/adamzaplatilek/GitHub/MapMe/MapMe/MapMe.Tests/bin/Release/net10.0/MapMe.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="MapMe.Tests.ApiSmokeTests" name="Profiles_Create_And_Get" />
+    </UnitTest>
+    <UnitTest name="MapMe.Tests.ErrorHandlingIntegrationTests.DateMark_Create_WithSpecialCharactersInArrays_HandlesCorrectly" storage="/users/adamzaplatilek/github/mapme/mapme/mapme.tests/bin/release/net10.0/mapme.tests.dll" id="55b92aa8-a493-9f3f-6289-6a5413f947d4">
+      <Execution id="9bed6fe3-05ac-4242-be37-768b3dfe78d5" />
+      <TestMethod codeBase="/Users/adamzaplatilek/GitHub/MapMe/MapMe/MapMe.Tests/bin/Release/net10.0/MapMe.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="MapMe.Tests.ErrorHandlingIntegrationTests" name="DateMark_Create_WithSpecialCharactersInArrays_HandlesCorrectly" />
+    </UnitTest>
+    <UnitTest name="MapMe.Tests.ApiSmokeTests.DateMarks_Create_And_List_By_User" storage="/users/adamzaplatilek/github/mapme/mapme/mapme.tests/bin/release/net10.0/mapme.tests.dll" id="b13c62f0-8540-b317-0628-868ca8f9ca58">
+      <Execution id="48e82304-9577-44b2-a5f8-73c10885a7ea" />
+      <TestMethod codeBase="/Users/adamzaplatilek/GitHub/MapMe/MapMe/MapMe.Tests/bin/Release/net10.0/MapMe.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="MapMe.Tests.ApiSmokeTests" name="DateMarks_Create_And_List_By_User" />
+    </UnitTest>
+    <UnitTest name="MapMe.Tests.InMemoryRepositoryTests.UserProfile_InMemory_Upsert_And_Get" storage="/users/adamzaplatilek/github/mapme/mapme/mapme.tests/bin/release/net10.0/mapme.tests.dll" id="ce8d9085-257d-d7d4-fda4-d09aafc89d94">
+      <Execution id="03d0fe68-09ed-4805-b82a-e2fdf50fc13e" />
+      <TestMethod codeBase="/Users/adamzaplatilek/GitHub/MapMe/MapMe/MapMe.Tests/bin/Release/net10.0/MapMe.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="MapMe.Tests.InMemoryRepositoryTests" name="UserProfile_InMemory_Upsert_And_Get" />
+    </UnitTest>
+    <UnitTest name="MapMe.Tests.ErrorHandlingIntegrationTests.DateMark_Query_WithExtremelyLongQueryString_HandlesGracefully" storage="/users/adamzaplatilek/github/mapme/mapme/mapme.tests/bin/release/net10.0/mapme.tests.dll" id="69967aec-93ea-5719-8f75-1adce4a52868">
+      <Execution id="f1d64089-fe95-4187-bf63-5d779a9a4782" />
+      <TestMethod codeBase="/Users/adamzaplatilek/GitHub/MapMe/MapMe/MapMe.Tests/bin/Release/net10.0/MapMe.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="MapMe.Tests.ErrorHandlingIntegrationTests" name="DateMark_Query_WithExtremelyLongQueryString_HandlesGracefully" />
+    </UnitTest>
+    <UnitTest name="MapMe.Tests.ApiIntegrationTests.DateMark_UpdateExisting_ModifiesCorrectly" storage="/users/adamzaplatilek/github/mapme/mapme/mapme.tests/bin/release/net10.0/mapme.tests.dll" id="9d132666-049a-2cef-9037-d675521ac78d">
+      <Execution id="0aee3ab3-385c-4c0b-a9fe-16e0ec7aca44" />
+      <TestMethod codeBase="/Users/adamzaplatilek/GitHub/MapMe/MapMe/MapMe.Tests/bin/Release/net10.0/MapMe.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="MapMe.Tests.ApiIntegrationTests" name="DateMark_UpdateExisting_ModifiesCorrectly" />
+    </UnitTest>
+    <UnitTest name="MapMe.Tests.ApiIntegrationTests.DateMark_VisibilitySettings_AreRespected(visibility: &quot;public&quot;)" storage="/users/adamzaplatilek/github/mapme/mapme/mapme.tests/bin/release/net10.0/mapme.tests.dll" id="f84d9dcb-bf3a-2eb4-ab08-f117a88ef601">
+      <Execution id="4e6f5c01-734a-447d-9ce6-54dd4b71b64b" />
+      <TestMethod codeBase="/Users/adamzaplatilek/GitHub/MapMe/MapMe/MapMe.Tests/bin/Release/net10.0/MapMe.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="MapMe.Tests.ApiIntegrationTests" name="DateMark_VisibilitySettings_AreRespected" />
+    </UnitTest>
+    <UnitTest name="MapMe.Tests.ErrorHandlingIntegrationTests.Profile_Create_WithMalformedJson_ReturnsBadRequest" storage="/users/adamzaplatilek/github/mapme/mapme/mapme.tests/bin/release/net10.0/mapme.tests.dll" id="01e8d627-4fef-47ec-1699-619ca36cdd21">
+      <Execution id="14b3803b-ab66-4d1f-99a9-f0f93ee716c0" />
+      <TestMethod codeBase="/Users/adamzaplatilek/GitHub/MapMe/MapMe/MapMe.Tests/bin/Release/net10.0/MapMe.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="MapMe.Tests.ErrorHandlingIntegrationTests" name="Profile_Create_WithMalformedJson_ReturnsBadRequest" />
+    </UnitTest>
+    <UnitTest name="MapMe.Tests.ErrorHandlingIntegrationTests.DateMark_Query_WithInvalidQueryParameters_HandlesGracefully" storage="/users/adamzaplatilek/github/mapme/mapme/mapme.tests/bin/release/net10.0/mapme.tests.dll" id="bd4eda91-769c-68a3-3336-24c5260e11cc">
+      <Execution id="9b380964-86dc-4a20-9a98-b851ad9fd0e6" />
+      <TestMethod codeBase="/Users/adamzaplatilek/GitHub/MapMe/MapMe/MapMe.Tests/bin/Release/net10.0/MapMe.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="MapMe.Tests.ErrorHandlingIntegrationTests" name="DateMark_Query_WithInvalidQueryParameters_HandlesGracefully" />
+    </UnitTest>
+    <UnitTest name="MapMe.Tests.ErrorHandlingIntegrationTests.Profile_Create_WithSpecialCharacters_HandlesCorrectly" storage="/users/adamzaplatilek/github/mapme/mapme/mapme.tests/bin/release/net10.0/mapme.tests.dll" id="3fd022d9-ba8a-3de7-f381-3d8f18ee1d21">
+      <Execution id="dd326db9-58b8-4823-b7e3-6fceb1060fda" />
+      <TestMethod codeBase="/Users/adamzaplatilek/GitHub/MapMe/MapMe/MapMe.Tests/bin/Release/net10.0/MapMe.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="MapMe.Tests.ErrorHandlingIntegrationTests" name="Profile_Create_WithSpecialCharacters_HandlesCorrectly" />
+    </UnitTest>
+    <UnitTest name="MapMe.Tests.ExtendedApiIntegrationTests.DateMark_EmptyArraysAndNulls_HandlesCorrectly" storage="/users/adamzaplatilek/github/mapme/mapme/mapme.tests/bin/release/net10.0/mapme.tests.dll" id="3d3a8ff1-f9b0-d995-6e04-6725082233ab">
+      <Execution id="4378ba85-083e-4d9f-96af-fb2cec721fb5" />
+      <TestMethod codeBase="/Users/adamzaplatilek/GitHub/MapMe/MapMe/MapMe.Tests/bin/Release/net10.0/MapMe.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="MapMe.Tests.ExtendedApiIntegrationTests" name="DateMark_EmptyArraysAndNulls_HandlesCorrectly" />
+    </UnitTest>
+    <UnitTest name="MapMe.Tests.ErrorHandlingIntegrationTests.Profile_UnsupportedHttpMethods_ReturnMethodNotAllowed" storage="/users/adamzaplatilek/github/mapme/mapme/mapme.tests/bin/release/net10.0/mapme.tests.dll" id="392b8f8a-ffa2-54af-3387-d04bba9bfdc1">
+      <Execution id="5580a71c-6651-4f19-8aa9-dfa3f563badd" />
+      <TestMethod codeBase="/Users/adamzaplatilek/GitHub/MapMe/MapMe/MapMe.Tests/bin/Release/net10.0/MapMe.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="MapMe.Tests.ErrorHandlingIntegrationTests" name="Profile_UnsupportedHttpMethods_ReturnMethodNotAllowed" />
+    </UnitTest>
+    <UnitTest name="MapMe.Tests.ApiIntegrationTests.DateMark_VisibilitySettings_AreRespected(visibility: &quot;friends&quot;)" storage="/users/adamzaplatilek/github/mapme/mapme/mapme.tests/bin/release/net10.0/mapme.tests.dll" id="a0564c8c-f64f-d0b7-a0c6-ee73b903133d">
+      <Execution id="e990fab7-2ce8-4911-b6ed-1154022e26fe" />
+      <TestMethod codeBase="/Users/adamzaplatilek/GitHub/MapMe/MapMe/MapMe.Tests/bin/Release/net10.0/MapMe.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="MapMe.Tests.ApiIntegrationTests" name="DateMark_VisibilitySettings_AreRespected" />
+    </UnitTest>
+    <UnitTest name="MapMe.Tests.InMemoryRepositoryTests.DateMarks_InMemory_Filtering_Works" storage="/users/adamzaplatilek/github/mapme/mapme/mapme.tests/bin/release/net10.0/mapme.tests.dll" id="e73246bd-9452-0519-22d8-5ecd6b6f4191">
+      <Execution id="0128b022-17a2-4284-a348-e95cf2fb91e9" />
+      <TestMethod codeBase="/Users/adamzaplatilek/GitHub/MapMe/MapMe/MapMe.Tests/bin/Release/net10.0/MapMe.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="MapMe.Tests.InMemoryRepositoryTests" name="DateMarks_InMemory_Filtering_Works" />
+    </UnitTest>
+    <UnitTest name="MapMe.Tests.ExtendedApiIntegrationTests.DateMark_FilteringCombinations_ReturnsCorrectResults" storage="/users/adamzaplatilek/github/mapme/mapme/mapme.tests/bin/release/net10.0/mapme.tests.dll" id="1f5b834a-1f40-8f0d-974a-558a28b46282">
+      <Execution id="4fb02ea7-7996-4a44-b750-2042c1f1b75c" />
+      <TestMethod codeBase="/Users/adamzaplatilek/GitHub/MapMe/MapMe/MapMe.Tests/bin/Release/net10.0/MapMe.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="MapMe.Tests.ExtendedApiIntegrationTests" name="DateMark_FilteringCombinations_ReturnsCorrectResults" />
+    </UnitTest>
+    <UnitTest name="MapMe.Tests.ErrorHandlingIntegrationTests.DateMark_Create_WithManyCategories_HandlesCorrectly" storage="/users/adamzaplatilek/github/mapme/mapme/mapme.tests/bin/release/net10.0/mapme.tests.dll" id="bcf44575-74ad-aa79-2f26-05e1de5d4e85">
+      <Execution id="f1b2ba57-7498-4255-b8c7-9beaa85fb827" />
+      <TestMethod codeBase="/Users/adamzaplatilek/GitHub/MapMe/MapMe/MapMe.Tests/bin/Release/net10.0/MapMe.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="MapMe.Tests.ErrorHandlingIntegrationTests" name="DateMark_Create_WithManyCategories_HandlesCorrectly" />
+    </UnitTest>
+    <UnitTest name="MapMe.Tests.NormalizationTests.ToNorm_Filters_Empty_And_Duplicates" storage="/users/adamzaplatilek/github/mapme/mapme/mapme.tests/bin/release/net10.0/mapme.tests.dll" id="10ba1ee7-a45b-ddd2-1f57-0e6bac1f2f13">
+      <Execution id="c70ffddc-16ae-4c0a-8ac2-50befb84a57f" />
+      <TestMethod codeBase="/Users/adamzaplatilek/GitHub/MapMe/MapMe/MapMe.Tests/bin/Release/net10.0/MapMe.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="MapMe.Tests.NormalizationTests" name="ToNorm_Filters_Empty_And_Duplicates" />
+    </UnitTest>
+    <UnitTest name="MapMe.Tests.ErrorHandlingIntegrationTests.DateMark_Create_WithBoundaryCoordinates_HandlesCorrectly" storage="/users/adamzaplatilek/github/mapme/mapme/mapme.tests/bin/release/net10.0/mapme.tests.dll" id="a07e639f-bee7-5859-675e-406eb66d6852">
+      <Execution id="06f9fb86-6188-4ed7-bf98-d914ee95449d" />
+      <TestMethod codeBase="/Users/adamzaplatilek/GitHub/MapMe/MapMe/MapMe.Tests/bin/Release/net10.0/MapMe.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="MapMe.Tests.ErrorHandlingIntegrationTests" name="DateMark_Create_WithBoundaryCoordinates_HandlesCorrectly" />
+    </UnitTest>
+    <UnitTest name="MapMe.Tests.ApiIntegrationTests.DateMark_FilteringByDateRange_ReturnsCorrectResults" storage="/users/adamzaplatilek/github/mapme/mapme/mapme.tests/bin/release/net10.0/mapme.tests.dll" id="c10ecd8f-58d2-d7bc-522c-7ee6260aa183">
+      <Execution id="665a8a4f-a16a-4bff-a168-fb23ed86116c" />
+      <TestMethod codeBase="/Users/adamzaplatilek/GitHub/MapMe/MapMe/MapMe.Tests/bin/Release/net10.0/MapMe.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="MapMe.Tests.ApiIntegrationTests" name="DateMark_FilteringByDateRange_ReturnsCorrectResults" />
+    </UnitTest>
+    <UnitTest name="MapMe.Tests.ErrorHandlingIntegrationTests.DateMark_UnsupportedHttpMethods_ReturnMethodNotAllowed" storage="/users/adamzaplatilek/github/mapme/mapme/mapme.tests/bin/release/net10.0/mapme.tests.dll" id="bfa49886-b8c5-6319-98bf-738ba44816dc">
+      <Execution id="12713cc5-e57e-4a23-b82f-024dd0c14dd8" />
+      <TestMethod codeBase="/Users/adamzaplatilek/GitHub/MapMe/MapMe/MapMe.Tests/bin/Release/net10.0/MapMe.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="MapMe.Tests.ErrorHandlingIntegrationTests" name="DateMark_UnsupportedHttpMethods_ReturnMethodNotAllowed" />
+    </UnitTest>
+    <UnitTest name="MapMe.Tests.ErrorHandlingIntegrationTests.DateMark_Create_WithMalformedJson_ReturnsBadRequest" storage="/users/adamzaplatilek/github/mapme/mapme/mapme.tests/bin/release/net10.0/mapme.tests.dll" id="c30b884c-9a00-2f15-ba4b-f26e812a36f7">
+      <Execution id="7da8f959-4c81-4010-a591-435818dec463" />
+      <TestMethod codeBase="/Users/adamzaplatilek/GitHub/MapMe/MapMe/MapMe.Tests/bin/Release/net10.0/MapMe.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="MapMe.Tests.ErrorHandlingIntegrationTests" name="DateMark_Create_WithMalformedJson_ReturnsBadRequest" />
+    </UnitTest>
+    <UnitTest name="MapMe.Tests.ExtendedApiIntegrationTests.ConcurrentOperations_MultipleProfileCreation_HandlesCorrectly" storage="/users/adamzaplatilek/github/mapme/mapme/mapme.tests/bin/release/net10.0/mapme.tests.dll" id="564f5290-a42e-5e74-ba0a-ed0fd97e4c11">
+      <Execution id="eda5a4da-99ea-41ea-8b17-1d22535c6ada" />
+      <TestMethod codeBase="/Users/adamzaplatilek/GitHub/MapMe/MapMe/MapMe.Tests/bin/Release/net10.0/MapMe.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="MapMe.Tests.ExtendedApiIntegrationTests" name="ConcurrentOperations_MultipleProfileCreation_HandlesCorrectly" />
+    </UnitTest>
+    <UnitTest name="MapMe.Tests.ExtendedApiIntegrationTests.DateMark_DateRangeEdgeCases_HandlesCorrectly" storage="/users/adamzaplatilek/github/mapme/mapme/mapme.tests/bin/release/net10.0/mapme.tests.dll" id="17c53a49-97e6-d8f8-98e3-07d519c83924">
+      <Execution id="1dfe653c-ef70-4007-b827-88487ff4c2c6" />
+      <TestMethod codeBase="/Users/adamzaplatilek/GitHub/MapMe/MapMe/MapMe.Tests/bin/Release/net10.0/MapMe.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="MapMe.Tests.ExtendedApiIntegrationTests" name="DateMark_DateRangeEdgeCases_HandlesCorrectly" />
+    </UnitTest>
+    <UnitTest name="MapMe.Tests.ErrorHandlingIntegrationTests.Profile_Create_WithExcessivelyLongStrings_HandlesGracefully" storage="/users/adamzaplatilek/github/mapme/mapme/mapme.tests/bin/release/net10.0/mapme.tests.dll" id="3632c349-dd2f-3e90-723d-d46b906a7814">
+      <Execution id="90298e94-6c51-4e1a-9014-73988c583ebe" />
+      <TestMethod codeBase="/Users/adamzaplatilek/GitHub/MapMe/MapMe/MapMe.Tests/bin/Release/net10.0/MapMe.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="MapMe.Tests.ErrorHandlingIntegrationTests" name="Profile_Create_WithExcessivelyLongStrings_HandlesGracefully" />
+    </UnitTest>
+    <UnitTest name="MapMe.Tests.ApiIntegrationTests.Profile_NotFound_Returns404" storage="/users/adamzaplatilek/github/mapme/mapme/mapme.tests/bin/release/net10.0/mapme.tests.dll" id="f55b9f59-f089-88c0-fc75-1f51fa3c7bc5">
+      <Execution id="c9976b4a-4037-419a-a189-1cdbed1be288" />
+      <TestMethod codeBase="/Users/adamzaplatilek/GitHub/MapMe/MapMe/MapMe.Tests/bin/Release/net10.0/MapMe.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="MapMe.Tests.ApiIntegrationTests" name="Profile_NotFound_Returns404" />
+    </UnitTest>
+    <UnitTest name="MapMe.Tests.ExtendedApiIntegrationTests.MapDateMarks_Query_ReturnsEmptyForPrototype" storage="/users/adamzaplatilek/github/mapme/mapme/mapme.tests/bin/release/net10.0/mapme.tests.dll" id="5defb1fc-8974-0a28-9d03-1ee89a1e4938">
+      <Execution id="fc5808f6-7a19-49cf-8b49-399861032459" />
+      <TestMethod codeBase="/Users/adamzaplatilek/GitHub/MapMe/MapMe/MapMe.Tests/bin/Release/net10.0/MapMe.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="MapMe.Tests.ExtendedApiIntegrationTests" name="MapDateMarks_Query_ReturnsEmptyForPrototype" />
+    </UnitTest>
+    <UnitTest name="MapMe.Tests.ExtendedApiIntegrationTests.Profile_Create_WithInvalidData_ReturnsBadRequest" storage="/users/adamzaplatilek/github/mapme/mapme/mapme.tests/bin/release/net10.0/mapme.tests.dll" id="a349e94b-0008-2e34-76f7-09d9fd6da033">
+      <Execution id="f11148a7-7d24-497e-ada2-bbccf78fab00" />
+      <TestMethod codeBase="/Users/adamzaplatilek/GitHub/MapMe/MapMe/MapMe.Tests/bin/Release/net10.0/MapMe.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="MapMe.Tests.ExtendedApiIntegrationTests" name="Profile_Create_WithInvalidData_ReturnsBadRequest" />
+    </UnitTest>
+    <UnitTest name="MapMe.Tests.ApiIntegrationTests.DateMark_FilteringByCategories_ReturnsCorrectResults" storage="/users/adamzaplatilek/github/mapme/mapme/mapme.tests/bin/release/net10.0/mapme.tests.dll" id="4a9ff9b6-10c5-9acd-4eb9-cab6a86f7b1e">
+      <Execution id="0e420de0-2312-42cc-9c89-984ebcae4fcc" />
+      <TestMethod codeBase="/Users/adamzaplatilek/GitHub/MapMe/MapMe/MapMe.Tests/bin/Release/net10.0/MapMe.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="MapMe.Tests.ApiIntegrationTests" name="DateMark_FilteringByCategories_ReturnsCorrectResults" />
+    </UnitTest>
+    <UnitTest name="MapMe.Tests.ErrorHandlingIntegrationTests.Profile_Create_WithManyPhotos_HandlesCorrectly" storage="/users/adamzaplatilek/github/mapme/mapme/mapme.tests/bin/release/net10.0/mapme.tests.dll" id="6bdd0e70-ab80-e944-5486-35acf451dd25">
+      <Execution id="80e0c8ac-8c75-4a03-a451-7d2de597f4c6" />
+      <TestMethod codeBase="/Users/adamzaplatilek/GitHub/MapMe/MapMe/MapMe.Tests/bin/Release/net10.0/MapMe.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="MapMe.Tests.ErrorHandlingIntegrationTests" name="Profile_Create_WithManyPhotos_HandlesCorrectly" />
+    </UnitTest>
+    <UnitTest name="MapMe.Tests.ApiIntegrationTests.DateMarks_EmptyUser_ReturnsEmptyList" storage="/users/adamzaplatilek/github/mapme/mapme/mapme.tests/bin/release/net10.0/mapme.tests.dll" id="918d69b8-0567-3b62-1b94-40477ed61acc">
+      <Execution id="ae07fb69-1fd9-429e-a166-fb86754cad64" />
+      <TestMethod codeBase="/Users/adamzaplatilek/GitHub/MapMe/MapMe/MapMe.Tests/bin/Release/net10.0/MapMe.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="MapMe.Tests.ApiIntegrationTests" name="DateMarks_EmptyUser_ReturnsEmptyList" />
+    </UnitTest>
+  </TestDefinitions>
+  <TestEntries>
+    <TestEntry testId="a467f50e-8928-ce92-dc48-be7f3d913283" executionId="0e6047d6-4625-4f8a-b7bf-fc022082e93c" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="10ba1ee7-a45b-ddd2-1f57-0e6bac1f2f13" executionId="c70ffddc-16ae-4c0a-8ac2-50befb84a57f" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="5defb1fc-8974-0a28-9d03-1ee89a1e4938" executionId="fc5808f6-7a19-49cf-8b49-399861032459" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="b6bf0b68-ca39-395d-a92c-70d15117ba62" executionId="413ede7e-6047-40ff-a690-eacb6fde9485" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="4a9ff9b6-10c5-9acd-4eb9-cab6a86f7b1e" executionId="0e420de0-2312-42cc-9c89-984ebcae4fcc" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="f55b9f59-f089-88c0-fc75-1f51fa3c7bc5" executionId="c9976b4a-4037-419a-a189-1cdbed1be288" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="a349e94b-0008-2e34-76f7-09d9fd6da033" executionId="f11148a7-7d24-497e-ada2-bbccf78fab00" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="e73246bd-9452-0519-22d8-5ecd6b6f4191" executionId="0128b022-17a2-4284-a348-e95cf2fb91e9" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="ce8d9085-257d-d7d4-fda4-d09aafc89d94" executionId="03d0fe68-09ed-4805-b82a-e2fdf50fc13e" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="bfa49886-b8c5-6319-98bf-738ba44816dc" executionId="12713cc5-e57e-4a23-b82f-024dd0c14dd8" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="01e8d627-4fef-47ec-1699-619ca36cdd21" executionId="14b3803b-ab66-4d1f-99a9-f0f93ee716c0" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="6bdd0e70-ab80-e944-5486-35acf451dd25" executionId="80e0c8ac-8c75-4a03-a451-7d2de597f4c6" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="918d69b8-0567-3b62-1b94-40477ed61acc" executionId="ae07fb69-1fd9-429e-a166-fb86754cad64" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="bcf44575-74ad-aa79-2f26-05e1de5d4e85" executionId="f1b2ba57-7498-4255-b8c7-9beaa85fb827" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="a07e639f-bee7-5859-675e-406eb66d6852" executionId="06f9fb86-6188-4ed7-bf98-d914ee95449d" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="2e14b324-12b9-253f-cfa7-357966005c0c" executionId="969d7dd5-83e6-401e-867f-d4af304d20e1" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="69967aec-93ea-5719-8f75-1adce4a52868" executionId="f1d64089-fe95-4187-bf63-5d779a9a4782" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="e1fcb762-7e2e-ba33-1443-92e761f380e5" executionId="42b4125d-6d52-4aee-b136-3d580470823f" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="9d132666-049a-2cef-9037-d675521ac78d" executionId="0aee3ab3-385c-4c0b-a9fe-16e0ec7aca44" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="de8bf758-b03b-e20e-69c9-ef05dfd4fb46" executionId="b4c9ae2c-5908-4243-b8e8-6c4a65230073" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="55b92aa8-a493-9f3f-6289-6a5413f947d4" executionId="9bed6fe3-05ac-4242-be37-768b3dfe78d5" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="7d3500f9-fe15-a5db-18f7-7485f3ebb427" executionId="546c8003-524b-4553-98b6-670e3abf518b" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="20d3ef96-1ec5-f124-07fc-2c97b341c609" executionId="44a7eabf-f376-40a1-a7d6-3a67747626de" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="392b8f8a-ffa2-54af-3387-d04bba9bfdc1" executionId="5580a71c-6651-4f19-8aa9-dfa3f563badd" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="c10ecd8f-58d2-d7bc-522c-7ee6260aa183" executionId="665a8a4f-a16a-4bff-a168-fb23ed86116c" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="3d3a8ff1-f9b0-d995-6e04-6725082233ab" executionId="4378ba85-083e-4d9f-96af-fb2cec721fb5" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="17c53a49-97e6-d8f8-98e3-07d519c83924" executionId="1dfe653c-ef70-4007-b827-88487ff4c2c6" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="a0564c8c-f64f-d0b7-a0c6-ee73b903133d" executionId="e990fab7-2ce8-4911-b6ed-1154022e26fe" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="1f5b834a-1f40-8f0d-974a-558a28b46282" executionId="4fb02ea7-7996-4a44-b750-2042c1f1b75c" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="15a69689-ac9f-bd90-52e0-f559c0b50dc3" executionId="fbb8408a-4e05-44e1-8492-cad477910884" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="c30b884c-9a00-2f15-ba4b-f26e812a36f7" executionId="7da8f959-4c81-4010-a591-435818dec463" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="3fd022d9-ba8a-3de7-f381-3d8f18ee1d21" executionId="dd326db9-58b8-4823-b7e3-6fceb1060fda" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="564f5290-a42e-5e74-ba0a-ed0fd97e4c11" executionId="eda5a4da-99ea-41ea-8b17-1d22535c6ada" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="3632c349-dd2f-3e90-723d-d46b906a7814" executionId="90298e94-6c51-4e1a-9014-73988c583ebe" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="f84d9dcb-bf3a-2eb4-ab08-f117a88ef601" executionId="4e6f5c01-734a-447d-9ce6-54dd4b71b64b" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="b13c62f0-8540-b317-0628-868ca8f9ca58" executionId="48e82304-9577-44b2-a5f8-73c10885a7ea" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="bd4eda91-769c-68a3-3336-24c5260e11cc" executionId="9b380964-86dc-4a20-9a98-b851ad9fd0e6" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="43a57797-e8d6-4267-fa5a-c63a5f5d9b4e" executionId="139cf1b7-e3a5-4448-bc9f-2f70385873dd" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+  </TestEntries>
+  <TestLists>
+    <TestList name="Results Not in a List" id="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestList name="All Loaded Results" id="19431567-8539-422a-85d7-44ee4e166bda" />
+  </TestLists>
+  <ResultSummary outcome="Completed">
+    <Counters total="38" executed="38" passed="38" failed="0" error="0" timeout="0" aborted="0" inconclusive="0" passedButRunAborted="0" notRunnable="0" notExecuted="0" disconnected="0" warning="0" completed="0" inProgress="0" pending="0" />
+    <Output>
+      <StdOut>[xUnit.net 00:00:00.00] xUnit.net VSTest Adapter v2.8.1+ce9211e970 (64-bit .NET 10.0.0-preview.6.25358.103)
+[xUnit.net 00:00:00.03]   Discovering: MapMe.Tests
+[xUnit.net 00:00:00.06]   Discovered:  MapMe.Tests
+[xUnit.net 00:00:00.06]   Starting:    MapMe.Tests
+warn: Microsoft.AspNetCore.HttpsPolicy.HttpsRedirectionMiddleware[3]
+      Failed to determine the https port for redirect.
+warn: Microsoft.AspNetCore.HttpsPolicy.HttpsRedirectionMiddleware[3]
+      Failed to determine the https port for redirect.
+warn: Microsoft.AspNetCore.HttpsPolicy.HttpsRedirectionMiddleware[3]
+      Failed to determine the https port for redirect.
+warn: Microsoft.AspNetCore.HttpsPolicy.HttpsRedirectionMiddleware[3]
+      Failed to determine the https port for redirect.
+warn: Microsoft.AspNetCore.HttpsPolicy.HttpsRedirectionMiddleware[3]
+      Failed to determine the https port for redirect.
+warn: Microsoft.AspNetCore.HttpsPolicy.HttpsRedirectionMiddleware[3]
+      Failed to determine the https port for redirect.
+warn: Microsoft.AspNetCore.HttpsPolicy.HttpsRedirectionMiddleware[3]
+      Failed to determine the https port for redirect.
+warn: Microsoft.AspNetCore.HttpsPolicy.HttpsRedirectionMiddleware[3]
+      Failed to determine the https port for redirect.
+warn: Microsoft.AspNetCore.HttpsPolicy.HttpsRedirectionMiddleware[3]
+      Failed to determine the https port for redirect.
+warn: Microsoft.AspNetCore.HttpsPolicy.HttpsRedirectionMiddleware[3]
+      Failed to determine the https port for redirect.
+warn: Microsoft.AspNetCore.HttpsPolicy.HttpsRedirectionMiddleware[3]
+      Failed to determine the https port for redirect.
+fail: Microsoft.AspNetCore.Diagnostics.DeveloperExceptionPageMiddleware[1]
+      An unhandled exception has occurred while executing the request.
+      Microsoft.AspNetCore.Http.BadHttpRequestException: Failed to read parameter "UpsertDateMarkRequest req" from the request body as JSON.
+       ---&gt; System.Text.Json.JsonException: The JSON value could not be converted to MapMe.DTOs.UpsertDateMarkRequest. Path: $.Latitude | LineNumber: 0 | BytePositionInLine: 42.
+       ---&gt; System.FormatException: Either the JSON value is not in a supported format, or is out of bounds for a Double.
+         at System.Text.Json.ThrowHelper.ThrowFormatException(NumericType numericType)
+         at System.Text.Json.Utf8JsonReader.GetDoubleWithQuotes()
+         at System.Text.Json.Serialization.JsonConverter`1.TryRead(Utf8JsonReader&amp; reader, Type typeToConvert, JsonSerializerOptions options, ReadStack&amp; state, T&amp; value, Boolean&amp; isPopulatedValue)
+         at System.Text.Json.Serialization.JsonConverter`1.TryReadAsObject(Utf8JsonReader&amp; reader, Type typeToConvert, JsonSerializerOptions options, ReadStack&amp; state, Object&amp; value)
+         at System.Text.Json.Serialization.Converters.LargeObjectWithParameterizedConstructorConverter`1.ReadAndCacheConstructorArgument(ReadStack&amp; state, Utf8JsonReader&amp; reader, JsonParameterInfo jsonParameterInfo)
+         at System.Text.Json.Serialization.Converters.ObjectWithParameterizedConstructorConverter`1.ReadConstructorArgumentsWithContinuation(ReadStack&amp; state, Utf8JsonReader&amp; reader, JsonSerializerOptions options)
+         at System.Text.Json.Serialization.Converters.ObjectWithParameterizedConstructorConverter`1.OnTryRead(Utf8JsonReader&amp; reader, Type typeToConvert, JsonSerializerOptions options, ReadStack&amp; state, T&amp; value)
+         at System.Text.Json.Serialization.JsonConverter`1.TryRead(Utf8JsonReader&amp; reader, Type typeToConvert, JsonSerializerOptions options, ReadStack&amp; state, T&amp; value, Boolean&amp; isPopulatedValue)
+         at System.Text.Json.Serialization.JsonConverter`1.ReadCore(Utf8JsonReader&amp; reader, T&amp; value, JsonSerializerOptions options, ReadStack&amp; state)
+         --- End of inner exception stack trace ---
+         at System.Text.Json.ThrowHelper.ReThrowWithPath(ReadStack&amp; state, Utf8JsonReader&amp; reader, Exception ex)
+         at System.Text.Json.Serialization.JsonConverter`1.ReadCore(Utf8JsonReader&amp; reader, T&amp; value, JsonSerializerOptions options, ReadStack&amp; state)
+         at System.Text.Json.Serialization.Metadata.JsonTypeInfo`1.ContinueDeserialize(ReadBufferState&amp; bufferState, JsonReaderState&amp; jsonReaderState, ReadStack&amp; readStack, T&amp; value)
+         at System.Text.Json.Serialization.Metadata.JsonTypeInfo`1.DeserializeAsync(Stream utf8Json, CancellationToken cancellationToken)
+         at System.Text.Json.Serialization.Metadata.JsonTypeInfo`1.DeserializeAsObjectAsync(Stream utf8Json, CancellationToken cancellationToken)
+         at Microsoft.AspNetCore.Http.HttpRequestJsonExtensions.ReadFromJsonAsync(HttpRequest request, JsonTypeInfo jsonTypeInfo, CancellationToken cancellationToken)
+         at Microsoft.AspNetCore.Http.HttpRequestJsonExtensions.ReadFromJsonAsync(HttpRequest request, JsonTypeInfo jsonTypeInfo, CancellationToken cancellationToken)
+         at Microsoft.AspNetCore.Http.RequestDelegateFactory.&lt;HandleRequestBodyAndCompileRequestDelegateForJson&gt;g__TryReadBodyAsync|102_0(HttpContext httpContext, Type bodyType, String parameterTypeName, String parameterName, Boolean allowEmptyRequestBody, Boolean throwOnBadRequest, JsonTypeInfo jsonTypeInfo)
+         --- End of inner exception stack trace ---
+         at Microsoft.AspNetCore.Http.RequestDelegateFactory.Log.InvalidJsonRequestBody(HttpContext httpContext, String parameterTypeName, String parameterName, Exception exception, Boolean shouldThrow)
+         at Microsoft.AspNetCore.Http.RequestDelegateFactory.&lt;HandleRequestBodyAndCompileRequestDelegateForJson&gt;g__TryReadBodyAsync|102_0(HttpContext httpContext, Type bodyType, String parameterTypeName, String parameterName, Boolean allowEmptyRequestBody, Boolean throwOnBadRequest, JsonTypeInfo jsonTypeInfo)
+         at Microsoft.AspNetCore.Http.RequestDelegateFactory.&lt;&gt;c__DisplayClass102_2.&lt;&lt;HandleRequestBodyAndCompileRequestDelegateForJson&gt;b__2&gt;d.MoveNext()
+      --- End of stack trace from previous location ---
+         at Microsoft.AspNetCore.Diagnostics.StatusCodePagesMiddleware.Invoke(HttpContext context)
+         at Microsoft.AspNetCore.Authorization.AuthorizationMiddleware.Invoke(HttpContext context)
+         at Microsoft.AspNetCore.Diagnostics.DeveloperExceptionPageMiddlewareImpl.Invoke(HttpContext context)
+fail: Microsoft.AspNetCore.Diagnostics.DeveloperExceptionPageMiddleware[1]
+      An unhandled exception has occurred while executing the request.
+      Microsoft.AspNetCore.Http.BadHttpRequestException: Failed to read parameter "UpsertDateMarkRequest req" from the request body as JSON.
+       ---&gt; System.Text.Json.JsonException: '}' is an invalid start of a value. Path: $.Longitude | LineNumber: 0 | BytePositionInLine: 47.
+       ---&gt; System.Text.Json.JsonReaderException: '}' is an invalid start of a value. LineNumber: 0 | BytePositionInLine: 47.
+         at System.Text.Json.ThrowHelper.ThrowJsonReaderException(Utf8JsonReader&amp; json, ExceptionResource resource, Byte nextByte, ReadOnlySpan`1 bytes)
+         at System.Text.Json.Utf8JsonReader.ConsumeValue(Byte marker)
+         at System.Text.Json.Utf8JsonReader.ReadSingleSegment()
+         at System.Text.Json.Utf8JsonReader.Read()
+         at System.Text.Json.Serialization.Converters.ObjectWithParameterizedConstructorConverter`1.ReadConstructorArgumentsWithContinuation(ReadStack&amp; state, Utf8JsonReader&amp; reader, JsonSerializerOptions options)
+         at System.Text.Json.Serialization.Converters.ObjectWithParameterizedConstructorConverter`1.OnTryRead(Utf8JsonReader&amp; reader, Type typeToConvert, JsonSerializerOptions options, ReadStack&amp; state, T&amp; value)
+         at System.Text.Json.Serialization.JsonConverter`1.TryRead(Utf8JsonReader&amp; reader, Type typeToConvert, JsonSerializerOptions options, ReadStack&amp; state, T&amp; value, Boolean&amp; isPopulatedValue)
+         at System.Text.Json.Serialization.JsonConverter`1.ReadCore(Utf8JsonReader&amp; reader, T&amp; value, JsonSerializerOptions options, ReadStack&amp; state)
+         --- End of inner exception stack trace ---
+         at System.Text.Json.ThrowHelper.ReThrowWithPath(ReadStack&amp; state, JsonReaderException ex)
+         at System.Text.Json.Serialization.JsonConverter`1.ReadCore(Utf8JsonReader&amp; reader, T&amp; value, JsonSerializerOptions options, ReadStack&amp; state)
+         at System.Text.Json.Serialization.Metadata.JsonTypeInfo`1.ContinueDeserialize(ReadBufferState&amp; bufferState, JsonReaderState&amp; jsonReaderState, ReadStack&amp; readStack, T&amp; value)
+         at System.Text.Json.Serialization.Metadata.JsonTypeInfo`1.DeserializeAsync(Stream utf8Json, CancellationToken cancellationToken)
+         at System.Text.Json.Serialization.Metadata.JsonTypeInfo`1.DeserializeAsObjectAsync(Stream utf8Json, CancellationToken cancellationToken)
+         at Microsoft.AspNetCore.Http.HttpRequestJsonExtensions.ReadFromJsonAsync(HttpRequest request, JsonTypeInfo jsonTypeInfo, CancellationToken cancellationToken)
+         at Microsoft.AspNetCore.Http.HttpRequestJsonExtensions.ReadFromJsonAsync(HttpRequest request, JsonTypeInfo jsonTypeInfo, CancellationToken cancellationToken)
+         at Microsoft.AspNetCore.Http.RequestDelegateFactory.&lt;HandleRequestBodyAndCompileRequestDelegateForJson&gt;g__TryReadBodyAsync|102_0(HttpContext httpContext, Type bodyType, String parameterTypeName, String parameterName, Boolean allowEmptyRequestBody, Boolean throwOnBadRequest, JsonTypeInfo jsonTypeInfo)
+         --- End of inner exception stack trace ---
+         at Microsoft.AspNetCore.Http.RequestDelegateFactory.Log.InvalidJsonRequestBody(HttpContext httpContext, String parameterTypeName, String parameterName, Exception exception, Boolean shouldThrow)
+         at Microsoft.AspNetCore.Http.RequestDelegateFactory.&lt;HandleRequestBodyAndCompileRequestDelegateForJson&gt;g__TryReadBodyAsync|102_0(HttpContext httpContext, Type bodyType, String parameterTypeName, String parameterName, Boolean allowEmptyRequestBody, Boolean throwOnBadRequest, JsonTypeInfo jsonTypeInfo)
+         at Microsoft.AspNetCore.Http.RequestDelegateFactory.&lt;&gt;c__DisplayClass102_2.&lt;&lt;HandleRequestBodyAndCompileRequestDelegateForJson&gt;b__2&gt;d.MoveNext()
+      --- End of stack trace from previous location ---
+         at Microsoft.AspNetCore.Diagnostics.StatusCodePagesMiddleware.Invoke(HttpContext context)
+         at Microsoft.AspNetCore.Authorization.AuthorizationMiddleware.Invoke(HttpContext context)
+         at Microsoft.AspNetCore.Diagnostics.DeveloperExceptionPageMiddlewareImpl.Invoke(HttpContext context)
+fail: Microsoft.AspNetCore.Diagnostics.DeveloperExceptionPageMiddleware[1]
+      An unhandled exception has occurred while executing the request.
+      Microsoft.AspNetCore.Http.BadHttpRequestException: Failed to read parameter "UpsertDateMarkRequest req" from the request body as JSON.
+       ---&gt; System.Text.Json.JsonException: The JSON value could not be converted to System.Collections.Generic.IReadOnlyList`1[System.String]. Path: $.Categories | LineNumber: 0 | BytePositionInLine: 44.
+         at System.Text.Json.ThrowHelper.ThrowJsonException_DeserializeUnableToConvertValue(Type propertyType)
+         at System.Text.Json.Serialization.JsonCollectionConverter`2.OnTryRead(Utf8JsonReader&amp; reader, Type typeToConvert, JsonSerializerOptions options, ReadStack&amp; state, TCollection&amp; value)
+         at System.Text.Json.Serialization.JsonConverter`1.TryRead(Utf8JsonReader&amp; reader, Type typeToConvert, JsonSerializerOptions options, ReadStack&amp; state, T&amp; value, Boolean&amp; isPopulatedValue)
+         at System.Text.Json.Serialization.JsonConverter`1.TryReadAsObject(Utf8JsonReader&amp; reader, Type typeToConvert, JsonSerializerOptions options, ReadStack&amp; state, Object&amp; value)
+         at System.Text.Json.Serialization.Converters.LargeObjectWithParameterizedConstructorConverter`1.ReadAndCacheConstructorArgument(ReadStack&amp; state, Utf8JsonReader&amp; reader, JsonParameterInfo jsonParameterInfo)
+         at System.Text.Json.Serialization.Converters.ObjectWithParameterizedConstructorConverter`1.ReadConstructorArgumentsWithContinuation(ReadStack&amp; state, Utf8JsonReader&amp; reader, JsonSerializerOptions options)
+         at System.Text.Json.Serialization.Converters.ObjectWithParameterizedConstructorConverter`1.OnTryRead(Utf8JsonReader&amp; reader, Type typeToConvert, JsonSerializerOptions options, ReadStack&amp; state, T&amp; value)
+         at System.Text.Json.Serialization.JsonConverter`1.TryRead(Utf8JsonReader&amp; reader, Type typeToConvert, JsonSerializerOptions options, ReadStack&amp; state, T&amp; value, Boolean&amp; isPopulatedValue)
+         at System.Text.Json.Serialization.JsonConverter`1.ReadCore(Utf8JsonReader&amp; reader, T&amp; value, JsonSerializerOptions options, ReadStack&amp; state)
+         at System.Text.Json.Serialization.Metadata.JsonTypeInfo`1.ContinueDeserialize(ReadBufferState&amp; bufferState, JsonReaderState&amp; jsonReaderState, ReadStack&amp; readStack, T&amp; value)
+         at System.Text.Json.Serialization.Metadata.JsonTypeInfo`1.DeserializeAsync(Stream utf8Json, CancellationToken cancellationToken)
+         at System.Text.Json.Serialization.Metadata.JsonTypeInfo`1.DeserializeAsObjectAsync(Stream utf8Json, CancellationToken cancellationToken)
+         at Microsoft.AspNetCore.Http.HttpRequestJsonExtensions.ReadFromJsonAsync(HttpRequest request, JsonTypeInfo jsonTypeInfo, CancellationToken cancellationToken)
+         at Microsoft.AspNetCore.Http.HttpRequestJsonExtensions.ReadFromJsonAsync(HttpRequest request, JsonTypeInfo jsonTypeInfo, CancellationToken cancellationToken)
+         at Microsoft.AspNetCore.Http.RequestDelegateFactory.&lt;HandleRequestBodyAndCompileRequestDelegateForJson&gt;g__TryReadBodyAsync|102_0(HttpContext httpContext, Type bodyType, String parameterTypeName, String parameterName, Boolean allowEmptyRequestBody, Boolean throwOnBadRequest, JsonTypeInfo jsonTypeInfo)
+         --- End of inner exception stack trace ---
+         at Microsoft.AspNetCore.Http.RequestDelegateFactory.Log.InvalidJsonRequestBody(HttpContext httpContext, String parameterTypeName, String parameterName, Exception exception, Boolean shouldThrow)
+         at Microsoft.AspNetCore.Http.RequestDelegateFactory.&lt;HandleRequestBodyAndCompileRequestDelegateForJson&gt;g__TryReadBodyAsync|102_0(HttpContext httpContext, Type bodyType, String parameterTypeName, String parameterName, Boolean allowEmptyRequestBody, Boolean throwOnBadRequest, JsonTypeInfo jsonTypeInfo)
+         at Microsoft.AspNetCore.Http.RequestDelegateFactory.&lt;&gt;c__DisplayClass102_2.&lt;&lt;HandleRequestBodyAndCompileRequestDelegateForJson&gt;b__2&gt;d.MoveNext()
+      --- End of stack trace from previous location ---
+         at Microsoft.AspNetCore.Diagnostics.StatusCodePagesMiddleware.Invoke(HttpContext context)
+         at Microsoft.AspNetCore.Authorization.AuthorizationMiddleware.Invoke(HttpContext context)
+         at Microsoft.AspNetCore.Diagnostics.DeveloperExceptionPageMiddlewareImpl.Invoke(HttpContext context)
+warn: Microsoft.AspNetCore.HttpsPolicy.HttpsRedirectionMiddleware[3]
+      Failed to determine the https port for redirect.
+warn: Microsoft.AspNetCore.HttpsPolicy.HttpsRedirectionMiddleware[3]
+      Failed to determine the https port for redirect.
+warn: Microsoft.AspNetCore.HttpsPolicy.HttpsRedirectionMiddleware[3]
+      Failed to determine the https port for redirect.
+warn: Microsoft.AspNetCore.HttpsPolicy.HttpsRedirectionMiddleware[3]
+      Failed to determine the https port for redirect.
+warn: Microsoft.AspNetCore.HttpsPolicy.HttpsRedirectionMiddleware[3]
+      Failed to determine the https port for redirect.
+warn: Microsoft.AspNetCore.HttpsPolicy.HttpsRedirectionMiddleware[3]
+      Failed to determine the https port for redirect.
+warn: Microsoft.AspNetCore.HttpsPolicy.HttpsRedirectionMiddleware[3]
+      Failed to determine the https port for redirect.
+warn: Microsoft.AspNetCore.HttpsPolicy.HttpsRedirectionMiddleware[3]
+      Failed to determine the https port for redirect.
+warn: Microsoft.AspNetCore.HttpsPolicy.HttpsRedirectionMiddleware[3]
+      Failed to determine the https port for redirect.
+warn: Microsoft.AspNetCore.HttpsPolicy.HttpsRedirectionMiddleware[3]
+      Failed to determine the https port for redirect.
+warn: Microsoft.AspNetCore.HttpsPolicy.HttpsRedirectionMiddleware[3]
+      Failed to determine the https port for redirect.
+warn: Microsoft.AspNetCore.HttpsPolicy.HttpsRedirectionMiddleware[3]
+      Failed to determine the https port for redirect.
+fail: Microsoft.AspNetCore.Diagnostics.DeveloperExceptionPageMiddleware[1]
+      An unhandled exception has occurred while executing the request.
+      Microsoft.AspNetCore.Http.BadHttpRequestException: Failed to bind parameter "Nullable&lt;DateOnly&gt; from" from "invalid-date".
+         at lambda_method2363(Closure, Object, HttpContext)
+         at Microsoft.AspNetCore.HttpsPolicy.HttpsRedirectionMiddleware.Invoke(HttpContext context)
+         at Microsoft.AspNetCore.Diagnostics.StatusCodePagesMiddleware.Invoke(HttpContext context)
+         at Microsoft.AspNetCore.Authorization.AuthorizationMiddleware.Invoke(HttpContext context)
+         at Microsoft.AspNetCore.Diagnostics.DeveloperExceptionPageMiddlewareImpl.Invoke(HttpContext context)
+fail: Microsoft.AspNetCore.Diagnostics.DeveloperExceptionPageMiddleware[1]
+      An unhandled exception has occurred while executing the request.
+      Microsoft.AspNetCore.Http.BadHttpRequestException: Failed to bind parameter "Nullable&lt;DateOnly&gt; to" from "not-a-date".
+         at lambda_method2363(Closure, Object, HttpContext)
+         at Microsoft.AspNetCore.HttpsPolicy.HttpsRedirectionMiddleware.Invoke(HttpContext context)
+         at Microsoft.AspNetCore.Diagnostics.StatusCodePagesMiddleware.Invoke(HttpContext context)
+         at Microsoft.AspNetCore.Authorization.AuthorizationMiddleware.Invoke(HttpContext context)
+         at Microsoft.AspNetCore.Diagnostics.DeveloperExceptionPageMiddlewareImpl.Invoke(HttpContext context)
+fail: Microsoft.AspNetCore.Diagnostics.DeveloperExceptionPageMiddleware[1]
+      An unhandled exception has occurred while executing the request.
+      Microsoft.AspNetCore.Http.BadHttpRequestException: Failed to bind parameter "Nullable&lt;DateOnly&gt; from" from "2025-13-01".
+         at lambda_method2363(Closure, Object, HttpContext)
+         at Microsoft.AspNetCore.HttpsPolicy.HttpsRedirectionMiddleware.Invoke(HttpContext context)
+         at Microsoft.AspNetCore.Diagnostics.StatusCodePagesMiddleware.Invoke(HttpContext context)
+         at Microsoft.AspNetCore.Authorization.AuthorizationMiddleware.Invoke(HttpContext context)
+         at Microsoft.AspNetCore.Diagnostics.DeveloperExceptionPageMiddlewareImpl.Invoke(HttpContext context)
+fail: Microsoft.AspNetCore.Diagnostics.DeveloperExceptionPageMiddleware[1]
+      An unhandled exception has occurred while executing the request.
+      Microsoft.AspNetCore.Http.BadHttpRequestException: Failed to bind parameter "Nullable&lt;DateOnly&gt; from" from "2025-02-30".
+         at lambda_method2363(Closure, Object, HttpContext)
+         at Microsoft.AspNetCore.HttpsPolicy.HttpsRedirectionMiddleware.Invoke(HttpContext context)
+         at Microsoft.AspNetCore.Diagnostics.StatusCodePagesMiddleware.Invoke(HttpContext context)
+         at Microsoft.AspNetCore.Authorization.AuthorizationMiddleware.Invoke(HttpContext context)
+         at Microsoft.AspNetCore.Diagnostics.DeveloperExceptionPageMiddlewareImpl.Invoke(HttpContext context)
+warn: Microsoft.AspNetCore.HttpsPolicy.HttpsRedirectionMiddleware[3]
+      Failed to determine the https port for redirect.
+warn: Microsoft.AspNetCore.HttpsPolicy.HttpsRedirectionMiddleware[3]
+      Failed to determine the https port for redirect.
+warn: Microsoft.AspNetCore.HttpsPolicy.HttpsRedirectionMiddleware[3]
+      Failed to determine the https port for redirect.
+warn: Microsoft.AspNetCore.HttpsPolicy.HttpsRedirectionMiddleware[3]
+      Failed to determine the https port for redirect.
+warn: Microsoft.AspNetCore.HttpsPolicy.HttpsRedirectionMiddleware[3]
+      Failed to determine the https port for redirect.
+warn: Microsoft.AspNetCore.HttpsPolicy.HttpsRedirectionMiddleware[3]
+      Failed to determine the https port for redirect.
+warn: Microsoft.AspNetCore.HttpsPolicy.HttpsRedirectionMiddleware[3]
+      Failed to determine the https port for redirect.
+warn: Microsoft.AspNetCore.HttpsPolicy.HttpsRedirectionMiddleware[3]
+      Failed to determine the https port for redirect.
+fail: Microsoft.AspNetCore.Diagnostics.DeveloperExceptionPageMiddleware[1]
+      An unhandled exception has occurred while executing the request.
+      Microsoft.AspNetCore.Http.BadHttpRequestException: Failed to read parameter "CreateProfileRequest req" from the request body as JSON.
+       ---&gt; System.Text.Json.JsonException: Expected depth to be zero at the end of the JSON payload. There is an open JSON object or array that should be closed. Path: $ | LineNumber: 0 | BytePositionInLine: 1.
+       ---&gt; System.Text.Json.JsonReaderException: Expected depth to be zero at the end of the JSON payload. There is an open JSON object or array that should be closed. LineNumber: 0 | BytePositionInLine: 1.
+         at System.Text.Json.ThrowHelper.ThrowJsonReaderException(Utf8JsonReader&amp; json, ExceptionResource resource, Byte nextByte, ReadOnlySpan`1 bytes)
+         at System.Text.Json.Utf8JsonReader.ReadSingleSegment()
+         at System.Text.Json.Utf8JsonReader.Read()
+         at System.Text.Json.Serialization.Converters.ObjectWithParameterizedConstructorConverter`1.ReadConstructorArgumentsWithContinuation(ReadStack&amp; state, Utf8JsonReader&amp; reader, JsonSerializerOptions options)
+         at System.Text.Json.Serialization.Converters.ObjectWithParameterizedConstructorConverter`1.OnTryRead(Utf8JsonReader&amp; reader, Type typeToConvert, JsonSerializerOptions options, ReadStack&amp; state, T&amp; value)
+         at System.Text.Json.Serialization.JsonConverter`1.TryRead(Utf8JsonReader&amp; reader, Type typeToConvert, JsonSerializerOptions options, ReadStack&amp; state, T&amp; value, Boolean&amp; isPopulatedValue)
+         at System.Text.Json.Serialization.JsonConverter`1.ReadCore(Utf8JsonReader&amp; reader, T&amp; value, JsonSerializerOptions options, ReadStack&amp; state)
+         --- End of inner exception stack trace ---
+         at System.Text.Json.ThrowHelper.ReThrowWithPath(ReadStack&amp; state, JsonReaderException ex)
+         at System.Text.Json.Serialization.JsonConverter`1.ReadCore(Utf8JsonReader&amp; reader, T&amp; value, JsonSerializerOptions options, ReadStack&amp; state)
+         at System.Text.Json.Serialization.Metadata.JsonTypeInfo`1.ContinueDeserialize(ReadBufferState&amp; bufferState, JsonReaderState&amp; jsonReaderState, ReadStack&amp; readStack, T&amp; value)
+         at System.Text.Json.Serialization.Metadata.JsonTypeInfo`1.DeserializeAsync(Stream utf8Json, CancellationToken cancellationToken)
+         at System.Text.Json.Serialization.Metadata.JsonTypeInfo`1.DeserializeAsObjectAsync(Stream utf8Json, CancellationToken cancellationToken)
+         at Microsoft.AspNetCore.Http.HttpRequestJsonExtensions.ReadFromJsonAsync(HttpRequest request, JsonTypeInfo jsonTypeInfo, CancellationToken cancellationToken)
+         at Microsoft.AspNetCore.Http.HttpRequestJsonExtensions.ReadFromJsonAsync(HttpRequest request, JsonTypeInfo jsonTypeInfo, CancellationToken cancellationToken)
+         at Microsoft.AspNetCore.Http.RequestDelegateFactory.&lt;HandleRequestBodyAndCompileRequestDelegateForJson&gt;g__TryReadBodyAsync|102_0(HttpContext httpContext, Type bodyType, String parameterTypeName, String parameterName, Boolean allowEmptyRequestBody, Boolean throwOnBadRequest, JsonTypeInfo jsonTypeInfo)
+         --- End of inner exception stack trace ---
+         at Microsoft.AspNetCore.Http.RequestDelegateFactory.Log.InvalidJsonRequestBody(HttpContext httpContext, String parameterTypeName, String parameterName, Exception exception, Boolean shouldThrow)
+         at Microsoft.AspNetCore.Http.RequestDelegateFactory.&lt;HandleRequestBodyAndCompileRequestDelegateForJson&gt;g__TryReadBodyAsync|102_0(HttpContext httpContext, Type bodyType, String parameterTypeName, String parameterName, Boolean allowEmptyRequestBody, Boolean throwOnBadRequest, JsonTypeInfo jsonTypeInfo)
+         at Microsoft.AspNetCore.Http.RequestDelegateFactory.&lt;&gt;c__DisplayClass102_2.&lt;&lt;HandleRequestBodyAndCompileRequestDelegateForJson&gt;b__2&gt;d.MoveNext()
+      --- End of stack trace from previous location ---
+         at Microsoft.AspNetCore.Diagnostics.StatusCodePagesMiddleware.Invoke(HttpContext context)
+         at Microsoft.AspNetCore.Authorization.AuthorizationMiddleware.Invoke(HttpContext context)
+         at Microsoft.AspNetCore.Diagnostics.DeveloperExceptionPageMiddlewareImpl.Invoke(HttpContext context)
+fail: Microsoft.AspNetCore.Diagnostics.DeveloperExceptionPageMiddleware[1]
+      An unhandled exception has occurred while executing the request.
+      Microsoft.AspNetCore.Http.BadHttpRequestException: Failed to read parameter "CreateProfileRequest req" from the request body as JSON.
+       ---&gt; System.Text.Json.JsonException: The JSON object contains a trailing comma at the end which is not supported in this mode. Change the reader options. Path: $ | LineNumber: 0 | BytePositionInLine: 16.
+       ---&gt; System.Text.Json.JsonReaderException: The JSON object contains a trailing comma at the end which is not supported in this mode. Change the reader options. LineNumber: 0 | BytePositionInLine: 16.
+         at System.Text.Json.ThrowHelper.ThrowJsonReaderException(Utf8JsonReader&amp; json, ExceptionResource resource, Byte nextByte, ReadOnlySpan`1 bytes)
+         at System.Text.Json.Utf8JsonReader.ConsumeNextToken(Byte marker)
+         at System.Text.Json.Utf8JsonReader.ConsumeNextTokenOrRollback(Byte marker)
+         at System.Text.Json.Utf8JsonReader.ReadSingleSegment()
+         at System.Text.Json.Utf8JsonReader.Read()
+         at System.Text.Json.Serialization.Converters.ObjectWithParameterizedConstructorConverter`1.ReadConstructorArgumentsWithContinuation(ReadStack&amp; state, Utf8JsonReader&amp; reader, JsonSerializerOptions options)
+         at System.Text.Json.Serialization.Converters.ObjectWithParameterizedConstructorConverter`1.OnTryRead(Utf8JsonReader&amp; reader, Type typeToConvert, JsonSerializerOptions options, ReadStack&amp; state, T&amp; value)
+         at System.Text.Json.Serialization.JsonConverter`1.TryRead(Utf8JsonReader&amp; reader, Type typeToConvert, JsonSerializerOptions options, ReadStack&amp; state, T&amp; value, Boolean&amp; isPopulatedValue)
+         at System.Text.Json.Serialization.JsonConverter`1.ReadCore(Utf8JsonReader&amp; reader, T&amp; value, JsonSerializerOptions options, ReadStack&amp; state)
+         --- End of inner exception stack trace ---
+         at System.Text.Json.ThrowHelper.ReThrowWithPath(ReadStack&amp; state, JsonReaderException ex)
+         at System.Text.Json.Serialization.JsonConverter`1.ReadCore(Utf8JsonReader&amp; reader, T&amp; value, JsonSerializerOptions options, ReadStack&amp; state)
+         at System.Text.Json.Serialization.Metadata.JsonTypeInfo`1.ContinueDeserialize(ReadBufferState&amp; bufferState, JsonReaderState&amp; jsonReaderState, ReadStack&amp; readStack, T&amp; value)
+         at System.Text.Json.Serialization.Metadata.JsonTypeInfo`1.DeserializeAsync(Stream utf8Json, CancellationToken cancellationToken)
+         at System.Text.Json.Serialization.Metadata.JsonTypeInfo`1.DeserializeAsObjectAsync(Stream utf8Json, CancellationToken cancellationToken)
+         at Microsoft.AspNetCore.Http.HttpRequestJsonExtensions.ReadFromJsonAsync(HttpRequest request, JsonTypeInfo jsonTypeInfo, CancellationToken cancellationToken)
+         at Microsoft.AspNetCore.Http.HttpRequestJsonExtensions.ReadFromJsonAsync(HttpRequest request, JsonTypeInfo jsonTypeInfo, CancellationToken cancellationToken)
+         at Microsoft.AspNetCore.Http.RequestDelegateFactory.&lt;HandleRequestBodyAndCompileRequestDelegateForJson&gt;g__TryReadBodyAsync|102_0(HttpContext httpContext, Type bodyType, String parameterTypeName, String parameterName, Boolean allowEmptyRequestBody, Boolean throwOnBadRequest, JsonTypeInfo jsonTypeInfo)
+         --- End of inner exception stack trace ---
+         at Microsoft.AspNetCore.Http.RequestDelegateFactory.Log.InvalidJsonRequestBody(HttpContext httpContext, String parameterTypeName, String parameterName, Exception exception, Boolean shouldThrow)
+         at Microsoft.AspNetCore.Http.RequestDelegateFactory.&lt;HandleRequestBodyAndCompileRequestDelegateForJson&gt;g__TryReadBodyAsync|102_0(HttpContext httpContext, Type bodyType, String parameterTypeName, String parameterName, Boolean allowEmptyRequestBody, Boolean throwOnBadRequest, JsonTypeInfo jsonTypeInfo)
+         at Microsoft.AspNetCore.Http.RequestDelegateFactory.&lt;&gt;c__DisplayClass102_2.&lt;&lt;HandleRequestBodyAndCompileRequestDelegateForJson&gt;b__2&gt;d.MoveNext()
+      --- End of stack trace from previous location ---
+         at Microsoft.AspNetCore.Diagnostics.StatusCodePagesMiddleware.Invoke(HttpContext context)
+         at Microsoft.AspNetCore.Authorization.AuthorizationMiddleware.Invoke(HttpContext context)
+         at Microsoft.AspNetCore.Diagnostics.DeveloperExceptionPageMiddlewareImpl.Invoke(HttpContext context)
+fail: Microsoft.AspNetCore.Diagnostics.DeveloperExceptionPageMiddleware[1]
+      An unhandled exception has occurred while executing the request.
+      Microsoft.AspNetCore.Http.BadHttpRequestException: Failed to read parameter "CreateProfileRequest req" from the request body as JSON.
+       ---&gt; System.Text.Json.JsonException: '}' is an invalid start of a value. Path: $.UserId | LineNumber: 0 | BytePositionInLine: 26.
+       ---&gt; System.Text.Json.JsonReaderException: '}' is an invalid start of a value. LineNumber: 0 | BytePositionInLine: 26.
+         at System.Text.Json.ThrowHelper.ThrowJsonReaderException(Utf8JsonReader&amp; json, ExceptionResource resource, Byte nextByte, ReadOnlySpan`1 bytes)
+         at System.Text.Json.Utf8JsonReader.ConsumeValue(Byte marker)
+         at System.Text.Json.Utf8JsonReader.ReadSingleSegment()
+         at System.Text.Json.Utf8JsonReader.Read()
+         at System.Text.Json.Serialization.Converters.ObjectWithParameterizedConstructorConverter`1.ReadConstructorArgumentsWithContinuation(ReadStack&amp; state, Utf8JsonReader&amp; reader, JsonSerializerOptions options)
+         at System.Text.Json.Serialization.Converters.ObjectWithParameterizedConstructorConverter`1.OnTryRead(Utf8JsonReader&amp; reader, Type typeToConvert, JsonSerializerOptions options, ReadStack&amp; state, T&amp; value)
+         at System.Text.Json.Serialization.JsonConverter`1.TryRead(Utf8JsonReader&amp; reader, Type typeToConvert, JsonSerializerOptions options, ReadStack&amp; state, T&amp; value, Boolean&amp; isPopulatedValue)
+         at System.Text.Json.Serialization.JsonConverter`1.ReadCore(Utf8JsonReader&amp; reader, T&amp; value, JsonSerializerOptions options, ReadStack&amp; state)
+         --- End of inner exception stack trace ---
+         at System.Text.Json.ThrowHelper.ReThrowWithPath(ReadStack&amp; state, JsonReaderException ex)
+         at System.Text.Json.Serialization.JsonConverter`1.ReadCore(Utf8JsonReader&amp; reader, T&amp; value, JsonSerializerOptions options, ReadStack&amp; state)
+         at System.Text.Json.Serialization.Metadata.JsonTypeInfo`1.ContinueDeserialize(ReadBufferState&amp; bufferState, JsonReaderState&amp; jsonReaderState, ReadStack&amp; readStack, T&amp; value)
+         at System.Text.Json.Serialization.Metadata.JsonTypeInfo`1.DeserializeAsync(Stream utf8Json, CancellationToken cancellationToken)
+         at System.Text.Json.Serialization.Metadata.JsonTypeInfo`1.DeserializeAsObjectAsync(Stream utf8Json, CancellationToken cancellationToken)
+         at Microsoft.AspNetCore.Http.HttpRequestJsonExtensions.ReadFromJsonAsync(HttpRequest request, JsonTypeInfo jsonTypeInfo, CancellationToken cancellationToken)
+         at Microsoft.AspNetCore.Http.HttpRequestJsonExtensions.ReadFromJsonAsync(HttpRequest request, JsonTypeInfo jsonTypeInfo, CancellationToken cancellationToken)
+         at Microsoft.AspNetCore.Http.RequestDelegateFactory.&lt;HandleRequestBodyAndCompileRequestDelegateForJson&gt;g__TryReadBodyAsync|102_0(HttpContext httpContext, Type bodyType, String parameterTypeName, String parameterName, Boolean allowEmptyRequestBody, Boolean throwOnBadRequest, JsonTypeInfo jsonTypeInfo)
+         --- End of inner exception stack trace ---
+         at Microsoft.AspNetCore.Http.RequestDelegateFactory.Log.InvalidJsonRequestBody(HttpContext httpContext, String parameterTypeName, String parameterName, Exception exception, Boolean shouldThrow)
+         at Microsoft.AspNetCore.Http.RequestDelegateFactory.&lt;HandleRequestBodyAndCompileRequestDelegateForJson&gt;g__TryReadBodyAsync|102_0(HttpContext httpContext, Type bodyType, String parameterTypeName, String parameterName, Boolean allowEmptyRequestBody, Boolean throwOnBadRequest, JsonTypeInfo jsonTypeInfo)
+         at Microsoft.AspNetCore.Http.RequestDelegateFactory.&lt;&gt;c__DisplayClass102_2.&lt;&lt;HandleRequestBodyAndCompileRequestDelegateForJson&gt;b__2&gt;d.MoveNext()
+      --- End of stack trace from previous location ---
+         at Microsoft.AspNetCore.Diagnostics.StatusCodePagesMiddleware.Invoke(HttpContext context)
+         at Microsoft.AspNetCore.Authorization.AuthorizationMiddleware.Invoke(HttpContext context)
+         at Microsoft.AspNetCore.Diagnostics.DeveloperExceptionPageMiddlewareImpl.Invoke(HttpContext context)
+fail: Microsoft.AspNetCore.Diagnostics.DeveloperExceptionPageMiddleware[1]
+      An unhandled exception has occurred while executing the request.
+      Microsoft.AspNetCore.Http.BadHttpRequestException: Failed to read parameter "CreateProfileRequest req" from the request body as JSON.
+       ---&gt; System.Text.Json.JsonException: 'not json at all' is an invalid JSON literal. Expected the literal 'null'. Path: $ | LineNumber: 0 | BytePositionInLine: 1.
+       ---&gt; System.Text.Json.JsonReaderException: 'not json at all' is an invalid JSON literal. Expected the literal 'null'. LineNumber: 0 | BytePositionInLine: 1.
+         at System.Text.Json.ThrowHelper.ThrowJsonReaderException(Utf8JsonReader&amp; json, ExceptionResource resource, Byte nextByte, ReadOnlySpan`1 bytes)
+         at System.Text.Json.Utf8JsonReader.ThrowInvalidLiteral(ReadOnlySpan`1 span)
+         at System.Text.Json.Utf8JsonReader.CheckLiteral(ReadOnlySpan`1 span, ReadOnlySpan`1 literal)
+         at System.Text.Json.Utf8JsonReader.ConsumeLiteral(ReadOnlySpan`1 literal, JsonTokenType tokenType)
+         at System.Text.Json.Utf8JsonReader.ConsumeValue(Byte marker)
+         at System.Text.Json.Utf8JsonReader.ReadFirstToken(Byte first)
+         at System.Text.Json.Utf8JsonReader.ReadSingleSegment()
+         at System.Text.Json.Utf8JsonReader.Read()
+         at System.Text.Json.Serialization.JsonConverter`1.ReadCore(Utf8JsonReader&amp; reader, T&amp; value, JsonSerializerOptions options, ReadStack&amp; state)
+         --- End of inner exception stack trace ---
+         at System.Text.Json.ThrowHelper.ReThrowWithPath(ReadStack&amp; state, JsonReaderException ex)
+         at System.Text.Json.Serialization.JsonConverter`1.ReadCore(Utf8JsonReader&amp; reader, T&amp; value, JsonSerializerOptions options, ReadStack&amp; state)
+         at System.Text.Json.Serialization.Metadata.JsonTypeInfo`1.ContinueDeserialize(ReadBufferState&amp; bufferState, JsonReaderState&amp; jsonReaderState, ReadStack&amp; readStack, T&amp; value)
+         at System.Text.Json.Serialization.Metadata.JsonTypeInfo`1.DeserializeAsync(Stream utf8Json, CancellationToken cancellationToken)
+         at System.Text.Json.Serialization.Metadata.JsonTypeInfo`1.DeserializeAsObjectAsync(Stream utf8Json, CancellationToken cancellationToken)
+         at Microsoft.AspNetCore.Http.HttpRequestJsonExtensions.ReadFromJsonAsync(HttpRequest request, JsonTypeInfo jsonTypeInfo, CancellationToken cancellationToken)
+         at Microsoft.AspNetCore.Http.HttpRequestJsonExtensions.ReadFromJsonAsync(HttpRequest request, JsonTypeInfo jsonTypeInfo, CancellationToken cancellationToken)
+         at Microsoft.AspNetCore.Http.RequestDelegateFactory.&lt;HandleRequestBodyAndCompileRequestDelegateForJson&gt;g__TryReadBodyAsync|102_0(HttpContext httpContext, Type bodyType, String parameterTypeName, String parameterName, Boolean allowEmptyRequestBody, Boolean throwOnBadRequest, JsonTypeInfo jsonTypeInfo)
+         --- End of inner exception stack trace ---
+         at Microsoft.AspNetCore.Http.RequestDelegateFactory.Log.InvalidJsonRequestBody(HttpContext httpContext, String parameterTypeName, String parameterName, Exception exception, Boolean shouldThrow)
+         at Microsoft.AspNetCore.Http.RequestDelegateFactory.&lt;HandleRequestBodyAndCompileRequestDelegateForJson&gt;g__TryReadBodyAsync|102_0(HttpContext httpContext, Type bodyType, String parameterTypeName, String parameterName, Boolean allowEmptyRequestBody, Boolean throwOnBadRequest, JsonTypeInfo jsonTypeInfo)
+         at Microsoft.AspNetCore.Http.RequestDelegateFactory.&lt;&gt;c__DisplayClass102_2.&lt;&lt;HandleRequestBodyAndCompileRequestDelegateForJson&gt;b__2&gt;d.MoveNext()
+      --- End of stack trace from previous location ---
+         at Microsoft.AspNetCore.Diagnostics.StatusCodePagesMiddleware.Invoke(HttpContext context)
+         at Microsoft.AspNetCore.Authorization.AuthorizationMiddleware.Invoke(HttpContext context)
+         at Microsoft.AspNetCore.Diagnostics.DeveloperExceptionPageMiddlewareImpl.Invoke(HttpContext context)
+fail: Microsoft.AspNetCore.Diagnostics.DeveloperExceptionPageMiddleware[1]
+      An unhandled exception has occurred while executing the request.
+      Microsoft.AspNetCore.Http.BadHttpRequestException: Implicit body inferred for parameter "req" but no body was provided. Did you mean to use a Service instead?
+         at lambda_method3142(Closure, Object, HttpContext, Object)
+         at Microsoft.AspNetCore.Http.RequestDelegateFactory.&lt;&gt;c__DisplayClass102_2.&lt;&lt;HandleRequestBodyAndCompileRequestDelegateForJson&gt;b__2&gt;d.MoveNext()
+      --- End of stack trace from previous location ---
+         at Microsoft.AspNetCore.Diagnostics.StatusCodePagesMiddleware.Invoke(HttpContext context)
+         at Microsoft.AspNetCore.Authorization.AuthorizationMiddleware.Invoke(HttpContext context)
+         at Microsoft.AspNetCore.Diagnostics.DeveloperExceptionPageMiddlewareImpl.Invoke(HttpContext context)
+fail: Microsoft.AspNetCore.Diagnostics.DeveloperExceptionPageMiddleware[1]
+      An unhandled exception has occurred while executing the request.
+      Microsoft.AspNetCore.Http.BadHttpRequestException: Implicit body inferred for parameter "req" but no body was provided. Did you mean to use a Service instead?
+         at lambda_method3142(Closure, Object, HttpContext, Object)
+         at Microsoft.AspNetCore.Http.RequestDelegateFactory.&lt;&gt;c__DisplayClass102_2.&lt;&lt;HandleRequestBodyAndCompileRequestDelegateForJson&gt;b__2&gt;d.MoveNext()
+      --- End of stack trace from previous location ---
+         at Microsoft.AspNetCore.Diagnostics.StatusCodePagesMiddleware.Invoke(HttpContext context)
+         at Microsoft.AspNetCore.Authorization.AuthorizationMiddleware.Invoke(HttpContext context)
+         at Microsoft.AspNetCore.Diagnostics.DeveloperExceptionPageMiddlewareImpl.Invoke(HttpContext context)
+warn: Microsoft.AspNetCore.HttpsPolicy.HttpsRedirectionMiddleware[3]
+      Failed to determine the https port for redirect.
+warn: Microsoft.AspNetCore.HttpsPolicy.HttpsRedirectionMiddleware[3]
+      Failed to determine the https port for redirect.
+warn: Microsoft.AspNetCore.HttpsPolicy.HttpsRedirectionMiddleware[3]
+      Failed to determine the https port for redirect.
+[xUnit.net 00:00:06.70]   Finished:    MapMe.Tests
+</StdOut>
+    </Output>
+  </ResultSummary>
+</TestRun>
