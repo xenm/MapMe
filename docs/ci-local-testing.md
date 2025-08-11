@@ -14,7 +14,7 @@ From the MapMe folder:
 These scripts will:
 - Run only `Category=Service` tests using in-memory repositories
 - Produce a TRX test results file at `MapMe/TestResults/Service/<timestamp>/Service.trx`
-- If the `reportgenerator` dotnet tool is installed, also generate `index.html` in the same folder
+- If the `trxlog2html` dotnet tool is installed, also generate `test-report.html` in the same folder
 
 **No external dependencies required** - service tests use in-memory implementations for fast, reliable testing.
 
@@ -70,6 +70,27 @@ Or use the convenience script:
 cd MapMe
 ./scripts/test-service.sh
 ```
+
+## HTML Test Reports
+
+The service test scripts can generate user-friendly HTML test reports from the TRX files:
+
+1. **Install the HTML report generator** (one-time setup):
+   ```bash
+   cd MapMe
+   dotnet tool install trxlog2html
+   ```
+
+2. **Run service tests** - HTML reports will be generated automatically:
+   ```bash
+   ./scripts/test-service.sh
+   ```
+
+3. **View the HTML report**:
+   - Open `TestResults/Service/<timestamp>/test-report.html` in your browser
+   - The report shows test results in a clean, readable format with proper styling
+
+The HTML reports provide a much better viewing experience than raw TRX files, especially for reviewing test results and sharing with team members.
 
 ## Running the app + emulator with docker-compose
 
