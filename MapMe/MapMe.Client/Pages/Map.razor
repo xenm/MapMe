@@ -288,6 +288,18 @@
             {
                 _zoom = 15; // Default zoom when navigating to specific location
             }
+            
+            // Check if we should show popup for a specific place
+            if (bool.TryParse(query["showPopup"], out var showPopup) && showPopup)
+            {
+                var placeId = query["placeId"] ?? "";
+                // Schedule popup to show after map is initialized and marks are rendered
+                Task.Run(async () =>
+                {
+                    await Task.Delay(2000); // Wait for map and marks to be ready
+                    await ShowPopupForLocation(lat, lng, placeId);
+                });
+            }
         }
     }
 
@@ -334,6 +346,9 @@
                 _zoom, 
                 _mapType,
                 _googleMapsApiKey);
+                
+            // Set up the getUserProfile hook for JavaScript to use real user data
+            await SetupUserProfileHook();
                 
             // Load any existing marks from localStorage
             await LoadMarksAsync();
@@ -767,6 +782,92 @@
         catch (Exception ex)
         {
             Console.WriteLine($"Error syncing marks to map: {ex.Message}");
+        }
+    }
+
+    private async Task ShowPopupForLocation(double lat, double lng, string placeId)
+    {
+        try
+        {
+            if (_mapModule != null)
+            {
+                // Call JavaScript function to show popup for specific location
+                await _mapModule.InvokeVoidAsync("showPopupForLocation", lat, lng, placeId);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error showing popup for location: {ex.Message}");
+        }
+    }
+
+    private async Task SetupUserProfileHook()
+    {
+        try
+        {
+            await JsRuntime.InvokeVoidAsync("eval", @"
+                window.MapMe = window.MapMe || {};
+                window.MapMe.getUserProfile = async function(username) {
+                    try {
+                        const result = await window.MapMe._dotNetRef.invokeMethodAsync('GetUserProfileForJs', username);
+                        return result;
+                    } catch (error) {
+                        console.error('Error getting user profile:', error);
+                        return null;
+                    }
+                };
+                window.MapMe._dotNetRef = arguments[0];
+            ", _dotNetHelper);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error setting up user profile hook: {ex.Message}");
+        }
+    }
+
+    [JSInvokable]
+    public async Task<object> GetUserProfileForJs(string username)
+    {
+        try
+        {
+            var userProfile = await ProfileService.GetUserProfileAsync(username);
+            if (userProfile == null)
+            {
+                return new
+                {
+                    fullName = username,
+                    username = username,
+                    bio = "MapMe user",
+                    location = "Location not specified",
+                    avatar = "/images/user-avatar.svg"
+                };
+            }
+
+            return new
+            {
+                fullName = userProfile.DisplayName ?? username,
+                username = username,
+                bio = userProfile.Bio ?? "MapMe user",
+                location = userProfile.Location ?? "Location not specified",
+                website = userProfile.Website,
+                joinedAt = "Member since 2024",
+                followers = 0,
+                following = 0,
+                photosCount = userProfile.Photos?.Count ?? 0,
+                interests = userProfile.Interests ?? new List<string>(),
+                avatar = userProfile.Photos?.FirstOrDefault()?.Url ?? "/images/user-avatar.svg"
+            };
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error getting user profile for JS: {ex.Message}");
+            return new
+            {
+                fullName = username,
+                username = username,
+                bio = "MapMe user",
+                avatar = "/images/user-avatar.svg"
+            };
         }
     }
 

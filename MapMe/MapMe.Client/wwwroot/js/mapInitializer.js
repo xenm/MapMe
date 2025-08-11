@@ -556,6 +556,54 @@ window.MapMe.storage = {
 window.MapMe.reverseGeocode = reverseGeocode;
 export { reverseGeocode };
 
+// Function to show popup for a specific location (called from Blazor)
+function showPopupForLocation(lat, lng, placeId) {
+    if (!mapsApiLoaded || !map || !savedMarkers) {
+        console.warn('Map not ready for showing popup');
+        return;
+    }
+    
+    try {
+        // Find the marker that matches this location and placeId
+        const targetMarker = savedMarkers.find(marker => {
+            if (!marker.labelOverlay) return false;
+            
+            // Check if this marker is at the same location (within small tolerance)
+            const markerPos = marker.getPosition();
+            if (!markerPos) return false;
+            
+            const latDiff = Math.abs(markerPos.lat() - lat);
+            const lngDiff = Math.abs(markerPos.lng() - lng);
+            const tolerance = 0.0001; // ~10 meters
+            
+            return latDiff < tolerance && lngDiff < tolerance;
+        });
+        
+        if (targetMarker && targetMarker.labelOverlay) {
+            // Simulate a click on the marker to show the popup
+            const container = targetMarker.labelOverlay.div;
+            if (container) {
+                // Trigger the click event that shows the popup
+                const clickEvent = new MouseEvent('click', {
+                    bubbles: true,
+                    cancelable: true,
+                    view: window
+                });
+                container.dispatchEvent(clickEvent);
+            }
+        } else {
+            console.warn('Could not find marker for location:', lat, lng, placeId);
+        }
+    } catch (error) {
+        console.error('Error showing popup for location:', error);
+    }
+}
+
+// Make it available globally
+window.MapMe = window.MapMe || {};
+window.MapMe.showPopupForLocation = showPopupForLocation;
+export { showPopupForLocation };
+
 // Render a collection of saved marks on the map using user's first photo as the marker icon
 function renderMarks(marks) {
     if (!mapsApiLoaded || !map) {
@@ -884,7 +932,7 @@ function renderMarks(marks) {
                 const titleVal = firstWith('title');
                 const addrVal = firstWith('address');
                 const title = titleVal ? `<div style=\"font-weight:600;\">${escapeHtml(titleVal)}</div>` : '';
-                const addr = addrVal ? `<div style=\"color:#6c757d; font-size:12px;\">${escapeHtml(addrVal)}</div>` : '';
+                const addr = addrVal ? `<div style=\"color:#6c757d;font-size:12px;margin-bottom:6px;\">${escapeHtml(addrVal)}</div>` : '';
                 const thumbHtml = (url) => `<img class=\"mm-thumb\" src=\"${url}\" alt=\"Photo\" style=\"width:72px;height:72px;border-radius:8px;object-fit:cover;border:1px solid #e9ecef;cursor:pointer;\"/>`;
                 // Build sections: first place images, then for each user: their images, name link and message
                 const placeUrls = [...new Set(g.items.flatMap(it => it.placePhotos).filter(Boolean))];

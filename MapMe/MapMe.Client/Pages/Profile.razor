@@ -621,8 +621,8 @@ else
 
     private void ViewOnMap(DateMark dateMark)
     {
-        // Navigate to map and center on this location
-        Nav.NavigateTo($"/map?lat={dateMark.Latitude}&lng={dateMark.Longitude}&zoom=15");
+        // Navigate to map and center on this location with popup
+        Nav.NavigateTo($"/map?lat={dateMark.Latitude}&lng={dateMark.Longitude}&zoom=15&showPopup=true&placeId={Uri.EscapeDataString(dateMark.PlaceId ?? "")}");
     }
 
     private async Task EditDateMark(DateMark dateMark)

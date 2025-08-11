@@ -49,6 +49,9 @@ public class UserProfile
     [JsonPropertyName("hometown")]
     public string? Hometown { get; set; }
 
+    [JsonPropertyName("website")]
+    public string? Website { get; set; }
+
     [JsonPropertyName("languages")]
     public List<string> Languages { get; set; } = new();
 
