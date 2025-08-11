@@ -181,7 +181,7 @@ export async function initMap(dotNetHelper, elementId, lat, lng, zoom, mapType, 
         });
 
         // Small prompt before opening the full dialog
-        const showDateProposalPrompt = ({ position, title, address, photos, isAdvanced = false, onConfirm }) => {
+        const showDateProposalPrompt = ({ position, title, address, photos, url, isAdvanced = false, onConfirm }) => {
             try {
                 if (!sharedInfoWindow) {
                     sharedInfoWindow = new google.maps.InfoWindow();
@@ -191,9 +191,17 @@ export async function initMap(dotNetHelper, elementId, lat, lng, zoom, mapType, 
                 const imgs = list
                     .map(u => `<img class=\"mm-thumb\" src=\"${u}\" style=\"width:72px;height:72px;border-radius:6px;object-fit:cover;border:1px solid #e9ecef;cursor:pointer;\"/>`) 
                     .join('');
+                
+                // Make title clickable if URL is available
+                const titleHtml = title ? 
+                    (url ? 
+                        `<div style=\"font-weight:600;margin-bottom:2px;\"><a href=\"${safe(url)}\" target=\"_blank\" rel=\"noopener noreferrer\" style=\"color:#0d6efd;text-decoration:none;\">${safe(title)}<svg style=\"width:12px;height:12px;margin-left:4px;vertical-align:baseline;\" viewBox=\"0 0 24 24\" fill=\"currentColor\"><path d=\"M14,3V5H17.59L7.76,14.83L9.17,16.24L19,6.41V10H21V3M19,19H5V5H12V3H5C3.89,3 3,3.9 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V12H19V19Z\" /></svg></a></div>` : 
+                        `<div style=\"font-weight:600;margin-bottom:2px;\">${safe(title)}</div>`) : 
+                    '';
+                
                 const content = `
                   <div style="min-width:220px; max-width:320px;">
-                    ${title ? `<div style=\"font-weight:600;margin-bottom:2px;\">${safe(title)}</div>` : ''}
+                    ${titleHtml}
                     ${address ? `<div style=\"color:#6c757d;font-size:12px;margin-bottom:6px;\">${safe(address)}</div>` : ''}
                     <div class=\"mm-scroll\" style=\"display:flex; gap:8px; overflow-x:auto; padding-bottom:4px; margin:6px 0;\">${imgs}</div>
                     <div style="display:flex; gap:8px; align-items:center;">
@@ -223,6 +231,14 @@ export async function initMap(dotNetHelper, elementId, lat, lng, zoom, mapType, 
                             el.addEventListener('click', () => {
                                 try { window.MapMe && typeof window.MapMe.openPhotoViewer === 'function' ? window.MapMe.openPhotoViewer(urls, idx) : openPhotoViewer(urls, idx); } catch (_) {}
                             }, { once: true });
+                        });
+                        // Handle Google Maps links in creation popup
+                        const titleLinks = container.querySelectorAll('a[href*="google"], a[href*="maps"], a[target="_blank"]');
+                        titleLinks.forEach(link => {
+                            link.addEventListener('click', (e) => {
+                                e.stopPropagation(); // Prevent popup from closing
+                                // Let the default link behavior proceed (opening in new tab)
+                            });
                         });
                     } catch (_) {}
                     if (createBtn) {
@@ -346,6 +362,7 @@ export async function initMap(dotNetHelper, elementId, lat, lng, zoom, mapType, 
                                         title: details.name || 'Selected place',
                                         address: details.address || '',
                                         photos: photoUrls,
+                                        url: details.url,
                                         isAdvanced: false, // Mark as non-advanced dialog
                                         onConfirm: () => {
                                             // Move marker after confirm
@@ -377,13 +394,13 @@ export async function initMap(dotNetHelper, elementId, lat, lng, zoom, mapType, 
                                                     }).filter(Boolean);
                                                 }
                                             } catch (_) {}
-                                            showDateProposalPrompt({ position: pos, title, address, photos: thumbs, onConfirm: () => {
+                                            showDateProposalPrompt({ position: pos, title, address, photos: thumbs, url: null, onConfirm: () => {
                                                 marker.setPosition(pos);
                                                 if (dotNetHelper) { dotNetHelper.invokeMethodAsync('OnMapClickAsync', pos.lat(), pos.lng()); }
                                             }});
                                         });
                                     } else {
-                                        showDateProposalPrompt({ position: pos, title, address, photos: [], onConfirm: () => {
+                                        showDateProposalPrompt({ position: pos, title, address, photos: [], url: null, onConfirm: () => {
                                             marker.setPosition(pos);
                                             if (dotNetHelper) { dotNetHelper.invokeMethodAsync('OnMapClickAsync', pos.lat(), pos.lng()); }
                                         }});
@@ -432,6 +449,7 @@ export async function initMap(dotNetHelper, elementId, lat, lng, zoom, mapType, 
                             title: 'Selected location',
                             address: '',
                             photos: [],
+                            url: null,
                             onConfirm: () => {
                                 marker.setPosition(pos);
                                 if (dotNetHelper) {
@@ -936,10 +954,10 @@ function renderMarks(marks) {
                 // Make title clickable if URL is available
                 const title = titleVal ? 
                     (urlVal ? 
-                        `<div style="font-weight:600;"><a href="${escapeHtml(urlVal)}" target="_blank" rel="noopener noreferrer" style="color:#0d6efd;text-decoration:none;">${escapeHtml(titleVal)}<svg style="width:12px;height:12px;margin-left:4px;vertical-align:baseline;" viewBox="0 0 24 24" fill="currentColor"><path d="M14,3V5H17.59L7.76,14.83L9.17,16.24L19,6.41V10H21V3M19,19H5V5H12V3H5C3.89,3 3,3.9 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V12H19V19Z" /></svg></a></div>` : 
-                        `<div style="font-weight:600;">${escapeHtml(titleVal)}</div>`) : 
+                        `<div style=\"font-weight:600;\"><a href=\"${escapeHtml(urlVal)}\" target=\"_blank\" rel=\"noopener noreferrer\" style=\"color:#0d6efd;text-decoration:none;\">${escapeHtml(titleVal)}<svg style=\"width:12px;height:12px;margin-left:4px;vertical-align:baseline;\" viewBox=\"0 0 24 24\" fill=\"currentColor\"><path d=\"M14,3V5H17.59L7.76,14.83L9.17,16.24L19,6.41V10H21V3M19,19H5V5H12V3H5C3.89,3 3,3.9 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V12H19V19Z\" /></svg></a></div>` : 
+                        `<div style=\"font-weight:600;\">${escapeHtml(titleVal)}</div>`) : 
                     '';
-                const addr = addrVal ? `<div style="color:#6c757d;font-size:12px;margin-bottom:6px;">${escapeHtml(addrVal)}</div>` : '';
+                const addr = addrVal ? `<div style=\"color:#6c757d;font-size:12px;margin-bottom:6px;\">${escapeHtml(addrVal)}</div>` : '';
                 const thumbHtml = (url) => `<img class=\"mm-thumb\" src=\"${url}\" alt=\"\" style=\"width:72px;height:72px;border-radius:8px;object-fit:cover;border:1px solid #e9ecef;cursor:pointer;\"/>`;
                 // Build sections: first place images, then for each user: their images, name link and message
                 const placeUrls = [...new Set(g.items.flatMap(it => it.placePhotos).filter(Boolean))];
@@ -1111,6 +1129,15 @@ function renderMarks(marks) {
                                 } catch (err) {
                                     console.error('Error editing Date Mark:', err);
                                 }
+                            });
+                        });
+
+                        // Handle Google Maps links in popup titles
+                        const titleLinks = container.querySelectorAll('a[href*="google"], a[href*="maps"], a[target="_blank"]');
+                        titleLinks.forEach(link => {
+                            link.addEventListener('click', (e) => {
+                                e.stopPropagation(); // Prevent marker click handler from interfering
+                                // Let the default link behavior proceed (opening in new tab)
                             });
                         });
                     } catch (_) { /* ignore */ }
