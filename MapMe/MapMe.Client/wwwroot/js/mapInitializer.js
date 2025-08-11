@@ -931,9 +931,16 @@ function renderMarks(marks) {
                 };
                 const titleVal = firstWith('title');
                 const addrVal = firstWith('address');
-                const title = titleVal ? `<div style=\"font-weight:600;\">${escapeHtml(titleVal)}</div>` : '';
-                const addr = addrVal ? `<div style=\"color:#6c757d;font-size:12px;margin-bottom:6px;\">${escapeHtml(addrVal)}</div>` : '';
-                const thumbHtml = (url) => `<img class=\"mm-thumb\" src=\"${url}\" alt=\"Photo\" style=\"width:72px;height:72px;border-radius:8px;object-fit:cover;border:1px solid #e9ecef;cursor:pointer;\"/>`;
+                const urlVal = firstWith('url') || (g.items[0] && g.items[0].mark && g.items[0].mark.url);
+                
+                // Make title clickable if URL is available
+                const title = titleVal ? 
+                    (urlVal ? 
+                        `<div style="font-weight:600;"><a href="${escapeHtml(urlVal)}" target="_blank" rel="noopener noreferrer" style="color:#0d6efd;text-decoration:none;">${escapeHtml(titleVal)}<svg style="width:12px;height:12px;margin-left:4px;vertical-align:baseline;" viewBox="0 0 24 24" fill="currentColor"><path d="M14,3V5H17.59L7.76,14.83L9.17,16.24L19,6.41V10H21V3M19,19H5V5H12V3H5C3.89,3 3,3.9 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V12H19V19Z" /></svg></a></div>` : 
+                        `<div style="font-weight:600;">${escapeHtml(titleVal)}</div>`) : 
+                    '';
+                const addr = addrVal ? `<div style="color:#6c757d;font-size:12px;margin-bottom:6px;">${escapeHtml(addrVal)}</div>` : '';
+                const thumbHtml = (url) => `<img class=\"mm-thumb\" src=\"${url}\" alt=\"\" style=\"width:72px;height:72px;border-radius:8px;object-fit:cover;border:1px solid #e9ecef;cursor:pointer;\"/>`;
                 // Build sections: first place images, then for each user: their images, name link and message
                 const placeUrls = [...new Set(g.items.flatMap(it => it.placePhotos).filter(Boolean))];
                 const byUser = new Map(); // name -> { urls:Set, messages:Set, avatar:string, dateMarks:[] }
@@ -966,7 +973,7 @@ function renderMarks(marks) {
                     let msgHtml = '';
                     if (sec.type === 'user' && Array.isArray(sec.messages) && sec.messages.length) {
                         const items = sec.messages.map(m => `<li>${escapeHtml(m)}</li>`).join('');
-                        msgHtml = `<ul style=\"color:#6c757d;font-size:12px;margin:2px 0 4px;padding-left:16px;\">${items}</ul>`;
+                        msgHtml = `<ul style=\"color:#6b7280;font-size:12px;margin:2px 0 4px;padding-left:16px;\">${items}</ul>`;
                     }
                     // Add edit button for current user's Date Marks
                     let editButtonHtml = '';
