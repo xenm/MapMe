@@ -351,7 +351,7 @@ export async function initMap(dotNetHelper, elementId, lat, lng, zoom, mapType, 
                                             // Move marker after confirm
                                             marker.setPosition(new google.maps.LatLng(loc.lat, loc.lng));
                                             if (dotNetHelper) {
-                                                dotNetHelper.invokeMethodAsync('OnPlaceDetails', details);
+                                                dotNetHelper.invokeMethodAsync('OnPlaceDetailsAsync', details);
                                             }
                                         }
                                     });
@@ -379,13 +379,13 @@ export async function initMap(dotNetHelper, elementId, lat, lng, zoom, mapType, 
                                             } catch (_) {}
                                             showDateProposalPrompt({ position: pos, title, address, photos: thumbs, onConfirm: () => {
                                                 marker.setPosition(pos);
-                                                if (dotNetHelper) { dotNetHelper.invokeMethodAsync('OnMapClick', pos.lat(), pos.lng()); }
+                                                if (dotNetHelper) { dotNetHelper.invokeMethodAsync('OnMapClickAsync', pos.lat(), pos.lng()); }
                                             }});
                                         });
                                     } else {
                                         showDateProposalPrompt({ position: pos, title, address, photos: [], onConfirm: () => {
                                             marker.setPosition(pos);
-                                            if (dotNetHelper) { dotNetHelper.invokeMethodAsync('OnMapClick', pos.lat(), pos.lng()); }
+                                            if (dotNetHelper) { dotNetHelper.invokeMethodAsync('OnMapClickAsync', pos.lat(), pos.lng()); }
                                         }});
                                     }
                                 });
@@ -435,7 +435,7 @@ export async function initMap(dotNetHelper, elementId, lat, lng, zoom, mapType, 
                             onConfirm: () => {
                                 marker.setPosition(pos);
                                 if (dotNetHelper) {
-                                    dotNetHelper.invokeMethodAsync('OnMapClick', pos.lat(), pos.lng());
+                                    dotNetHelper.invokeMethodAsync('OnMapClickAsync', pos.lat(), pos.lng());
                                 }
                             }
                         });
@@ -449,7 +449,7 @@ export async function initMap(dotNetHelper, elementId, lat, lng, zoom, mapType, 
             marker.addListener('dragend', (e) => {
                 const pos = marker.getPosition();
                 if (dotNetHelper) {
-                    dotNetHelper.invokeMethodAsync('OnMarkerDragEnd', pos.lat(), pos.lng());
+                    dotNetHelper.invokeMethodAsync('OnMarkerDragEndAsync', pos.lat(), pos.lng());
                 }
             });
         };
