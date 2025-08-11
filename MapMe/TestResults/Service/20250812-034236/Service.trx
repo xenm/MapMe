@@ -1,0 +1,44 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TestRun id="758d1316-3fbc-4044-ac3f-4cecaa670d08" name="@Adams-MacBook-Pro 2025-08-12 03:42:40" xmlns="http://microsoft.com/schemas/VisualStudio/TeamTest/2010">
+  <Times creation="2025-08-12T03:42:40.6428220+07:00" queuing="2025-08-12T03:42:40.6428220+07:00" start="2025-08-12T03:42:39.1551580+07:00" finish="2025-08-12T03:42:40.6446930+07:00" />
+  <TestSettings name="default" id="6a21d6be-211f-48bd-99f0-ea9488615ecb">
+    <Deployment runDeploymentRoot="_Adams-MacBook-Pro_2025-08-12_03_42_40" />
+  </TestSettings>
+  <Results>
+    <UnitTestResult executionId="e00bc965-4a84-4ad9-b7c5-a98a7c640a72" testId="2e14b324-12b9-253f-cfa7-357966005c0c" testName="MapMe.Tests.ApiSmokeTests.Profiles_Create_And_Get" computerName="Adams-MacBook-Pro" duration="00:00:00.5753109" startTime="2025-08-12T03:42:39.9944320+07:00" endTime="2025-08-12T03:42:39.9944410+07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="e00bc965-4a84-4ad9-b7c5-a98a7c640a72" />
+    <UnitTestResult executionId="39760848-906a-4604-91a8-fc66196d9e7c" testId="b13c62f0-8540-b317-0628-868ca8f9ca58" testName="MapMe.Tests.ApiSmokeTests.DateMarks_Create_And_List_By_User" computerName="Adams-MacBook-Pro" duration="00:00:00.5934922" startTime="2025-08-12T03:42:40.5882970+07:00" endTime="2025-08-12T03:42:40.5882970+07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="39760848-906a-4604-91a8-fc66196d9e7c" />
+  </Results>
+  <TestDefinitions>
+    <UnitTest name="MapMe.Tests.ApiSmokeTests.Profiles_Create_And_Get" storage="/users/adamzaplatilek/github/mapme/mapme/mapme.tests/bin/release/net10.0/mapme.tests.dll" id="2e14b324-12b9-253f-cfa7-357966005c0c">
+      <Execution id="e00bc965-4a84-4ad9-b7c5-a98a7c640a72" />
+      <TestMethod codeBase="/Users/adamzaplatilek/GitHub/MapMe/MapMe/MapMe.Tests/bin/Release/net10.0/MapMe.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="MapMe.Tests.ApiSmokeTests" name="Profiles_Create_And_Get" />
+    </UnitTest>
+    <UnitTest name="MapMe.Tests.ApiSmokeTests.DateMarks_Create_And_List_By_User" storage="/users/adamzaplatilek/github/mapme/mapme/mapme.tests/bin/release/net10.0/mapme.tests.dll" id="b13c62f0-8540-b317-0628-868ca8f9ca58">
+      <Execution id="39760848-906a-4604-91a8-fc66196d9e7c" />
+      <TestMethod codeBase="/Users/adamzaplatilek/GitHub/MapMe/MapMe/MapMe.Tests/bin/Release/net10.0/MapMe.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="MapMe.Tests.ApiSmokeTests" name="DateMarks_Create_And_List_By_User" />
+    </UnitTest>
+  </TestDefinitions>
+  <TestEntries>
+    <TestEntry testId="2e14b324-12b9-253f-cfa7-357966005c0c" executionId="e00bc965-4a84-4ad9-b7c5-a98a7c640a72" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="b13c62f0-8540-b317-0628-868ca8f9ca58" executionId="39760848-906a-4604-91a8-fc66196d9e7c" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+  </TestEntries>
+  <TestLists>
+    <TestList name="Results Not in a List" id="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestList name="All Loaded Results" id="19431567-8539-422a-85d7-44ee4e166bda" />
+  </TestLists>
+  <ResultSummary outcome="Completed">
+    <Counters total="2" executed="2" passed="2" failed="0" error="0" timeout="0" aborted="0" inconclusive="0" passedButRunAborted="0" notRunnable="0" notExecuted="0" disconnected="0" warning="0" completed="0" inProgress="0" pending="0" />
+    <Output>
+      <StdOut>[xUnit.net 00:00:00.00] xUnit.net VSTest Adapter v2.8.1+ce9211e970 (64-bit .NET 10.0.0-preview.6.25358.103)
+[xUnit.net 00:00:00.03]   Discovering: MapMe.Tests
+[xUnit.net 00:00:00.04]   Discovered:  MapMe.Tests
+[xUnit.net 00:00:00.05]   Starting:    MapMe.Tests
+warn: Microsoft.AspNetCore.HttpsPolicy.HttpsRedirectionMiddleware[3]
+      Failed to determine the https port for redirect.
+warn: Microsoft.AspNetCore.HttpsPolicy.HttpsRedirectionMiddleware[3]
+      Failed to determine the https port for redirect.
+[xUnit.net 00:00:01.24]   Finished:    MapMe.Tests
+</StdOut>
+    </Output>
+  </ResultSummary>
+</TestRun>

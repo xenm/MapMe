@@ -1,0 +1,424 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TestRun id="6bcc1a46-a51f-418a-a048-bb6cad15d039" name="@Adams-MacBook-Pro 2025-08-12 03:58:05" xmlns="http://microsoft.com/schemas/VisualStudio/TeamTest/2010">
+  <Times creation="2025-08-12T03:58:05.0907070+07:00" queuing="2025-08-12T03:58:05.0907070+07:00" start="2025-08-12T03:58:04.7662460+07:00" finish="2025-08-12T03:58:08.7311400+07:00" />
+  <TestSettings name="default" id="a2083eab-5f59-40fe-824c-e8a26ee921ea">
+    <Deployment runDeploymentRoot="_Adams-MacBook-Pro_2025-08-12_03_58_05" />
+  </TestSettings>
+  <Results>
+    <UnitTestResult executionId="86f4147a-6879-4425-a30a-2c44fcf29b15" testId="874b23b5-c5c7-d5ea-d8bf-e24d7906f523" testName="MapMe.Tests.DateMarkBusinessLogicTests.DateMark_EmptyCollections_AreHandledCorrectly" computerName="Adams-MacBook-Pro" duration="00:00:00.0010838" startTime="2025-08-12T03:58:05.0489700+07:00" endTime="2025-08-12T03:58:05.0489700+07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="86f4147a-6879-4425-a30a-2c44fcf29b15" />
+    <UnitTestResult executionId="cf572bf3-5d29-4b0d-bd87-8c8d5f5326bc" testId="43a57797-e8d6-4267-fa5a-c63a5f5d9b4e" testName="MapMe.Tests.ApiIntegrationTests.UserProfile_CompleteWorkflow_CreatesAndRetrievesProfile" computerName="Adams-MacBook-Pro" duration="00:00:00.2973146" startTime="2025-08-12T03:58:08.7007260+07:00" endTime="2025-08-12T03:58:08.7007260+07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="cf572bf3-5d29-4b0d-bd87-8c8d5f5326bc" />
+    <UnitTestResult executionId="d9de9b5a-ee06-4966-92c4-1cd047292aa4" testId="a99b4ebd-2ed1-b3e7-7afd-aef9e25651ba" testName="MapMe.Tests.DateMarkBusinessLogicTests.DateMark_UpdatedAt_CanBeModified" computerName="Adams-MacBook-Pro" duration="00:00:00.0004489" startTime="2025-08-12T03:58:05.0492750+07:00" endTime="2025-08-12T03:58:05.0492750+07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="d9de9b5a-ee06-4966-92c4-1cd047292aa4" />
+    <UnitTestResult executionId="c82d4166-b181-4afd-ba71-1cd9cd06eab2" testId="e1fcb762-7e2e-ba33-1443-92e761f380e5" testName="MapMe.Tests.ApiIntegrationTests.DateMark_CompleteWorkflow_CreatesAndListsDateMarks" computerName="Adams-MacBook-Pro" duration="00:00:00.2986912" startTime="2025-08-12T03:58:08.4031620+07:00" endTime="2025-08-12T03:58:08.4031620+07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="c82d4166-b181-4afd-ba71-1cd9cd06eab2" />
+    <UnitTestResult executionId="a1085dfa-9de6-4866-89ee-a6dd95825905" testId="9d132666-049a-2cef-9037-d675521ac78d" testName="MapMe.Tests.ApiIntegrationTests.DateMark_UpdateExisting_ModifiesCorrectly" computerName="Adams-MacBook-Pro" duration="00:00:00.2875572" startTime="2025-08-12T03:58:08.1042400+07:00" endTime="2025-08-12T03:58:08.1042400+07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="a1085dfa-9de6-4866-89ee-a6dd95825905" />
+    <UnitTestResult executionId="ac4e7e16-5dbe-4a49-926d-033abb9469a4" testId="b13c62f0-8540-b317-0628-868ca8f9ca58" testName="MapMe.Tests.ApiSmokeTests.DateMarks_Create_And_List_By_User" computerName="Adams-MacBook-Pro" duration="00:00:00.4624545" startTime="2025-08-12T03:58:06.3256420+07:00" endTime="2025-08-12T03:58:06.3256420+07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="ac4e7e16-5dbe-4a49-926d-033abb9469a4" />
+    <UnitTestResult executionId="cd15b7e0-230f-452e-8315-8cc4114d5524" testId="10ba1ee7-a45b-ddd2-1f57-0e6bac1f2f13" testName="MapMe.Tests.NormalizationTests.ToNorm_Filters_Empty_And_Duplicates" computerName="Adams-MacBook-Pro" duration="00:00:00.0005563" startTime="2025-08-12T03:58:05.0660190+07:00" endTime="2025-08-12T03:58:05.0660190+07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="cd15b7e0-230f-452e-8315-8cc4114d5524" />
+    <UnitTestResult executionId="69784cbe-e9d7-4b76-94da-47063b949670" testId="294d6ab3-7a5a-8e46-0751-8c501e719acc" testName="MapMe.Tests.DateMarkBusinessLogicTests.DateMark_SoftDelete_PreservesData" computerName="Adams-MacBook-Pro" duration="00:00:00.0003612" startTime="2025-08-12T03:58:05.0659350+07:00" endTime="2025-08-12T03:58:05.0659350+07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="69784cbe-e9d7-4b76-94da-47063b949670" />
+    <UnitTestResult executionId="b7159ccf-9aba-4e42-b095-57a6ba032beb" testId="646e669c-15fc-e67e-45f9-f3fe632ab5ab" testName="MapMe.Tests.UserProfileServiceTests.GetUserProfileAsync_ReturnsCorrectUserProfile" computerName="Adams-MacBook-Pro" duration="00:00:00.0010430" startTime="2025-08-12T03:58:05.2029710+07:00" endTime="2025-08-12T03:58:05.2029710+07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="b7159ccf-9aba-4e42-b095-57a6ba032beb" />
+    <UnitTestResult executionId="9fecb4ad-cec3-4a41-849a-624b06f98fcf" testId="ba55de75-c0f9-b5a1-73ee-ada7be98142c" testName="MapMe.Tests.DateMarkBusinessLogicTests.DateMark_WithDifferentLocations_StoresCorrectCoordinates(lat: 40,712800000000001, lng: -74,006, city: &quot;New York&quot;)" computerName="Adams-MacBook-Pro" duration="00:00:00.0000885" startTime="2025-08-12T03:58:05.0653100+07:00" endTime="2025-08-12T03:58:05.0653100+07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="9fecb4ad-cec3-4a41-849a-624b06f98fcf" />
+    <UnitTestResult executionId="eb8757d2-8338-4d75-bf3a-407846957428" testId="c10ecd8f-58d2-d7bc-522c-7ee6260aa183" testName="MapMe.Tests.ApiIntegrationTests.DateMark_FilteringByDateRange_ReturnsCorrectResults" computerName="Adams-MacBook-Pro" duration="00:00:00.4738178" startTime="2025-08-12T03:58:06.3253010+07:00" endTime="2025-08-12T03:58:06.3253010+07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="eb8757d2-8338-4d75-bf3a-407846957428" />
+    <UnitTestResult executionId="05c6e7dc-6310-4e0c-a8d8-46f606f4189b" testId="42b8854b-27d0-9d8d-d9f8-b520fb778e5c" testName="MapMe.Tests.UserProfileServiceTests.GetCurrentUserProfileAsync_ReturnsDefaultProfile_WhenNoDataExists" computerName="Adams-MacBook-Pro" duration="00:00:00.0006454" startTime="2025-08-12T03:58:05.2019020+07:00" endTime="2025-08-12T03:58:05.2019020+07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="05c6e7dc-6310-4e0c-a8d8-46f606f4189b" />
+    <UnitTestResult executionId="892f98fb-751e-4a1f-8e63-02b7d4e577ca" testId="9a1ed001-f54b-92f9-c489-c617a055cb6a" testName="MapMe.Tests.UserProfileServiceTests.GetUserDateMarksAsync_ReturnsUserSpecificMarks" computerName="Adams-MacBook-Pro" duration="00:00:00.0243107" startTime="2025-08-12T03:58:05.1891840+07:00" endTime="2025-08-12T03:58:05.1891840+07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="892f98fb-751e-4a1f-8e63-02b7d4e577ca" />
+    <UnitTestResult executionId="94c4a58f-e8d0-4327-ab03-97be87a58c9b" testId="56300fdb-165b-e4c9-1ef7-396f0edccf34" testName="MapMe.Tests.DateMarkBusinessLogicTests.DateMark_WithPlaceSnapshot_StoresPlaceDetails" computerName="Adams-MacBook-Pro" duration="00:00:00.0069238" startTime="2025-08-12T03:58:05.0487480+07:00" endTime="2025-08-12T03:58:05.0487480+07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="94c4a58f-e8d0-4327-ab03-97be87a58c9b" />
+    <UnitTestResult executionId="7bdd112a-4b43-4149-b3b1-d4fac270cdf8" testId="c12a3b5d-757e-d855-bf11-01baed1a5347" testName="MapMe.Tests.UserProfileServiceTests.DeleteDateMarkAsync_RemovesMarkFromStorage" computerName="Adams-MacBook-Pro" duration="00:00:00.0010352" startTime="2025-08-12T03:58:05.1906900+07:00" endTime="2025-08-12T03:58:05.1906900+07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Failed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="7bdd112a-4b43-4149-b3b1-d4fac270cdf8">
+      <Output>
+        <ErrorInfo>
+          <Message>System.NotSupportedException : Unsupported expression: x =&gt; x.InvokeVoidAsync("MapMe.storage.save", It.IsAny&lt;object[]&gt;())&#xD;
+Extension methods (here: JSRuntimeExtensions.InvokeVoidAsync) may not be used in setup / verification expressions.</Message>
+          <StackTrace>   at Moq.Guard.IsOverridable(MethodInfo method, Expression expression) in /_/src/Moq/Guard.cs:line 87
+   at Moq.MethodExpectation..ctor(LambdaExpression expression, MethodInfo method, IReadOnlyList`1 arguments, Boolean exactGenericTypeArguments, Boolean skipMatcherInitialization, Boolean allowNonOverridable) in /_/src/Moq/MethodExpectation.cs:line 236
+   at Moq.ExpressionExtensions.&lt;Split&gt;g__Split|5_0(Expression e, Expression&amp; r, MethodExpectation&amp; p, Boolean assignment, Boolean allowNonOverridableLastProperty) in /_/src/Moq/ExpressionExtensions.cs:line 256
+   at Moq.ExpressionExtensions.Split(LambdaExpression expression, Boolean allowNonOverridableLastProperty) in /_/src/Moq/ExpressionExtensions.cs:line 170
+   at Moq.Mock.SetupRecursive[TSetup](Mock mock, LambdaExpression expression, Func`4 setupLast, Boolean allowNonOverridableLastProperty) in /_/src/Moq/Mock.cs:line 728
+   at Moq.Mock.Setup(Mock mock, LambdaExpression expression, Condition condition) in /_/src/Moq/Mock.cs:line 562
+   at Moq.Mock`1.Setup[TResult](Expression`1 expression) in /_/src/Moq/Mock`1.cs:line 645
+   at MapMe.Tests.UserProfileServiceTests.DeleteDateMarkAsync_RemovesMarkFromStorage() in /Users/adamzaplatilek/GitHub/MapMe/MapMe/MapMe.Tests/UserProfileServiceTests.cs:line 210
+--- End of stack trace from previous location ---</StackTrace>
+        </ErrorInfo>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="35c76bdc-6cb7-4280-a465-642e07df70cd" testId="a0564c8c-f64f-d0b7-a0c6-ee73b903133d" testName="MapMe.Tests.ApiIntegrationTests.DateMark_VisibilitySettings_AreRespected(visibility: &quot;friends&quot;)" computerName="Adams-MacBook-Pro" duration="00:00:00.2739376" startTime="2025-08-12T03:58:07.2359690+07:00" endTime="2025-08-12T03:58:07.2359690+07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="35c76bdc-6cb7-4280-a465-642e07df70cd" />
+    <UnitTestResult executionId="964ddb47-fe91-47b4-8c16-95ab60f22df1" testId="ce4c28c1-65a8-0324-7a44-972efd63bd7a" testName="MapMe.Tests.DateMarkBusinessLogicTests.DateMark_Visibility_AcceptsValidValues(visibility: &quot;private&quot;)" computerName="Adams-MacBook-Pro" duration="00:00:00.0000049" startTime="2025-08-12T03:58:05.0652120+07:00" endTime="2025-08-12T03:58:05.0652120+07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="964ddb47-fe91-47b4-8c16-95ab60f22df1" />
+    <UnitTestResult executionId="bce139c2-ad50-4028-b867-35fd90527b3c" testId="54b38232-edcd-7ffe-9dd2-59e012336e85" testName="MapMe.Tests.UserProfileServiceTests.GetUserActivityStatsAsync_CalculatesCorrectStatistics" computerName="Adams-MacBook-Pro" duration="00:00:00.0033655" startTime="2025-08-12T03:58:05.1938450+07:00" endTime="2025-08-12T03:58:05.1938450+07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="bce139c2-ad50-4028-b867-35fd90527b3c" />
+    <UnitTestResult executionId="29075d35-7c88-466e-bef3-7d118b935de8" testId="4a9ff9b6-10c5-9acd-4eb9-cab6a86f7b1e" testName="MapMe.Tests.ApiIntegrationTests.DateMark_FilteringByCategories_ReturnsCorrectResults" computerName="Adams-MacBook-Pro" duration="00:00:00.2770141" startTime="2025-08-12T03:58:07.8164570+07:00" endTime="2025-08-12T03:58:07.8164570+07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="29075d35-7c88-466e-bef3-7d118b935de8" />
+    <UnitTestResult executionId="4df9986e-bab8-42ed-a47d-4692195396a9" testId="2e14b324-12b9-253f-cfa7-357966005c0c" testName="MapMe.Tests.ApiSmokeTests.Profiles_Create_And_Get" computerName="Adams-MacBook-Pro" duration="00:00:00.8229988" startTime="2025-08-12T03:58:05.8629540+07:00" endTime="2025-08-12T03:58:05.8629540+07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="4df9986e-bab8-42ed-a47d-4692195396a9" />
+    <UnitTestResult executionId="1a4748dd-b1e7-4b9d-ab4e-996424f8c45f" testId="f55b9f59-f089-88c0-fc75-1f51fa3c7bc5" testName="MapMe.Tests.ApiIntegrationTests.Profile_NotFound_Returns404" computerName="Adams-MacBook-Pro" duration="00:00:00.3700104" startTime="2025-08-12T03:58:06.6955230+07:00" endTime="2025-08-12T03:58:06.6955230+07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="1a4748dd-b1e7-4b9d-ab4e-996424f8c45f" />
+    <UnitTestResult executionId="676b5585-9610-414b-b811-7ed2a7699f1b" testId="17b9af79-bdff-a984-db3f-faa50f29a8bf" testName="MapMe.Tests.DateMarkBusinessLogicTests.DateMark_WithDifferentLocations_StoresCorrectCoordinates(lat: 51,507399999999997, lng: -0,1278, city: &quot;London&quot;)" computerName="Adams-MacBook-Pro" duration="00:00:00.0001016" startTime="2025-08-12T03:58:05.0652960+07:00" endTime="2025-08-12T03:58:05.0652960+07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="676b5585-9610-414b-b811-7ed2a7699f1b" />
+    <UnitTestResult executionId="11c8a12d-5326-44b9-a9b7-9b7865d4309c" testId="f9e3a7e3-9c8a-abfe-d210-e3753eab44ca" testName="MapMe.Tests.UserProfileServiceTests.GetCurrentUserProfileAsync_ReturnsStoredProfile_WhenDataExists" computerName="Adams-MacBook-Pro" duration="00:00:00.0035522" startTime="2025-08-12T03:58:05.2012180+07:00" endTime="2025-08-12T03:58:05.2012180+07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="11c8a12d-5326-44b9-a9b7-9b7865d4309c" />
+    <UnitTestResult executionId="0020c956-d9a1-47b5-afd3-626b49e9a7af" testId="cc60a92f-57ee-954d-88fa-7deb0a33926e" testName="MapMe.Tests.DateMarkBusinessLogicTests.DateMark_WithFutureVisitDate_IsValid" computerName="Adams-MacBook-Pro" duration="00:00:00.0003494" startTime="2025-08-12T03:58:05.0652370+07:00" endTime="2025-08-12T03:58:05.0652370+07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="0020c956-d9a1-47b5-afd3-626b49e9a7af" />
+    <UnitTestResult executionId="b8e53654-5b82-40e9-b22b-112520caea0c" testId="1cbae08d-9bef-30c1-da4d-9eae7ffba660" testName="MapMe.Tests.DateMarkBusinessLogicTests.DateMark_Visibility_AcceptsValidValues(visibility: &quot;public&quot;)" computerName="Adams-MacBook-Pro" duration="00:00:00.0000562" startTime="2025-08-12T03:58:05.0651960+07:00" endTime="2025-08-12T03:58:05.0651960+07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="b8e53654-5b82-40e9-b22b-112520caea0c" />
+    <UnitTestResult executionId="9ada23e9-4c2e-49f5-8310-35c339538dee" testId="918d69b8-0567-3b62-1b94-40477ed61acc" testName="MapMe.Tests.ApiIntegrationTests.DateMarks_EmptyUser_ReturnsEmptyList" computerName="Adams-MacBook-Pro" duration="00:00:00.8113953" startTime="2025-08-12T03:58:05.8512970+07:00" endTime="2025-08-12T03:58:05.8512970+07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="9ada23e9-4c2e-49f5-8310-35c339538dee" />
+    <UnitTestResult executionId="26c81220-502d-44eb-8fe0-1ceb81b81550" testId="22f21ca7-6b42-bbc3-a2cc-10b066777368" testName="MapMe.Tests.DateMarkBusinessLogicTests.GeoPoint_FromLatLng_CreatesValidGeoPoint" computerName="Adams-MacBook-Pro" duration="00:00:00.0002493" startTime="2025-08-12T03:58:05.0650790+07:00" endTime="2025-08-12T03:58:05.0650790+07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="26c81220-502d-44eb-8fe0-1ceb81b81550" />
+    <UnitTestResult executionId="329714aa-6cc5-414f-98fe-a6b02cd00779" testId="7d3500f9-fe15-a5db-18f7-7485f3ebb427" testName="MapMe.Tests.ApiIntegrationTests.DateMark_VisibilitySettings_AreRespected(visibility: &quot;private&quot;)" computerName="Adams-MacBook-Pro" duration="00:00:00.3030330" startTime="2025-08-12T03:58:07.5392140+07:00" endTime="2025-08-12T03:58:07.5392140+07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="329714aa-6cc5-414f-98fe-a6b02cd00779" />
+    <UnitTestResult executionId="5994ed30-c5b7-4463-a14d-8e6d0d76f688" testId="24548ab1-f6a3-b73b-5143-7775fddaf9e0" testName="MapMe.Tests.DateMarkBusinessLogicTests.DateMark_WithDifferentLocations_StoresCorrectCoordinates(lat: 37,774900000000002, lng: -122,4194, city: &quot;San Francisco&quot;)" computerName="Adams-MacBook-Pro" duration="00:00:00.0000076" startTime="2025-08-12T03:58:05.0659110+07:00" endTime="2025-08-12T03:58:05.0659110+07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="5994ed30-c5b7-4463-a14d-8e6d0d76f688" />
+    <UnitTestResult executionId="846894f6-e360-4edc-a052-4540e5308cd3" testId="f263b0e9-424a-142e-eae8-d5750ed3dbc3" testName="MapMe.Tests.UserProfileServiceTests.SaveDateMarkAsync_PreventsDuplicates_WhenSamePlaceAndUser" computerName="Adams-MacBook-Pro" duration="00:00:00.0011274" startTime="2025-08-12T03:58:05.1963340+07:00" endTime="2025-08-12T03:58:05.1963340+07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="846894f6-e360-4edc-a052-4540e5308cd3" />
+    <UnitTestResult executionId="e5f67c70-579d-460e-b04c-b66bbd5f46d4" testId="ce8d9085-257d-d7d4-fda4-d09aafc89d94" testName="MapMe.Tests.InMemoryRepositoryTests.UserProfile_InMemory_Upsert_And_Get" computerName="Adams-MacBook-Pro" duration="00:00:00.0047653" startTime="2025-08-12T03:58:05.0470750+07:00" endTime="2025-08-12T03:58:05.0470850+07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="e5f67c70-579d-460e-b04c-b66bbd5f46d4" />
+    <UnitTestResult executionId="284553b5-1c44-4b8d-b13a-2ef4cfc50797" testId="e73246bd-9452-0519-22d8-5ecd6b6f4191" testName="MapMe.Tests.InMemoryRepositoryTests.DateMarks_InMemory_Filtering_Works" computerName="Adams-MacBook-Pro" duration="00:00:00.0099503" startTime="2025-08-12T03:58:05.0659880+07:00" endTime="2025-08-12T03:58:05.0659880+07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="284553b5-1c44-4b8d-b13a-2ef4cfc50797" />
+    <UnitTestResult executionId="8f82db3b-3285-45a6-a874-749892d984c2" testId="84b473b1-ed56-f70f-10ec-c84b1a0219ef" testName="MapMe.Tests.DateMarkBusinessLogicTests.DateMark_NormalizationFields_AreProperlyNormalized" computerName="Adams-MacBook-Pro" duration="00:00:00.0001341" startTime="2025-08-12T03:58:05.0652570+07:00" endTime="2025-08-12T03:58:05.0652570+07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="8f82db3b-3285-45a6-a874-749892d984c2" />
+    <UnitTestResult executionId="dbc07fe2-a3e0-4966-b15b-5971aadade43" testId="f84d9dcb-bf3a-2eb4-ab08-f117a88ef601" testName="MapMe.Tests.ApiIntegrationTests.DateMark_VisibilitySettings_AreRespected(visibility: &quot;public&quot;)" computerName="Adams-MacBook-Pro" duration="00:00:00.2660986" startTime="2025-08-12T03:58:06.9618340+07:00" endTime="2025-08-12T03:58:06.9618340+07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="dbc07fe2-a3e0-4966-b15b-5971aadade43" />
+    <UnitTestResult executionId="90d9010f-f20b-486b-b350-321376319776" testId="7eea0268-04fe-6021-3cb7-8aba0a5f9c6a" testName="MapMe.Tests.DateMarkBusinessLogicTests.DateMark_Creation_SetsRequiredFields" computerName="Adams-MacBook-Pro" duration="00:00:00.0004409" startTime="2025-08-12T03:58:05.0652770+07:00" endTime="2025-08-12T03:58:05.0652770+07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="90d9010f-f20b-486b-b350-321376319776" />
+    <UnitTestResult executionId="884a55c9-0ebb-4b6c-9eb5-0f9f2324b6d2" testId="f836b39b-d087-0956-8a50-31a33791fb79" testName="MapMe.Tests.DateMarkBusinessLogicTests.DateMark_WithNullVisitDate_IsValid" computerName="Adams-MacBook-Pro" duration="00:00:00.0001270" startTime="2025-08-12T03:58:05.0659560+07:00" endTime="2025-08-12T03:58:05.0659560+07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="884a55c9-0ebb-4b6c-9eb5-0f9f2324b6d2" />
+    <UnitTestResult executionId="3bf122a1-b7aa-4e9d-8f09-d2be9f0e0b74" testId="99e4ee90-cdfb-eeff-f039-346231c48781" testName="MapMe.Tests.DateMarkBusinessLogicTests.DateMark_Visibility_AcceptsValidValues(visibility: &quot;friends&quot;)" computerName="Adams-MacBook-Pro" duration="00:00:00.0000706" startTime="2025-08-12T03:58:05.0651780+07:00" endTime="2025-08-12T03:58:05.0651780+07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="3bf122a1-b7aa-4e9d-8f09-d2be9f0e0b74" />
+    <UnitTestResult executionId="c5091cb9-6c68-4156-8cd2-18a9641c5443" testId="15a69689-ac9f-bd90-52e0-f559c0b50dc3" testName="MapMe.Tests.NormalizationTests.ToNorm_Removes_Diacritics_And_Punctuation_And_Lowercases" computerName="Adams-MacBook-Pro" duration="00:00:00.0179546" startTime="2025-08-12T03:58:05.0659940+07:00" endTime="2025-08-12T03:58:05.0659940+07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="c5091cb9-6c68-4156-8cd2-18a9641c5443" />
+    <UnitTestResult executionId="b46d1e0d-76fb-4cb2-9016-c780a2c997bf" testId="f92c1ea1-c00f-8d1a-38fc-5f63d7fd5d19" testName="MapMe.Tests.UserProfileServiceTests.UpdateDateMarkAsync_UpdatesExistingMark" computerName="Adams-MacBook-Pro" duration="00:00:00.0010249" startTime="2025-08-12T03:58:05.1978130+07:00" endTime="2025-08-12T03:58:05.1978130+07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Failed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="b46d1e0d-76fb-4cb2-9016-c780a2c997bf">
+      <Output>
+        <ErrorInfo>
+          <Message>System.NotSupportedException : Unsupported expression: x =&gt; x.InvokeVoidAsync("MapMe.storage.save", It.IsAny&lt;object[]&gt;())&#xD;
+Extension methods (here: JSRuntimeExtensions.InvokeVoidAsync) may not be used in setup / verification expressions.</Message>
+          <StackTrace>   at Moq.Guard.IsOverridable(MethodInfo method, Expression expression) in /_/src/Moq/Guard.cs:line 87
+   at Moq.MethodExpectation..ctor(LambdaExpression expression, MethodInfo method, IReadOnlyList`1 arguments, Boolean exactGenericTypeArguments, Boolean skipMatcherInitialization, Boolean allowNonOverridable) in /_/src/Moq/MethodExpectation.cs:line 236
+   at Moq.ExpressionExtensions.&lt;Split&gt;g__Split|5_0(Expression e, Expression&amp; r, MethodExpectation&amp; p, Boolean assignment, Boolean allowNonOverridableLastProperty) in /_/src/Moq/ExpressionExtensions.cs:line 256
+   at Moq.ExpressionExtensions.Split(LambdaExpression expression, Boolean allowNonOverridableLastProperty) in /_/src/Moq/ExpressionExtensions.cs:line 170
+   at Moq.Mock.SetupRecursive[TSetup](Mock mock, LambdaExpression expression, Func`4 setupLast, Boolean allowNonOverridableLastProperty) in /_/src/Moq/Mock.cs:line 728
+   at Moq.Mock.Setup(Mock mock, LambdaExpression expression, Condition condition) in /_/src/Moq/Mock.cs:line 562
+   at Moq.Mock`1.Setup[TResult](Expression`1 expression) in /_/src/Moq/Mock`1.cs:line 645
+   at MapMe.Tests.UserProfileServiceTests.UpdateDateMarkAsync_UpdatesExistingMark() in /Users/adamzaplatilek/GitHub/MapMe/MapMe/MapMe.Tests/UserProfileServiceTests.cs:line 173
+--- End of stack trace from previous location ---</StackTrace>
+        </ErrorInfo>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="596eeb61-32a1-487f-8668-bdae54222a13" testId="147eaff5-9ba7-3af8-4f46-b9b7c504a2cc" testName="MapMe.Tests.UserProfileServiceTests.SaveCurrentUserProfileAsync_SavesProfileToStorage" computerName="Adams-MacBook-Pro" duration="00:00:00.1211249" startTime="2025-08-12T03:58:05.1668520+07:00" endTime="2025-08-12T03:58:05.1668520+07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Failed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="596eeb61-32a1-487f-8668-bdae54222a13">
+      <Output>
+        <ErrorInfo>
+          <Message>System.NotSupportedException : Unsupported expression: x =&gt; x.InvokeVoidAsync("MapMe.storage.save", It.IsAny&lt;object[]&gt;())&#xD;
+Extension methods (here: JSRuntimeExtensions.InvokeVoidAsync) may not be used in setup / verification expressions.</Message>
+          <StackTrace>   at Moq.Guard.IsOverridable(MethodInfo method, Expression expression) in /_/src/Moq/Guard.cs:line 87
+   at Moq.MethodExpectation..ctor(LambdaExpression expression, MethodInfo method, IReadOnlyList`1 arguments, Boolean exactGenericTypeArguments, Boolean skipMatcherInitialization, Boolean allowNonOverridable) in /_/src/Moq/MethodExpectation.cs:line 236
+   at Moq.ExpressionExtensions.&lt;Split&gt;g__Split|5_0(Expression e, Expression&amp; r, MethodExpectation&amp; p, Boolean assignment, Boolean allowNonOverridableLastProperty) in /_/src/Moq/ExpressionExtensions.cs:line 256
+   at Moq.ExpressionExtensions.Split(LambdaExpression expression, Boolean allowNonOverridableLastProperty) in /_/src/Moq/ExpressionExtensions.cs:line 170
+   at Moq.Mock.SetupRecursive[TSetup](Mock mock, LambdaExpression expression, Func`4 setupLast, Boolean allowNonOverridableLastProperty) in /_/src/Moq/Mock.cs:line 728
+   at Moq.Mock.Setup(Mock mock, LambdaExpression expression, Condition condition) in /_/src/Moq/Mock.cs:line 562
+   at Moq.Mock`1.Setup[TResult](Expression`1 expression) in /_/src/Moq/Mock`1.cs:line 645
+   at MapMe.Tests.UserProfileServiceTests.SaveCurrentUserProfileAsync_SavesProfileToStorage() in /Users/adamzaplatilek/GitHub/MapMe/MapMe/MapMe.Tests/UserProfileServiceTests.cs:line 84
+--- End of stack trace from previous location ---</StackTrace>
+        </ErrorInfo>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="2df9ad87-3a7d-48b8-9305-39e492fdc9f5" testId="5670f1da-9611-fef0-6890-7da3c37afe03" testName="MapMe.Tests.UserProfileServiceTests.SaveDateMarkAsync_SavesNewMark_WhenNoDuplicate" computerName="Adams-MacBook-Pro" duration="00:00:00.0011034" startTime="2025-08-12T03:58:05.1956180+07:00" endTime="2025-08-12T03:58:05.1956180+07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Failed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="2df9ad87-3a7d-48b8-9305-39e492fdc9f5">
+      <Output>
+        <ErrorInfo>
+          <Message>System.NotSupportedException : Unsupported expression: x =&gt; x.InvokeVoidAsync("MapMe.storage.save", It.IsAny&lt;object[]&gt;())&#xD;
+Extension methods (here: JSRuntimeExtensions.InvokeVoidAsync) may not be used in setup / verification expressions.</Message>
+          <StackTrace>   at Moq.Guard.IsOverridable(MethodInfo method, Expression expression) in /_/src/Moq/Guard.cs:line 87
+   at Moq.MethodExpectation..ctor(LambdaExpression expression, MethodInfo method, IReadOnlyList`1 arguments, Boolean exactGenericTypeArguments, Boolean skipMatcherInitialization, Boolean allowNonOverridable) in /_/src/Moq/MethodExpectation.cs:line 236
+   at Moq.ExpressionExtensions.&lt;Split&gt;g__Split|5_0(Expression e, Expression&amp; r, MethodExpectation&amp; p, Boolean assignment, Boolean allowNonOverridableLastProperty) in /_/src/Moq/ExpressionExtensions.cs:line 256
+   at Moq.ExpressionExtensions.Split(LambdaExpression expression, Boolean allowNonOverridableLastProperty) in /_/src/Moq/ExpressionExtensions.cs:line 170
+   at Moq.Mock.SetupRecursive[TSetup](Mock mock, LambdaExpression expression, Func`4 setupLast, Boolean allowNonOverridableLastProperty) in /_/src/Moq/Mock.cs:line 728
+   at Moq.Mock.Setup(Mock mock, LambdaExpression expression, Condition condition) in /_/src/Moq/Mock.cs:line 562
+   at Moq.Mock`1.Setup[TResult](Expression`1 expression) in /_/src/Moq/Mock`1.cs:line 645
+   at MapMe.Tests.UserProfileServiceTests.SaveDateMarkAsync_SavesNewMark_WhenNoDuplicate() in /Users/adamzaplatilek/GitHub/MapMe/MapMe/MapMe.Tests/UserProfileServiceTests.cs:line 136
+--- End of stack trace from previous location ---</StackTrace>
+        </ErrorInfo>
+      </Output>
+    </UnitTestResult>
+  </Results>
+  <TestDefinitions>
+    <UnitTest name="MapMe.Tests.ApiIntegrationTests.DateMark_CompleteWorkflow_CreatesAndListsDateMarks" storage="/users/adamzaplatilek/github/mapme/mapme/mapme.tests/bin/release/net10.0/mapme.tests.dll" id="e1fcb762-7e2e-ba33-1443-92e761f380e5">
+      <Execution id="c82d4166-b181-4afd-ba71-1cd9cd06eab2" />
+      <TestMethod codeBase="/Users/adamzaplatilek/GitHub/MapMe/MapMe/MapMe.Tests/bin/Release/net10.0/MapMe.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="MapMe.Tests.ApiIntegrationTests" name="DateMark_CompleteWorkflow_CreatesAndListsDateMarks" />
+    </UnitTest>
+    <UnitTest name="MapMe.Tests.DateMarkBusinessLogicTests.DateMark_WithFutureVisitDate_IsValid" storage="/users/adamzaplatilek/github/mapme/mapme/mapme.tests/bin/release/net10.0/mapme.tests.dll" id="cc60a92f-57ee-954d-88fa-7deb0a33926e">
+      <Execution id="0020c956-d9a1-47b5-afd3-626b49e9a7af" />
+      <TestMethod codeBase="/Users/adamzaplatilek/GitHub/MapMe/MapMe/MapMe.Tests/bin/Release/net10.0/MapMe.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="MapMe.Tests.DateMarkBusinessLogicTests" name="DateMark_WithFutureVisitDate_IsValid" />
+    </UnitTest>
+    <UnitTest name="MapMe.Tests.UserProfileServiceTests.SaveDateMarkAsync_PreventsDuplicates_WhenSamePlaceAndUser" storage="/users/adamzaplatilek/github/mapme/mapme/mapme.tests/bin/release/net10.0/mapme.tests.dll" id="f263b0e9-424a-142e-eae8-d5750ed3dbc3">
+      <Execution id="846894f6-e360-4edc-a052-4540e5308cd3" />
+      <TestMethod codeBase="/Users/adamzaplatilek/GitHub/MapMe/MapMe/MapMe.Tests/bin/Release/net10.0/MapMe.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="MapMe.Tests.UserProfileServiceTests" name="SaveDateMarkAsync_PreventsDuplicates_WhenSamePlaceAndUser" />
+    </UnitTest>
+    <UnitTest name="MapMe.Tests.ApiIntegrationTests.DateMark_FilteringByDateRange_ReturnsCorrectResults" storage="/users/adamzaplatilek/github/mapme/mapme/mapme.tests/bin/release/net10.0/mapme.tests.dll" id="c10ecd8f-58d2-d7bc-522c-7ee6260aa183">
+      <Execution id="eb8757d2-8338-4d75-bf3a-407846957428" />
+      <TestMethod codeBase="/Users/adamzaplatilek/GitHub/MapMe/MapMe/MapMe.Tests/bin/Release/net10.0/MapMe.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="MapMe.Tests.ApiIntegrationTests" name="DateMark_FilteringByDateRange_ReturnsCorrectResults" />
+    </UnitTest>
+    <UnitTest name="MapMe.Tests.DateMarkBusinessLogicTests.DateMark_WithNullVisitDate_IsValid" storage="/users/adamzaplatilek/github/mapme/mapme/mapme.tests/bin/release/net10.0/mapme.tests.dll" id="f836b39b-d087-0956-8a50-31a33791fb79">
+      <Execution id="884a55c9-0ebb-4b6c-9eb5-0f9f2324b6d2" />
+      <TestMethod codeBase="/Users/adamzaplatilek/GitHub/MapMe/MapMe/MapMe.Tests/bin/Release/net10.0/MapMe.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="MapMe.Tests.DateMarkBusinessLogicTests" name="DateMark_WithNullVisitDate_IsValid" />
+    </UnitTest>
+    <UnitTest name="MapMe.Tests.InMemoryRepositoryTests.DateMarks_InMemory_Filtering_Works" storage="/users/adamzaplatilek/github/mapme/mapme/mapme.tests/bin/release/net10.0/mapme.tests.dll" id="e73246bd-9452-0519-22d8-5ecd6b6f4191">
+      <Execution id="284553b5-1c44-4b8d-b13a-2ef4cfc50797" />
+      <TestMethod codeBase="/Users/adamzaplatilek/GitHub/MapMe/MapMe/MapMe.Tests/bin/Release/net10.0/MapMe.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="MapMe.Tests.InMemoryRepositoryTests" name="DateMarks_InMemory_Filtering_Works" />
+    </UnitTest>
+    <UnitTest name="MapMe.Tests.DateMarkBusinessLogicTests.DateMark_UpdatedAt_CanBeModified" storage="/users/adamzaplatilek/github/mapme/mapme/mapme.tests/bin/release/net10.0/mapme.tests.dll" id="a99b4ebd-2ed1-b3e7-7afd-aef9e25651ba">
+      <Execution id="d9de9b5a-ee06-4966-92c4-1cd047292aa4" />
+      <TestMethod codeBase="/Users/adamzaplatilek/GitHub/MapMe/MapMe/MapMe.Tests/bin/Release/net10.0/MapMe.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="MapMe.Tests.DateMarkBusinessLogicTests" name="DateMark_UpdatedAt_CanBeModified" />
+    </UnitTest>
+    <UnitTest name="MapMe.Tests.DateMarkBusinessLogicTests.DateMark_NormalizationFields_AreProperlyNormalized" storage="/users/adamzaplatilek/github/mapme/mapme/mapme.tests/bin/release/net10.0/mapme.tests.dll" id="84b473b1-ed56-f70f-10ec-c84b1a0219ef">
+      <Execution id="8f82db3b-3285-45a6-a874-749892d984c2" />
+      <TestMethod codeBase="/Users/adamzaplatilek/GitHub/MapMe/MapMe/MapMe.Tests/bin/Release/net10.0/MapMe.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="MapMe.Tests.DateMarkBusinessLogicTests" name="DateMark_NormalizationFields_AreProperlyNormalized" />
+    </UnitTest>
+    <UnitTest name="MapMe.Tests.ApiSmokeTests.DateMarks_Create_And_List_By_User" storage="/users/adamzaplatilek/github/mapme/mapme/mapme.tests/bin/release/net10.0/mapme.tests.dll" id="b13c62f0-8540-b317-0628-868ca8f9ca58">
+      <Execution id="ac4e7e16-5dbe-4a49-926d-033abb9469a4" />
+      <TestMethod codeBase="/Users/adamzaplatilek/GitHub/MapMe/MapMe/MapMe.Tests/bin/Release/net10.0/MapMe.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="MapMe.Tests.ApiSmokeTests" name="DateMarks_Create_And_List_By_User" />
+    </UnitTest>
+    <UnitTest name="MapMe.Tests.DateMarkBusinessLogicTests.DateMark_WithDifferentLocations_StoresCorrectCoordinates(lat: 51,507399999999997, lng: -0,1278, city: &quot;London&quot;)" storage="/users/adamzaplatilek/github/mapme/mapme/mapme.tests/bin/release/net10.0/mapme.tests.dll" id="17b9af79-bdff-a984-db3f-faa50f29a8bf">
+      <Execution id="676b5585-9610-414b-b811-7ed2a7699f1b" />
+      <TestMethod codeBase="/Users/adamzaplatilek/GitHub/MapMe/MapMe/MapMe.Tests/bin/Release/net10.0/MapMe.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="MapMe.Tests.DateMarkBusinessLogicTests" name="DateMark_WithDifferentLocations_StoresCorrectCoordinates" />
+    </UnitTest>
+    <UnitTest name="MapMe.Tests.UserProfileServiceTests.GetUserActivityStatsAsync_CalculatesCorrectStatistics" storage="/users/adamzaplatilek/github/mapme/mapme/mapme.tests/bin/release/net10.0/mapme.tests.dll" id="54b38232-edcd-7ffe-9dd2-59e012336e85">
+      <Execution id="bce139c2-ad50-4028-b867-35fd90527b3c" />
+      <TestMethod codeBase="/Users/adamzaplatilek/GitHub/MapMe/MapMe/MapMe.Tests/bin/Release/net10.0/MapMe.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="MapMe.Tests.UserProfileServiceTests" name="GetUserActivityStatsAsync_CalculatesCorrectStatistics" />
+    </UnitTest>
+    <UnitTest name="MapMe.Tests.UserProfileServiceTests.UpdateDateMarkAsync_UpdatesExistingMark" storage="/users/adamzaplatilek/github/mapme/mapme/mapme.tests/bin/release/net10.0/mapme.tests.dll" id="f92c1ea1-c00f-8d1a-38fc-5f63d7fd5d19">
+      <Execution id="b46d1e0d-76fb-4cb2-9016-c780a2c997bf" />
+      <TestMethod codeBase="/Users/adamzaplatilek/GitHub/MapMe/MapMe/MapMe.Tests/bin/Release/net10.0/MapMe.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="MapMe.Tests.UserProfileServiceTests" name="UpdateDateMarkAsync_UpdatesExistingMark" />
+    </UnitTest>
+    <UnitTest name="MapMe.Tests.DateMarkBusinessLogicTests.DateMark_WithDifferentLocations_StoresCorrectCoordinates(lat: 40,712800000000001, lng: -74,006, city: &quot;New York&quot;)" storage="/users/adamzaplatilek/github/mapme/mapme/mapme.tests/bin/release/net10.0/mapme.tests.dll" id="ba55de75-c0f9-b5a1-73ee-ada7be98142c">
+      <Execution id="9fecb4ad-cec3-4a41-849a-624b06f98fcf" />
+      <TestMethod codeBase="/Users/adamzaplatilek/GitHub/MapMe/MapMe/MapMe.Tests/bin/Release/net10.0/MapMe.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="MapMe.Tests.DateMarkBusinessLogicTests" name="DateMark_WithDifferentLocations_StoresCorrectCoordinates" />
+    </UnitTest>
+    <UnitTest name="MapMe.Tests.ApiSmokeTests.Profiles_Create_And_Get" storage="/users/adamzaplatilek/github/mapme/mapme/mapme.tests/bin/release/net10.0/mapme.tests.dll" id="2e14b324-12b9-253f-cfa7-357966005c0c">
+      <Execution id="4df9986e-bab8-42ed-a47d-4692195396a9" />
+      <TestMethod codeBase="/Users/adamzaplatilek/GitHub/MapMe/MapMe/MapMe.Tests/bin/Release/net10.0/MapMe.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="MapMe.Tests.ApiSmokeTests" name="Profiles_Create_And_Get" />
+    </UnitTest>
+    <UnitTest name="MapMe.Tests.DateMarkBusinessLogicTests.DateMark_EmptyCollections_AreHandledCorrectly" storage="/users/adamzaplatilek/github/mapme/mapme/mapme.tests/bin/release/net10.0/mapme.tests.dll" id="874b23b5-c5c7-d5ea-d8bf-e24d7906f523">
+      <Execution id="86f4147a-6879-4425-a30a-2c44fcf29b15" />
+      <TestMethod codeBase="/Users/adamzaplatilek/GitHub/MapMe/MapMe/MapMe.Tests/bin/Release/net10.0/MapMe.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="MapMe.Tests.DateMarkBusinessLogicTests" name="DateMark_EmptyCollections_AreHandledCorrectly" />
+    </UnitTest>
+    <UnitTest name="MapMe.Tests.DateMarkBusinessLogicTests.DateMark_SoftDelete_PreservesData" storage="/users/adamzaplatilek/github/mapme/mapme/mapme.tests/bin/release/net10.0/mapme.tests.dll" id="294d6ab3-7a5a-8e46-0751-8c501e719acc">
+      <Execution id="69784cbe-e9d7-4b76-94da-47063b949670" />
+      <TestMethod codeBase="/Users/adamzaplatilek/GitHub/MapMe/MapMe/MapMe.Tests/bin/Release/net10.0/MapMe.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="MapMe.Tests.DateMarkBusinessLogicTests" name="DateMark_SoftDelete_PreservesData" />
+    </UnitTest>
+    <UnitTest name="MapMe.Tests.UserProfileServiceTests.GetUserProfileAsync_ReturnsCorrectUserProfile" storage="/users/adamzaplatilek/github/mapme/mapme/mapme.tests/bin/release/net10.0/mapme.tests.dll" id="646e669c-15fc-e67e-45f9-f3fe632ab5ab">
+      <Execution id="b7159ccf-9aba-4e42-b095-57a6ba032beb" />
+      <TestMethod codeBase="/Users/adamzaplatilek/GitHub/MapMe/MapMe/MapMe.Tests/bin/Release/net10.0/MapMe.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="MapMe.Tests.UserProfileServiceTests" name="GetUserProfileAsync_ReturnsCorrectUserProfile" />
+    </UnitTest>
+    <UnitTest name="MapMe.Tests.DateMarkBusinessLogicTests.DateMark_WithDifferentLocations_StoresCorrectCoordinates(lat: 37,774900000000002, lng: -122,4194, city: &quot;San Francisco&quot;)" storage="/users/adamzaplatilek/github/mapme/mapme/mapme.tests/bin/release/net10.0/mapme.tests.dll" id="24548ab1-f6a3-b73b-5143-7775fddaf9e0">
+      <Execution id="5994ed30-c5b7-4463-a14d-8e6d0d76f688" />
+      <TestMethod codeBase="/Users/adamzaplatilek/GitHub/MapMe/MapMe/MapMe.Tests/bin/Release/net10.0/MapMe.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="MapMe.Tests.DateMarkBusinessLogicTests" name="DateMark_WithDifferentLocations_StoresCorrectCoordinates" />
+    </UnitTest>
+    <UnitTest name="MapMe.Tests.InMemoryRepositoryTests.UserProfile_InMemory_Upsert_And_Get" storage="/users/adamzaplatilek/github/mapme/mapme/mapme.tests/bin/release/net10.0/mapme.tests.dll" id="ce8d9085-257d-d7d4-fda4-d09aafc89d94">
+      <Execution id="e5f67c70-579d-460e-b04c-b66bbd5f46d4" />
+      <TestMethod codeBase="/Users/adamzaplatilek/GitHub/MapMe/MapMe/MapMe.Tests/bin/Release/net10.0/MapMe.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="MapMe.Tests.InMemoryRepositoryTests" name="UserProfile_InMemory_Upsert_And_Get" />
+    </UnitTest>
+    <UnitTest name="MapMe.Tests.ApiIntegrationTests.DateMark_UpdateExisting_ModifiesCorrectly" storage="/users/adamzaplatilek/github/mapme/mapme/mapme.tests/bin/release/net10.0/mapme.tests.dll" id="9d132666-049a-2cef-9037-d675521ac78d">
+      <Execution id="a1085dfa-9de6-4866-89ee-a6dd95825905" />
+      <TestMethod codeBase="/Users/adamzaplatilek/GitHub/MapMe/MapMe/MapMe.Tests/bin/Release/net10.0/MapMe.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="MapMe.Tests.ApiIntegrationTests" name="DateMark_UpdateExisting_ModifiesCorrectly" />
+    </UnitTest>
+    <UnitTest name="MapMe.Tests.ApiIntegrationTests.Profile_NotFound_Returns404" storage="/users/adamzaplatilek/github/mapme/mapme/mapme.tests/bin/release/net10.0/mapme.tests.dll" id="f55b9f59-f089-88c0-fc75-1f51fa3c7bc5">
+      <Execution id="1a4748dd-b1e7-4b9d-ab4e-996424f8c45f" />
+      <TestMethod codeBase="/Users/adamzaplatilek/GitHub/MapMe/MapMe/MapMe.Tests/bin/Release/net10.0/MapMe.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="MapMe.Tests.ApiIntegrationTests" name="Profile_NotFound_Returns404" />
+    </UnitTest>
+    <UnitTest name="MapMe.Tests.ApiIntegrationTests.DateMark_VisibilitySettings_AreRespected(visibility: &quot;private&quot;)" storage="/users/adamzaplatilek/github/mapme/mapme/mapme.tests/bin/release/net10.0/mapme.tests.dll" id="7d3500f9-fe15-a5db-18f7-7485f3ebb427">
+      <Execution id="329714aa-6cc5-414f-98fe-a6b02cd00779" />
+      <TestMethod codeBase="/Users/adamzaplatilek/GitHub/MapMe/MapMe/MapMe.Tests/bin/Release/net10.0/MapMe.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="MapMe.Tests.ApiIntegrationTests" name="DateMark_VisibilitySettings_AreRespected" />
+    </UnitTest>
+    <UnitTest name="MapMe.Tests.ApiIntegrationTests.UserProfile_CompleteWorkflow_CreatesAndRetrievesProfile" storage="/users/adamzaplatilek/github/mapme/mapme/mapme.tests/bin/release/net10.0/mapme.tests.dll" id="43a57797-e8d6-4267-fa5a-c63a5f5d9b4e">
+      <Execution id="cf572bf3-5d29-4b0d-bd87-8c8d5f5326bc" />
+      <TestMethod codeBase="/Users/adamzaplatilek/GitHub/MapMe/MapMe/MapMe.Tests/bin/Release/net10.0/MapMe.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="MapMe.Tests.ApiIntegrationTests" name="UserProfile_CompleteWorkflow_CreatesAndRetrievesProfile" />
+    </UnitTest>
+    <UnitTest name="MapMe.Tests.ApiIntegrationTests.DateMarks_EmptyUser_ReturnsEmptyList" storage="/users/adamzaplatilek/github/mapme/mapme/mapme.tests/bin/release/net10.0/mapme.tests.dll" id="918d69b8-0567-3b62-1b94-40477ed61acc">
+      <Execution id="9ada23e9-4c2e-49f5-8310-35c339538dee" />
+      <TestMethod codeBase="/Users/adamzaplatilek/GitHub/MapMe/MapMe/MapMe.Tests/bin/Release/net10.0/MapMe.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="MapMe.Tests.ApiIntegrationTests" name="DateMarks_EmptyUser_ReturnsEmptyList" />
+    </UnitTest>
+    <UnitTest name="MapMe.Tests.NormalizationTests.ToNorm_Removes_Diacritics_And_Punctuation_And_Lowercases" storage="/users/adamzaplatilek/github/mapme/mapme/mapme.tests/bin/release/net10.0/mapme.tests.dll" id="15a69689-ac9f-bd90-52e0-f559c0b50dc3">
+      <Execution id="c5091cb9-6c68-4156-8cd2-18a9641c5443" />
+      <TestMethod codeBase="/Users/adamzaplatilek/GitHub/MapMe/MapMe/MapMe.Tests/bin/Release/net10.0/MapMe.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="MapMe.Tests.NormalizationTests" name="ToNorm_Removes_Diacritics_And_Punctuation_And_Lowercases" />
+    </UnitTest>
+    <UnitTest name="MapMe.Tests.UserProfileServiceTests.GetCurrentUserProfileAsync_ReturnsDefaultProfile_WhenNoDataExists" storage="/users/adamzaplatilek/github/mapme/mapme/mapme.tests/bin/release/net10.0/mapme.tests.dll" id="42b8854b-27d0-9d8d-d9f8-b520fb778e5c">
+      <Execution id="05c6e7dc-6310-4e0c-a8d8-46f606f4189b" />
+      <TestMethod codeBase="/Users/adamzaplatilek/GitHub/MapMe/MapMe/MapMe.Tests/bin/Release/net10.0/MapMe.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="MapMe.Tests.UserProfileServiceTests" name="GetCurrentUserProfileAsync_ReturnsDefaultProfile_WhenNoDataExists" />
+    </UnitTest>
+    <UnitTest name="MapMe.Tests.ApiIntegrationTests.DateMark_FilteringByCategories_ReturnsCorrectResults" storage="/users/adamzaplatilek/github/mapme/mapme/mapme.tests/bin/release/net10.0/mapme.tests.dll" id="4a9ff9b6-10c5-9acd-4eb9-cab6a86f7b1e">
+      <Execution id="29075d35-7c88-466e-bef3-7d118b935de8" />
+      <TestMethod codeBase="/Users/adamzaplatilek/GitHub/MapMe/MapMe/MapMe.Tests/bin/Release/net10.0/MapMe.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="MapMe.Tests.ApiIntegrationTests" name="DateMark_FilteringByCategories_ReturnsCorrectResults" />
+    </UnitTest>
+    <UnitTest name="MapMe.Tests.DateMarkBusinessLogicTests.DateMark_Visibility_AcceptsValidValues(visibility: &quot;private&quot;)" storage="/users/adamzaplatilek/github/mapme/mapme/mapme.tests/bin/release/net10.0/mapme.tests.dll" id="ce4c28c1-65a8-0324-7a44-972efd63bd7a">
+      <Execution id="964ddb47-fe91-47b4-8c16-95ab60f22df1" />
+      <TestMethod codeBase="/Users/adamzaplatilek/GitHub/MapMe/MapMe/MapMe.Tests/bin/Release/net10.0/MapMe.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="MapMe.Tests.DateMarkBusinessLogicTests" name="DateMark_Visibility_AcceptsValidValues" />
+    </UnitTest>
+    <UnitTest name="MapMe.Tests.DateMarkBusinessLogicTests.DateMark_Visibility_AcceptsValidValues(visibility: &quot;public&quot;)" storage="/users/adamzaplatilek/github/mapme/mapme/mapme.tests/bin/release/net10.0/mapme.tests.dll" id="1cbae08d-9bef-30c1-da4d-9eae7ffba660">
+      <Execution id="b8e53654-5b82-40e9-b22b-112520caea0c" />
+      <TestMethod codeBase="/Users/adamzaplatilek/GitHub/MapMe/MapMe/MapMe.Tests/bin/Release/net10.0/MapMe.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="MapMe.Tests.DateMarkBusinessLogicTests" name="DateMark_Visibility_AcceptsValidValues" />
+    </UnitTest>
+    <UnitTest name="MapMe.Tests.DateMarkBusinessLogicTests.DateMark_Visibility_AcceptsValidValues(visibility: &quot;friends&quot;)" storage="/users/adamzaplatilek/github/mapme/mapme/mapme.tests/bin/release/net10.0/mapme.tests.dll" id="99e4ee90-cdfb-eeff-f039-346231c48781">
+      <Execution id="3bf122a1-b7aa-4e9d-8f09-d2be9f0e0b74" />
+      <TestMethod codeBase="/Users/adamzaplatilek/GitHub/MapMe/MapMe/MapMe.Tests/bin/Release/net10.0/MapMe.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="MapMe.Tests.DateMarkBusinessLogicTests" name="DateMark_Visibility_AcceptsValidValues" />
+    </UnitTest>
+    <UnitTest name="MapMe.Tests.DateMarkBusinessLogicTests.GeoPoint_FromLatLng_CreatesValidGeoPoint" storage="/users/adamzaplatilek/github/mapme/mapme/mapme.tests/bin/release/net10.0/mapme.tests.dll" id="22f21ca7-6b42-bbc3-a2cc-10b066777368">
+      <Execution id="26c81220-502d-44eb-8fe0-1ceb81b81550" />
+      <TestMethod codeBase="/Users/adamzaplatilek/GitHub/MapMe/MapMe/MapMe.Tests/bin/Release/net10.0/MapMe.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="MapMe.Tests.DateMarkBusinessLogicTests" name="GeoPoint_FromLatLng_CreatesValidGeoPoint" />
+    </UnitTest>
+    <UnitTest name="MapMe.Tests.ApiIntegrationTests.DateMark_VisibilitySettings_AreRespected(visibility: &quot;public&quot;)" storage="/users/adamzaplatilek/github/mapme/mapme/mapme.tests/bin/release/net10.0/mapme.tests.dll" id="f84d9dcb-bf3a-2eb4-ab08-f117a88ef601">
+      <Execution id="dbc07fe2-a3e0-4966-b15b-5971aadade43" />
+      <TestMethod codeBase="/Users/adamzaplatilek/GitHub/MapMe/MapMe/MapMe.Tests/bin/Release/net10.0/MapMe.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="MapMe.Tests.ApiIntegrationTests" name="DateMark_VisibilitySettings_AreRespected" />
+    </UnitTest>
+    <UnitTest name="MapMe.Tests.UserProfileServiceTests.DeleteDateMarkAsync_RemovesMarkFromStorage" storage="/users/adamzaplatilek/github/mapme/mapme/mapme.tests/bin/release/net10.0/mapme.tests.dll" id="c12a3b5d-757e-d855-bf11-01baed1a5347">
+      <Execution id="7bdd112a-4b43-4149-b3b1-d4fac270cdf8" />
+      <TestMethod codeBase="/Users/adamzaplatilek/GitHub/MapMe/MapMe/MapMe.Tests/bin/Release/net10.0/MapMe.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="MapMe.Tests.UserProfileServiceTests" name="DeleteDateMarkAsync_RemovesMarkFromStorage" />
+    </UnitTest>
+    <UnitTest name="MapMe.Tests.NormalizationTests.ToNorm_Filters_Empty_And_Duplicates" storage="/users/adamzaplatilek/github/mapme/mapme/mapme.tests/bin/release/net10.0/mapme.tests.dll" id="10ba1ee7-a45b-ddd2-1f57-0e6bac1f2f13">
+      <Execution id="cd15b7e0-230f-452e-8315-8cc4114d5524" />
+      <TestMethod codeBase="/Users/adamzaplatilek/GitHub/MapMe/MapMe/MapMe.Tests/bin/Release/net10.0/MapMe.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="MapMe.Tests.NormalizationTests" name="ToNorm_Filters_Empty_And_Duplicates" />
+    </UnitTest>
+    <UnitTest name="MapMe.Tests.UserProfileServiceTests.SaveCurrentUserProfileAsync_SavesProfileToStorage" storage="/users/adamzaplatilek/github/mapme/mapme/mapme.tests/bin/release/net10.0/mapme.tests.dll" id="147eaff5-9ba7-3af8-4f46-b9b7c504a2cc">
+      <Execution id="596eeb61-32a1-487f-8668-bdae54222a13" />
+      <TestMethod codeBase="/Users/adamzaplatilek/GitHub/MapMe/MapMe/MapMe.Tests/bin/Release/net10.0/MapMe.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="MapMe.Tests.UserProfileServiceTests" name="SaveCurrentUserProfileAsync_SavesProfileToStorage" />
+    </UnitTest>
+    <UnitTest name="MapMe.Tests.DateMarkBusinessLogicTests.DateMark_WithPlaceSnapshot_StoresPlaceDetails" storage="/users/adamzaplatilek/github/mapme/mapme/mapme.tests/bin/release/net10.0/mapme.tests.dll" id="56300fdb-165b-e4c9-1ef7-396f0edccf34">
+      <Execution id="94c4a58f-e8d0-4327-ab03-97be87a58c9b" />
+      <TestMethod codeBase="/Users/adamzaplatilek/GitHub/MapMe/MapMe/MapMe.Tests/bin/Release/net10.0/MapMe.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="MapMe.Tests.DateMarkBusinessLogicTests" name="DateMark_WithPlaceSnapshot_StoresPlaceDetails" />
+    </UnitTest>
+    <UnitTest name="MapMe.Tests.ApiIntegrationTests.DateMark_VisibilitySettings_AreRespected(visibility: &quot;friends&quot;)" storage="/users/adamzaplatilek/github/mapme/mapme/mapme.tests/bin/release/net10.0/mapme.tests.dll" id="a0564c8c-f64f-d0b7-a0c6-ee73b903133d">
+      <Execution id="35c76bdc-6cb7-4280-a465-642e07df70cd" />
+      <TestMethod codeBase="/Users/adamzaplatilek/GitHub/MapMe/MapMe/MapMe.Tests/bin/Release/net10.0/MapMe.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="MapMe.Tests.ApiIntegrationTests" name="DateMark_VisibilitySettings_AreRespected" />
+    </UnitTest>
+    <UnitTest name="MapMe.Tests.UserProfileServiceTests.GetCurrentUserProfileAsync_ReturnsStoredProfile_WhenDataExists" storage="/users/adamzaplatilek/github/mapme/mapme/mapme.tests/bin/release/net10.0/mapme.tests.dll" id="f9e3a7e3-9c8a-abfe-d210-e3753eab44ca">
+      <Execution id="11c8a12d-5326-44b9-a9b7-9b7865d4309c" />
+      <TestMethod codeBase="/Users/adamzaplatilek/GitHub/MapMe/MapMe/MapMe.Tests/bin/Release/net10.0/MapMe.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="MapMe.Tests.UserProfileServiceTests" name="GetCurrentUserProfileAsync_ReturnsStoredProfile_WhenDataExists" />
+    </UnitTest>
+    <UnitTest name="MapMe.Tests.UserProfileServiceTests.GetUserDateMarksAsync_ReturnsUserSpecificMarks" storage="/users/adamzaplatilek/github/mapme/mapme/mapme.tests/bin/release/net10.0/mapme.tests.dll" id="9a1ed001-f54b-92f9-c489-c617a055cb6a">
+      <Execution id="892f98fb-751e-4a1f-8e63-02b7d4e577ca" />
+      <TestMethod codeBase="/Users/adamzaplatilek/GitHub/MapMe/MapMe/MapMe.Tests/bin/Release/net10.0/MapMe.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="MapMe.Tests.UserProfileServiceTests" name="GetUserDateMarksAsync_ReturnsUserSpecificMarks" />
+    </UnitTest>
+    <UnitTest name="MapMe.Tests.DateMarkBusinessLogicTests.DateMark_Creation_SetsRequiredFields" storage="/users/adamzaplatilek/github/mapme/mapme/mapme.tests/bin/release/net10.0/mapme.tests.dll" id="7eea0268-04fe-6021-3cb7-8aba0a5f9c6a">
+      <Execution id="90d9010f-f20b-486b-b350-321376319776" />
+      <TestMethod codeBase="/Users/adamzaplatilek/GitHub/MapMe/MapMe/MapMe.Tests/bin/Release/net10.0/MapMe.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="MapMe.Tests.DateMarkBusinessLogicTests" name="DateMark_Creation_SetsRequiredFields" />
+    </UnitTest>
+    <UnitTest name="MapMe.Tests.UserProfileServiceTests.SaveDateMarkAsync_SavesNewMark_WhenNoDuplicate" storage="/users/adamzaplatilek/github/mapme/mapme/mapme.tests/bin/release/net10.0/mapme.tests.dll" id="5670f1da-9611-fef0-6890-7da3c37afe03">
+      <Execution id="2df9ad87-3a7d-48b8-9305-39e492fdc9f5" />
+      <TestMethod codeBase="/Users/adamzaplatilek/GitHub/MapMe/MapMe/MapMe.Tests/bin/Release/net10.0/MapMe.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="MapMe.Tests.UserProfileServiceTests" name="SaveDateMarkAsync_SavesNewMark_WhenNoDuplicate" />
+    </UnitTest>
+  </TestDefinitions>
+  <TestEntries>
+    <TestEntry testId="874b23b5-c5c7-d5ea-d8bf-e24d7906f523" executionId="86f4147a-6879-4425-a30a-2c44fcf29b15" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="43a57797-e8d6-4267-fa5a-c63a5f5d9b4e" executionId="cf572bf3-5d29-4b0d-bd87-8c8d5f5326bc" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="a99b4ebd-2ed1-b3e7-7afd-aef9e25651ba" executionId="d9de9b5a-ee06-4966-92c4-1cd047292aa4" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="e1fcb762-7e2e-ba33-1443-92e761f380e5" executionId="c82d4166-b181-4afd-ba71-1cd9cd06eab2" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="9d132666-049a-2cef-9037-d675521ac78d" executionId="a1085dfa-9de6-4866-89ee-a6dd95825905" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="b13c62f0-8540-b317-0628-868ca8f9ca58" executionId="ac4e7e16-5dbe-4a49-926d-033abb9469a4" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="10ba1ee7-a45b-ddd2-1f57-0e6bac1f2f13" executionId="cd15b7e0-230f-452e-8315-8cc4114d5524" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="294d6ab3-7a5a-8e46-0751-8c501e719acc" executionId="69784cbe-e9d7-4b76-94da-47063b949670" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="646e669c-15fc-e67e-45f9-f3fe632ab5ab" executionId="b7159ccf-9aba-4e42-b095-57a6ba032beb" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="ba55de75-c0f9-b5a1-73ee-ada7be98142c" executionId="9fecb4ad-cec3-4a41-849a-624b06f98fcf" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="c10ecd8f-58d2-d7bc-522c-7ee6260aa183" executionId="eb8757d2-8338-4d75-bf3a-407846957428" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="42b8854b-27d0-9d8d-d9f8-b520fb778e5c" executionId="05c6e7dc-6310-4e0c-a8d8-46f606f4189b" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="9a1ed001-f54b-92f9-c489-c617a055cb6a" executionId="892f98fb-751e-4a1f-8e63-02b7d4e577ca" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="56300fdb-165b-e4c9-1ef7-396f0edccf34" executionId="94c4a58f-e8d0-4327-ab03-97be87a58c9b" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="c12a3b5d-757e-d855-bf11-01baed1a5347" executionId="7bdd112a-4b43-4149-b3b1-d4fac270cdf8" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="a0564c8c-f64f-d0b7-a0c6-ee73b903133d" executionId="35c76bdc-6cb7-4280-a465-642e07df70cd" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="ce4c28c1-65a8-0324-7a44-972efd63bd7a" executionId="964ddb47-fe91-47b4-8c16-95ab60f22df1" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="54b38232-edcd-7ffe-9dd2-59e012336e85" executionId="bce139c2-ad50-4028-b867-35fd90527b3c" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="4a9ff9b6-10c5-9acd-4eb9-cab6a86f7b1e" executionId="29075d35-7c88-466e-bef3-7d118b935de8" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="2e14b324-12b9-253f-cfa7-357966005c0c" executionId="4df9986e-bab8-42ed-a47d-4692195396a9" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="f55b9f59-f089-88c0-fc75-1f51fa3c7bc5" executionId="1a4748dd-b1e7-4b9d-ab4e-996424f8c45f" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="17b9af79-bdff-a984-db3f-faa50f29a8bf" executionId="676b5585-9610-414b-b811-7ed2a7699f1b" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="f9e3a7e3-9c8a-abfe-d210-e3753eab44ca" executionId="11c8a12d-5326-44b9-a9b7-9b7865d4309c" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="cc60a92f-57ee-954d-88fa-7deb0a33926e" executionId="0020c956-d9a1-47b5-afd3-626b49e9a7af" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="1cbae08d-9bef-30c1-da4d-9eae7ffba660" executionId="b8e53654-5b82-40e9-b22b-112520caea0c" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="918d69b8-0567-3b62-1b94-40477ed61acc" executionId="9ada23e9-4c2e-49f5-8310-35c339538dee" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="22f21ca7-6b42-bbc3-a2cc-10b066777368" executionId="26c81220-502d-44eb-8fe0-1ceb81b81550" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="7d3500f9-fe15-a5db-18f7-7485f3ebb427" executionId="329714aa-6cc5-414f-98fe-a6b02cd00779" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="24548ab1-f6a3-b73b-5143-7775fddaf9e0" executionId="5994ed30-c5b7-4463-a14d-8e6d0d76f688" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="f263b0e9-424a-142e-eae8-d5750ed3dbc3" executionId="846894f6-e360-4edc-a052-4540e5308cd3" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="ce8d9085-257d-d7d4-fda4-d09aafc89d94" executionId="e5f67c70-579d-460e-b04c-b66bbd5f46d4" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="e73246bd-9452-0519-22d8-5ecd6b6f4191" executionId="284553b5-1c44-4b8d-b13a-2ef4cfc50797" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="84b473b1-ed56-f70f-10ec-c84b1a0219ef" executionId="8f82db3b-3285-45a6-a874-749892d984c2" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="f84d9dcb-bf3a-2eb4-ab08-f117a88ef601" executionId="dbc07fe2-a3e0-4966-b15b-5971aadade43" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="7eea0268-04fe-6021-3cb7-8aba0a5f9c6a" executionId="90d9010f-f20b-486b-b350-321376319776" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="f836b39b-d087-0956-8a50-31a33791fb79" executionId="884a55c9-0ebb-4b6c-9eb5-0f9f2324b6d2" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="99e4ee90-cdfb-eeff-f039-346231c48781" executionId="3bf122a1-b7aa-4e9d-8f09-d2be9f0e0b74" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="15a69689-ac9f-bd90-52e0-f559c0b50dc3" executionId="c5091cb9-6c68-4156-8cd2-18a9641c5443" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="f92c1ea1-c00f-8d1a-38fc-5f63d7fd5d19" executionId="b46d1e0d-76fb-4cb2-9016-c780a2c997bf" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="147eaff5-9ba7-3af8-4f46-b9b7c504a2cc" executionId="596eeb61-32a1-487f-8668-bdae54222a13" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="5670f1da-9611-fef0-6890-7da3c37afe03" executionId="2df9ad87-3a7d-48b8-9305-39e492fdc9f5" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+  </TestEntries>
+  <TestLists>
+    <TestList name="Results Not in a List" id="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestList name="All Loaded Results" id="19431567-8539-422a-85d7-44ee4e166bda" />
+  </TestLists>
+  <ResultSummary outcome="Failed">
+    <Counters total="41" executed="41" passed="37" failed="4" error="0" timeout="0" aborted="0" inconclusive="0" passedButRunAborted="0" notRunnable="0" notExecuted="0" disconnected="0" warning="0" completed="0" inProgress="0" pending="0" />
+    <Output>
+      <StdOut>[xUnit.net 00:00:00.00] xUnit.net VSTest Adapter v2.8.1+ce9211e970 (64-bit .NET 10.0.0-preview.6.25358.103)
+[xUnit.net 00:00:00.03]   Discovering: MapMe.Tests
+[xUnit.net 00:00:00.06]   Discovered:  MapMe.Tests
+[xUnit.net 00:00:00.06]   Starting:    MapMe.Tests
+[xUnit.net 00:00:00.20]       System.NotSupportedException : Unsupported expression: x =&gt; x.InvokeVoidAsync("MapMe.storage.save", It.IsAny&lt;object[]&gt;())&#xD;
+[xUnit.net 00:00:00.20]       Extension methods (here: JSRuntimeExtensions.InvokeVoidAsync) may not be used in setup / verification expressions.
+[xUnit.net 00:00:00.20]       Stack Trace:
+[xUnit.net 00:00:00.20]         /_/src/Moq/Guard.cs(87,0): at Moq.Guard.IsOverridable(MethodInfo method, Expression expression)
+[xUnit.net 00:00:00.20]         /_/src/Moq/MethodExpectation.cs(236,0): at Moq.MethodExpectation..ctor(LambdaExpression expression, MethodInfo method, IReadOnlyList`1 arguments, Boolean exactGenericTypeArguments, Boolean skipMatcherInitialization, Boolean allowNonOverridable)
+[xUnit.net 00:00:00.20]         /_/src/Moq/ExpressionExtensions.cs(256,0): at Moq.ExpressionExtensions.&lt;Split&gt;g__Split|5_0(Expression e, Expression&amp; r, MethodExpectation&amp; p, Boolean assignment, Boolean allowNonOverridableLastProperty)
+[xUnit.net 00:00:00.20]         /_/src/Moq/ExpressionExtensions.cs(170,0): at Moq.ExpressionExtensions.Split(LambdaExpression expression, Boolean allowNonOverridableLastProperty)
+[xUnit.net 00:00:00.20]         /_/src/Moq/Mock.cs(728,0): at Moq.Mock.SetupRecursive[TSetup](Mock mock, LambdaExpression expression, Func`4 setupLast, Boolean allowNonOverridableLastProperty)
+[xUnit.net 00:00:00.20]         /_/src/Moq/Mock.cs(562,0): at Moq.Mock.Setup(Mock mock, LambdaExpression expression, Condition condition)
+[xUnit.net 00:00:00.20]         /_/src/Moq/Mock`1.cs(645,0): at Moq.Mock`1.Setup[TResult](Expression`1 expression)
+[xUnit.net 00:00:00.20]         /Users/adamzaplatilek/GitHub/MapMe/MapMe/MapMe.Tests/UserProfileServiceTests.cs(84,0): at MapMe.Tests.UserProfileServiceTests.SaveCurrentUserProfileAsync_SavesProfileToStorage()
+[xUnit.net 00:00:00.20]         --- End of stack trace from previous location ---
+[xUnit.net 00:00:00.22]       System.NotSupportedException : Unsupported expression: x =&gt; x.InvokeVoidAsync("MapMe.storage.save", It.IsAny&lt;object[]&gt;())&#xD;
+[xUnit.net 00:00:00.22]       Extension methods (here: JSRuntimeExtensions.InvokeVoidAsync) may not be used in setup / verification expressions.
+[xUnit.net 00:00:00.22]       Stack Trace:
+[xUnit.net 00:00:00.22]         /_/src/Moq/Guard.cs(87,0): at Moq.Guard.IsOverridable(MethodInfo method, Expression expression)
+[xUnit.net 00:00:00.22]         /_/src/Moq/MethodExpectation.cs(236,0): at Moq.MethodExpectation..ctor(LambdaExpression expression, MethodInfo method, IReadOnlyList`1 arguments, Boolean exactGenericTypeArguments, Boolean skipMatcherInitialization, Boolean allowNonOverridable)
+[xUnit.net 00:00:00.22]         /_/src/Moq/ExpressionExtensions.cs(256,0): at Moq.ExpressionExtensions.&lt;Split&gt;g__Split|5_0(Expression e, Expression&amp; r, MethodExpectation&amp; p, Boolean assignment, Boolean allowNonOverridableLastProperty)
+[xUnit.net 00:00:00.22]         /_/src/Moq/ExpressionExtensions.cs(170,0): at Moq.ExpressionExtensions.Split(LambdaExpression expression, Boolean allowNonOverridableLastProperty)
+[xUnit.net 00:00:00.22]         /_/src/Moq/Mock.cs(728,0): at Moq.Mock.SetupRecursive[TSetup](Mock mock, LambdaExpression expression, Func`4 setupLast, Boolean allowNonOverridableLastProperty)
+[xUnit.net 00:00:00.22]         /_/src/Moq/Mock.cs(562,0): at Moq.Mock.Setup(Mock mock, LambdaExpression expression, Condition condition)
+[xUnit.net 00:00:00.22]         /_/src/Moq/Mock`1.cs(645,0): at Moq.Mock`1.Setup[TResult](Expression`1 expression)
+[xUnit.net 00:00:00.22]         /Users/adamzaplatilek/GitHub/MapMe/MapMe/MapMe.Tests/UserProfileServiceTests.cs(210,0): at MapMe.Tests.UserProfileServiceTests.DeleteDateMarkAsync_RemovesMarkFromStorage()
+[xUnit.net 00:00:00.22]         --- End of stack trace from previous location ---
+[xUnit.net 00:00:00.23]       System.NotSupportedException : Unsupported expression: x =&gt; x.InvokeVoidAsync("MapMe.storage.save", It.IsAny&lt;object[]&gt;())&#xD;
+[xUnit.net 00:00:00.23]       Extension methods (here: JSRuntimeExtensions.InvokeVoidAsync) may not be used in setup / verification expressions.
+[xUnit.net 00:00:00.23]       Stack Trace:
+[xUnit.net 00:00:00.23]         /_/src/Moq/Guard.cs(87,0): at Moq.Guard.IsOverridable(MethodInfo method, Expression expression)
+[xUnit.net 00:00:00.23]         /_/src/Moq/MethodExpectation.cs(236,0): at Moq.MethodExpectation..ctor(LambdaExpression expression, MethodInfo method, IReadOnlyList`1 arguments, Boolean exactGenericTypeArguments, Boolean skipMatcherInitialization, Boolean allowNonOverridable)
+[xUnit.net 00:00:00.23]         /_/src/Moq/ExpressionExtensions.cs(256,0): at Moq.ExpressionExtensions.&lt;Split&gt;g__Split|5_0(Expression e, Expression&amp; r, MethodExpectation&amp; p, Boolean assignment, Boolean allowNonOverridableLastProperty)
+[xUnit.net 00:00:00.23]         /_/src/Moq/ExpressionExtensions.cs(170,0): at Moq.ExpressionExtensions.Split(LambdaExpression expression, Boolean allowNonOverridableLastProperty)
+[xUnit.net 00:00:00.23]         /_/src/Moq/Mock.cs(728,0): at Moq.Mock.SetupRecursive[TSetup](Mock mock, LambdaExpression expression, Func`4 setupLast, Boolean allowNonOverridableLastProperty)
+[xUnit.net 00:00:00.23]         /_/src/Moq/Mock.cs(562,0): at Moq.Mock.Setup(Mock mock, LambdaExpression expression, Condition condition)
+[xUnit.net 00:00:00.23]         /_/src/Moq/Mock`1.cs(645,0): at Moq.Mock`1.Setup[TResult](Expression`1 expression)
+[xUnit.net 00:00:00.23]         /Users/adamzaplatilek/GitHub/MapMe/MapMe/MapMe.Tests/UserProfileServiceTests.cs(136,0): at MapMe.Tests.UserProfileServiceTests.SaveDateMarkAsync_SavesNewMark_WhenNoDuplicate()
+[xUnit.net 00:00:00.23]         --- End of stack trace from previous location ---
+[xUnit.net 00:00:00.23]       System.NotSupportedException : Unsupported expression: x =&gt; x.InvokeVoidAsync("MapMe.storage.save", It.IsAny&lt;object[]&gt;())&#xD;
+[xUnit.net 00:00:00.23]       Extension methods (here: JSRuntimeExtensions.InvokeVoidAsync) may not be used in setup / verification expressions.
+[xUnit.net 00:00:00.23]       Stack Trace:
+[xUnit.net 00:00:00.23]         /_/src/Moq/Guard.cs(87,0): at Moq.Guard.IsOverridable(MethodInfo method, Expression expression)
+[xUnit.net 00:00:00.23]         /_/src/Moq/MethodExpectation.cs(236,0): at Moq.MethodExpectation..ctor(LambdaExpression expression, MethodInfo method, IReadOnlyList`1 arguments, Boolean exactGenericTypeArguments, Boolean skipMatcherInitialization, Boolean allowNonOverridable)
+[xUnit.net 00:00:00.23]         /_/src/Moq/ExpressionExtensions.cs(256,0): at Moq.ExpressionExtensions.&lt;Split&gt;g__Split|5_0(Expression e, Expression&amp; r, MethodExpectation&amp; p, Boolean assignment, Boolean allowNonOverridableLastProperty)
+[xUnit.net 00:00:00.23]         /_/src/Moq/ExpressionExtensions.cs(170,0): at Moq.ExpressionExtensions.Split(LambdaExpression expression, Boolean allowNonOverridableLastProperty)
+[xUnit.net 00:00:00.23]         /_/src/Moq/Mock.cs(728,0): at Moq.Mock.SetupRecursive[TSetup](Mock mock, LambdaExpression expression, Func`4 setupLast, Boolean allowNonOverridableLastProperty)
+[xUnit.net 00:00:00.23]         /_/src/Moq/Mock.cs(562,0): at Moq.Mock.Setup(Mock mock, LambdaExpression expression, Condition condition)
+[xUnit.net 00:00:00.23]         /_/src/Moq/Mock`1.cs(645,0): at Moq.Mock`1.Setup[TResult](Expression`1 expression)
+[xUnit.net 00:00:00.23]         /Users/adamzaplatilek/GitHub/MapMe/MapMe/MapMe.Tests/UserProfileServiceTests.cs(173,0): at MapMe.Tests.UserProfileServiceTests.UpdateDateMarkAsync_UpdatesExistingMark()
+[xUnit.net 00:00:00.23]         --- End of stack trace from previous location ---
+warn: Microsoft.AspNetCore.HttpsPolicy.HttpsRedirectionMiddleware[3]
+      Failed to determine the https port for redirect.
+warn: Microsoft.AspNetCore.HttpsPolicy.HttpsRedirectionMiddleware[3]
+      Failed to determine the https port for redirect.
+warn: Microsoft.AspNetCore.HttpsPolicy.HttpsRedirectionMiddleware[3]
+      Failed to determine the https port for redirect.
+warn: Microsoft.AspNetCore.HttpsPolicy.HttpsRedirectionMiddleware[3]
+      Failed to determine the https port for redirect.
+warn: Microsoft.AspNetCore.HttpsPolicy.HttpsRedirectionMiddleware[3]
+      Failed to determine the https port for redirect.
+warn: Microsoft.AspNetCore.HttpsPolicy.HttpsRedirectionMiddleware[3]
+      Failed to determine the https port for redirect.
+warn: Microsoft.AspNetCore.HttpsPolicy.HttpsRedirectionMiddleware[3]
+      Failed to determine the https port for redirect.
+warn: Microsoft.AspNetCore.HttpsPolicy.HttpsRedirectionMiddleware[3]
+      Failed to determine the https port for redirect.
+warn: Microsoft.AspNetCore.HttpsPolicy.HttpsRedirectionMiddleware[3]
+      Failed to determine the https port for redirect.
+warn: Microsoft.AspNetCore.HttpsPolicy.HttpsRedirectionMiddleware[3]
+      Failed to determine the https port for redirect.
+warn: Microsoft.AspNetCore.HttpsPolicy.HttpsRedirectionMiddleware[3]
+      Failed to determine the https port for redirect.
+warn: Microsoft.AspNetCore.HttpsPolicy.HttpsRedirectionMiddleware[3]
+      Failed to determine the https port for redirect.
+[xUnit.net 00:00:03.74]   Finished:    MapMe.Tests
+</StdOut>
+    </Output>
+    <RunInfos>
+      <RunInfo computerName="Adams-MacBook-Pro" outcome="Error" timestamp="2025-08-12T03:58:05.1663100+07:00">
+        <Text>[xUnit.net 00:00:00.20]     MapMe.Tests.UserProfileServiceTests.SaveCurrentUserProfileAsync_SavesProfileToStorage [FAIL]</Text>
+      </RunInfo>
+      <RunInfo computerName="Adams-MacBook-Pro" outcome="Error" timestamp="2025-08-12T03:58:05.1907970+07:00">
+        <Text>[xUnit.net 00:00:00.22]     MapMe.Tests.UserProfileServiceTests.DeleteDateMarkAsync_RemovesMarkFromStorage [FAIL]</Text>
+      </RunInfo>
+      <RunInfo computerName="Adams-MacBook-Pro" outcome="Error" timestamp="2025-08-12T03:58:05.1954460+07:00">
+        <Text>[xUnit.net 00:00:00.23]     MapMe.Tests.UserProfileServiceTests.SaveDateMarkAsync_SavesNewMark_WhenNoDuplicate [FAIL]</Text>
+      </RunInfo>
+      <RunInfo computerName="Adams-MacBook-Pro" outcome="Error" timestamp="2025-08-12T03:58:05.1978820+07:00">
+        <Text>[xUnit.net 00:00:00.23]     MapMe.Tests.UserProfileServiceTests.UpdateDateMarkAsync_UpdatesExistingMark [FAIL]</Text>
+      </RunInfo>
+    </RunInfos>
+  </ResultSummary>
+</TestRun>
