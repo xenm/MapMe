@@ -181,6 +181,7 @@
                 _mapModule = await JsRuntime.InvokeAsync<IJSObjectReference>("import", "./js/mapInitializer.js");
                 
                 await HandleQueryParametersAsync();
+                await LoadCurrentUserProfileAsync();
                 await InitializeMapAsync();
                 await SetupUserProfileHookAsync();
                 await SetupCurrentUserIdentificationAsync();
