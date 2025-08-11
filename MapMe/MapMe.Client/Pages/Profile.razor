@@ -19,6 +19,23 @@ else
     <div class="page">
         <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
             <h1 class="mb-0">My Profile</h1>
+            <div class="d-flex gap-2">
+                @if (_isEditing)
+                {
+                    <button class="btn btn-success" @onclick="SaveProfile">
+                        <i class="bi bi-check-lg"></i> Save Changes
+                    </button>
+                    <button class="btn btn-secondary" @onclick="CancelEdit">
+                        <i class="bi bi-x-lg"></i> Cancel
+                    </button>
+                }
+                else
+                {
+                    <button class="btn btn-primary" @onclick="StartEdit">
+                        <i class="bi bi-pencil"></i> Edit Profile
+                    </button>
+                }
+            </div>
         </div>
 
         <!-- User Info Card -->
@@ -32,8 +49,26 @@ else
                         <img src="@_avatar" alt="Avatar" style="width:64px;height:64px;border-radius:50%;object-fit:cover;border:1px solid #e9ecef;" />
                     </div>
                     <div class="col">
-                        <div class="fw-semibold">@_currentUser</div>
-                        <div class="text-muted small">Total Date Marks: @_marks.Count</div>
+                        @if (_isEditing)
+                        {
+                            <div class="mb-2">
+                                <label class="form-label">Display Name</label>
+                                <input type="text" class="form-control" @bind="_editDisplayName" placeholder="Enter your display name" />
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label">Bio</label>
+                                <textarea class="form-control" rows="2" @bind="_editBio" placeholder="Tell us about yourself..."></textarea>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="fw-semibold">@_displayName</div>
+                            @if (!string.IsNullOrWhiteSpace(_bio))
+                            {
+                                <div class="text-muted small mt-1">@_bio</div>
+                            }
+                        }
+                        <div class="text-muted small mt-1">Total Date Marks: @_marks.Count</div>
                         @if (!string.IsNullOrWhiteSpace(_lastNote))
                         {
                             <div class="small mt-1">Latest note: <span class="text-muted">@_lastNote</span></div>
@@ -43,10 +78,44 @@ else
             </CardBody>
         </div>
 
+        <!-- Preferences Card -->
+        @if (_isEditing)
+        {
+            <div class="card mb-3">
+                <CardHeader>
+                    <CardTitle class="mb-0">Preferences</CardTitle>
+                </CardHeader>
+                <CardBody>
+                    <div class="mb-3">
+                        <label class="form-label">Favorite Categories</label>
+                        <input type="text" class="form-control" @bind="_editCategories" 
+                               placeholder="e.g., coffee, restaurants, parks (comma-separated)" />
+                        <div class="form-text">Enter your favorite place categories, separated by commas</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Profile Visibility</label>
+                        <select class="form-select" @bind="_editVisibility">
+                            <option value="public">Public - Anyone can view</option>
+                            <option value="friends">Friends Only</option>
+                            <option value="private">Private - Only me</option>
+                        </select>
+                    </div>
+                </CardBody>
+            </div>
+        }
+
         <!-- Photos Card -->
         <div class="card mb-3">
             <CardHeader>
-                <CardTitle class="mb-0">My Photos (@_photos.Count)</CardTitle>
+                <div class="d-flex justify-content-between align-items-center">
+                    <CardTitle class="mb-0">My Photos (@_photos.Count)</CardTitle>
+                    @if (_isEditing)
+                    {
+                        <button class="btn btn-sm btn-outline-primary" @onclick="AddPhoto">
+                            <i class="bi bi-plus"></i> Add Photo
+                        </button>
+                    }
+                </div>
             </CardHeader>
             <CardBody>
                 @if (_photos.Count > 0)
@@ -55,10 +124,18 @@ else
                         @for (int i = 0; i < _photos.Count; i++)
                         {
                             var p = _photos[i];
-                            <div class="col-6 col-md-4 col-lg-3">
-                                <img src="@p" @onclick="() => OpenLightbox(i)" 
+                            var index = i; // Capture for lambda
+                            <div class="col-6 col-md-4 col-lg-3 position-relative">
+                                <img src="@p" @onclick="() => OpenLightbox(index)" 
                                      class="img-fluid rounded" 
                                      style="width:100%;height:140px;object-fit:cover;cursor:pointer;border:1px solid #e9ecef;" />
+                                @if (_isEditing)
+                                {
+                                    <button class="btn btn-sm btn-danger position-absolute top-0 end-0 m-1" 
+                                            @onclick="() => RemovePhoto(index)" style="--bs-btn-padding-y: .125rem; --bs-btn-padding-x: .25rem;">
+                                        <i class="bi bi-x"></i>
+                                    </button>
+                                }
                             </div>
                         }
                     </div>
@@ -98,6 +175,37 @@ else
                                                 {
                                                     <p class="mb-1 small">@mark.Note</p>
                                                 }
+                                                @if (mark.Categories?.Count > 0)
+                                                {
+                                                    <div class="mb-1">
+                                                        @foreach (var category in mark.Categories)
+                                                        {
+                                                            <span class="badge bg-primary me-1">@category</span>
+                                                        }
+                                                    </div>
+                                                }
+                                                @if (mark.Tags?.Count > 0)
+                                                {
+                                                    <div class="mb-1">
+                                                        @foreach (var tag in mark.Tags)
+                                                        {
+                                                            <span class="badge bg-secondary me-1">#@tag</span>
+                                                        }
+                                                    </div>
+                                                }
+                                                @if (mark.Qualities?.Count > 0)
+                                                {
+                                                    <div class="mb-1">
+                                                        @foreach (var quality in mark.Qualities)
+                                                        {
+                                                            <span class="badge bg-success me-1">@quality</span>
+                                                        }
+                                                    </div>
+                                                }
+                                                @if (mark.VisitDate.HasValue)
+                                                {
+                                                    <small class="text-muted">Visited: @mark.VisitDate.Value.ToString("MMM dd, yyyy")</small>
+                                                }
                                             </div>
                                             <small class="text-muted">@mark.SavedAt.ToString("MMM dd, yyyy")</small>
                                         </div>
@@ -106,6 +214,17 @@ else
                                                     @onclick="() => ViewOnMap(mark)">
                                                 <i class="bi bi-geo-alt"></i> View on Map
                                             </button>
+                                            @if (_isEditing)
+                                            {
+                                                <button class="btn btn-sm btn-outline-secondary" 
+                                                        @onclick="() => EditDateMark(mark)">
+                                                    <i class="bi bi-pencil"></i> Edit
+                                                </button>
+                                                <button class="btn btn-sm btn-outline-danger" 
+                                                        @onclick="() => DeleteDateMark(mark)">
+                                                    <i class="bi bi-trash"></i> Delete
+                                                </button>
+                                            }
                                         </div>
                                     </div>
                                 </div>
@@ -134,13 +253,49 @@ else
     </div>
 }
 
+<!-- Add Photo Modal -->
+@if (_showAddPhotoModal)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add Photo</h5>
+                    <button type="button" class="btn-close" @onclick="CloseAddPhotoModal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Photo URL</label>
+                        <input type="url" class="form-control" @bind="_newPhotoUrl" placeholder="https://example.com/photo.jpg" />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="CloseAddPhotoModal">Cancel</button>
+                    <button type="button" class="btn btn-primary" @onclick="ConfirmAddPhoto">Add Photo</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
 @code {
     private bool _loading = true;
     private string _currentUser = "current user";
+    private string _displayName = "current user";
+    private string _bio = "";
+    private string _categories = "";
+    private string _visibility = "public";
     private List<MarkDate> _marks = new();
     private string _avatar = "/images/user-avatar.svg";
     private List<string> _photos = new();
     private string? _lastNote;
+    private bool _isEditing = false;
+    private string _editDisplayName = "";
+    private string _editBio = "";
+    private string _editCategories = "";
+    private string _editVisibility = "public";
+    private bool _showAddPhotoModal = false;
+    private string _newPhotoUrl = "";
 
     // Default user images
     private static readonly string DefaultUserAvatar = "/images/user-avatar.svg";
@@ -165,6 +320,33 @@ else
 
         try
         {
+            // Load user profile data
+            var profileJson = await Js.InvokeAsync<string?>("MapMe.storage.load", "profile");
+            if (!string.IsNullOrWhiteSpace(profileJson))
+            {
+                var profile = JsonSerializer.Deserialize<ProfileData>(profileJson);
+                if (profile != null)
+                {
+                    _displayName = profile.DisplayName ?? _currentUser;
+                    _bio = profile.Bio ?? "";
+                    _categories = profile.Categories ?? "";
+                    _visibility = profile.Visibility ?? "public";
+                }
+            }
+
+            // Load user photos
+            var photosJson = await Js.InvokeAsync<string?>("MapMe.storage.load", "photos");
+            if (!string.IsNullOrWhiteSpace(photosJson))
+            {
+                _photos = JsonSerializer.Deserialize<List<string>>(photosJson) ?? new List<string>();
+            }
+            
+            // Use default photos if none exist
+            if (_photos.Count == 0)
+            {
+                _photos = new List<string>(DefaultUserPhotoUrls);
+            }
+
             // Load all Date Marks from storage
             var json = await Js.InvokeAsync<string?>("MapMe.storage.load", "markDates");
             var allMarks = !string.IsNullOrWhiteSpace(json) 
@@ -196,23 +378,8 @@ else
                 var first = _marks.First();
                 _avatar = first.UserPhotoUrl ?? first.UserPhotoUrls?.FirstOrDefault() ?? DefaultUserAvatar;
 
-                // Collect all unique user photos
-                var userPhotos = _marks
-                    .SelectMany(m => (m.UserPhotoUrls ?? new List<string>())
-                        .Concat(string.IsNullOrWhiteSpace(m.UserPhotoUrl) ? Array.Empty<string>() : new[] { m.UserPhotoUrl! }))
-                    .Where(u => !string.IsNullOrWhiteSpace(u))
-                    .Distinct()
-                    .ToList();
-
-                _photos = userPhotos.Count > 0 ? userPhotos : DefaultUserPhotoUrls;
-
                 // Get the most recent note
                 _lastNote = _marks.FirstOrDefault(m => !string.IsNullOrWhiteSpace(m.Note))?.Note;
-            }
-            else
-            {
-                // Use default photos if no marks exist
-                _photos = DefaultUserPhotoUrls;
             }
         }
         catch (Exception ex)
@@ -243,6 +410,144 @@ else
         Nav.NavigateTo($"/map?lat={mark.Latitude}&lng={mark.Longitude}&zoom=15");
     }
 
+    private void StartEdit()
+    {
+        _isEditing = true;
+        _editDisplayName = _displayName;
+        _editBio = _bio;
+        _editCategories = _categories;
+        _editVisibility = _visibility;
+    }
+
+    private async Task SaveProfile()
+    {
+        try
+        {
+            // Update user data
+            _displayName = _editDisplayName;
+            _bio = _editBio;
+            _categories = _editCategories;
+            _visibility = _editVisibility;
+
+            // Save changes to storage
+            var profileData = new ProfileData
+            {
+                DisplayName = _displayName,
+                Bio = _bio,
+                Categories = _categories,
+                Visibility = _visibility
+            };
+
+            await Js.InvokeVoidAsync("MapMe.storage.save", "profile", JsonSerializer.Serialize(profileData));
+
+            _isEditing = false;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error saving profile: {ex.Message}");
+        }
+    }
+
+    private void CancelEdit()
+    {
+        _isEditing = false;
+        // Reset edit fields
+        _editDisplayName = _displayName;
+        _editBio = _bio;
+        _editCategories = _categories;
+        _editVisibility = _visibility;
+    }
+
+    private void AddPhoto()
+    {
+        _showAddPhotoModal = true;
+        _newPhotoUrl = "";
+    }
+
+    private void CloseAddPhotoModal()
+    {
+        _showAddPhotoModal = false;
+        _newPhotoUrl = "";
+    }
+
+    private async Task ConfirmAddPhoto()
+    {
+        if (string.IsNullOrWhiteSpace(_newPhotoUrl))
+            return;
+
+        try
+        {
+            // Add new photo to user photos
+            _photos.Add(_newPhotoUrl);
+
+            // Save changes to storage
+            await Js.InvokeVoidAsync("MapMe.storage.save", "photos", JsonSerializer.Serialize(_photos));
+
+            _showAddPhotoModal = false;
+            _newPhotoUrl = "";
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error adding photo: {ex.Message}");
+        }
+    }
+
+    private async Task RemovePhoto(int index)
+    {
+        if (index < 0 || index >= _photos.Count)
+            return;
+
+        try
+        {
+            // Remove photo from user photos
+            _photos.RemoveAt(index);
+
+            // Save changes to storage
+            await Js.InvokeVoidAsync("MapMe.storage.save", "photos", JsonSerializer.Serialize(_photos));
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error removing photo: {ex.Message}");
+        }
+    }
+
+    private async Task EditDateMark(MarkDate mark)
+    {
+        try
+        {
+            // For now, navigate to map to edit the mark
+            Nav.NavigateTo($"/map?lat={mark.Latitude}&lng={mark.Longitude}&zoom=15&edit={mark.Id}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error editing Date Mark: {ex.Message}");
+        }
+    }
+
+    private async Task DeleteDateMark(MarkDate mark)
+    {
+        try
+        {
+            // Remove Date Mark from list
+            _marks.Remove(mark);
+
+            // Save changes to storage
+            await Js.InvokeVoidAsync("MapMe.storage.save", "markDates", JsonSerializer.Serialize(_marks));
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error deleting Date Mark: {ex.Message}");
+        }
+    }
+
+    private class ProfileData
+    {
+        public string? DisplayName { get; set; }
+        public string? Bio { get; set; }
+        public string? Categories { get; set; }
+        public string? Visibility { get; set; }
+    }
+
     private class MarkDate
     {
         public double Latitude { get; set; }
@@ -259,5 +564,10 @@ else
         public string? UserPhotoUrl { get; set; }
         public List<string>? UserPhotoUrls { get; set; }
         public DateTime SavedAt { get; set; }
+        public string? Id { get; set; }
+        public List<string>? Categories { get; set; }
+        public List<string>? Tags { get; set; }
+        public List<string>? Qualities { get; set; }
+        public DateTime? VisitDate { get; set; }
     }
 }

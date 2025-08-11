@@ -3,7 +3,7 @@
 @inject IJSRuntime Js
 @inject NavigationManager Nav
 
-<PageTitle>User Profile</PageTitle>
+<PageTitle>@username - Profile</PageTitle>
 
 @if (_loading)
 {
@@ -30,9 +30,10 @@ else
             <Button Color="ButtonColor.Secondary" Outline="true" @onclick="GoBack">Back</Button>
         </div>
 
+        <!-- User Info Card -->
         <div class="card mb-3">
             <CardHeader>
-                <CardTitle class="mb-0">User Info</CardTitle>
+                <CardTitle class="mb-0">User Information</CardTitle>
             </CardHeader>
             <CardBody>
                 <div class="row g-3 align-items-center">
@@ -41,31 +42,224 @@ else
                     </div>
                     <div class="col">
                         <div class="fw-semibold">@username</div>
-                        <div class="text-muted small">Marks: @_marks.Count</div>
+                        @if (!string.IsNullOrWhiteSpace(_bio))
+                        {
+                            <div class="text-muted small mt-1">@_bio</div>
+                        }
+                        <div class="text-muted small mt-1">Total Date Marks: @_marks.Count</div>
                         @if (!string.IsNullOrWhiteSpace(_lastNote))
                         {
-                            <div class="small mt-1">Last message: <span class="text-muted">@_lastNote</span></div>
+                            <div class="small mt-1">Latest note: <span class="text-muted">@_lastNote</span></div>
+                        }
+                        @if (_favoriteCategories?.Count > 0)
+                        {
+                            <div class="mt-2">
+                                <small class="text-muted">Favorite Categories:</small>
+                                <div class="mt-1">
+                                    @foreach (var category in _favoriteCategories)
+                                    {
+                                        <span class="badge bg-primary me-1">@category</span>
+                                    }
+                                </div>
+                            </div>
                         }
                     </div>
                 </div>
             </CardBody>
         </div>
 
-        <div class="card">
+        <!-- Statistics Card -->
+        <div class="card mb-3">
             <CardHeader>
-                <CardTitle class="mb-0">Photos</CardTitle>
+                <CardTitle class="mb-0">Activity Statistics</CardTitle>
             </CardHeader>
             <CardBody>
-                <div class="d-flex flex-wrap gap-2">
-                    @for (int i = 0; i < _photos.Count; i++)
-                    {
-                        var p = _photos[i];
-                        <img src="@p" @onclick="() => OpenLightbox(i)" style="width:140px;height:140px;border-radius:8px;object-fit:cover;border:1px solid #e9ecef;cursor:pointer;" />
-                    }
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <div class="h4 mb-0 text-primary">@_marks.Count</div>
+                            <small class="text-muted">Date Marks</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <div class="h4 mb-0 text-success">@_uniqueCategories.Count</div>
+                            <small class="text-muted">Categories</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <div class="h4 mb-0 text-info">@_uniqueTags.Count</div>
+                            <small class="text-muted">Tags</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <div class="h4 mb-0 text-warning">@_photos.Count</div>
+                            <small class="text-muted">Photos</small>
+                        </div>
+                    </div>
                 </div>
-                @if (_photos.Count == 0)
+            </CardBody>
+        </div>
+
+        <!-- Photos Card -->
+        <div class="card mb-3">
+            <CardHeader>
+                <CardTitle class="mb-0">Photos (@_photos.Count)</CardTitle>
+            </CardHeader>
+            <CardBody>
+                @if (_photos.Count > 0)
+                {
+                    <div class="row g-2">
+                        @for (int i = 0; i < _photos.Count; i++)
+                        {
+                            var p = _photos[i];
+                            <div class="col-6 col-md-4 col-lg-3">
+                                <img src="@p" @onclick="() => OpenLightbox(i)" 
+                                     class="img-fluid rounded" 
+                                     style="width:100%;height:140px;object-fit:cover;cursor:pointer;border:1px solid #e9ecef;" />
+                            </div>
+                        }
+                    </div>
+                }
+                else
                 {
                     <div class="text-muted">No photos available.</div>
+                }
+            </CardBody>
+        </div>
+
+        <!-- Categories & Tags Summary -->
+        @if (_uniqueCategories.Count > 0 || _uniqueTags.Count > 0 || _uniqueQualities.Count > 0)
+        {
+            <div class="card mb-3">
+                <CardHeader>
+                    <CardTitle class="mb-0">Interests & Preferences</CardTitle>
+                </CardHeader>
+                <CardBody>
+                    @if (_uniqueCategories.Count > 0)
+                    {
+                        <div class="mb-3">
+                            <h6 class="text-muted">Categories</h6>
+                            @foreach (var category in _uniqueCategories)
+                            {
+                                <span class="badge bg-primary me-1 mb-1">@category</span>
+                            }
+                        </div>
+                    }
+                    @if (_uniqueTags.Count > 0)
+                    {
+                        <div class="mb-3">
+                            <h6 class="text-muted">Tags</h6>
+                            @foreach (var tag in _uniqueTags)
+                            {
+                                <span class="badge bg-secondary me-1 mb-1">#@tag</span>
+                            }
+                        </div>
+                    }
+                    @if (_uniqueQualities.Count > 0)
+                    {
+                        <div class="mb-3">
+                            <h6 class="text-muted">Qualities</h6>
+                            @foreach (var quality in _uniqueQualities)
+                            {
+                                <span class="badge bg-success me-1 mb-1">@quality</span>
+                            }
+                        </div>
+                    }
+                </CardBody>
+            </div>
+        }
+
+        <!-- Date Marks Card -->
+        <div class="card">
+            <CardHeader>
+                <CardTitle class="mb-0">Date Marks (@_marks.Count)</CardTitle>
+            </CardHeader>
+            <CardBody>
+                @if (_marks.Count > 0)
+                {
+                    <div class="list-group list-group-flush">
+                        @foreach (var mark in _marks.Take(20))
+                        {
+                            <div class="list-group-item px-0">
+                                <div class="d-flex align-items-start">
+                                    @if (!string.IsNullOrWhiteSpace(mark.PlacePhotoUrl))
+                                    {
+                                        <img src="@mark.PlacePhotoUrl" alt="Place" 
+                                             class="me-3 rounded" 
+                                             style="width:60px;height:60px;object-fit:cover;border:1px solid #e9ecef;" />
+                                    }
+                                    <div class="flex-grow-1">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div>
+                                                <h6 class="mb-1">@(mark.Name ?? "Unnamed Location")</h6>
+                                                <p class="mb-1 text-muted small">@mark.Address</p>
+                                                @if (!string.IsNullOrWhiteSpace(mark.Note))
+                                                {
+                                                    <p class="mb-1 small">@mark.Note</p>
+                                                }
+                                                @if (mark.Categories?.Count > 0)
+                                                {
+                                                    <div class="mb-1">
+                                                        @foreach (var category in mark.Categories)
+                                                        {
+                                                            <span class="badge bg-primary me-1">@category</span>
+                                                        }
+                                                    </div>
+                                                }
+                                                @if (mark.Tags?.Count > 0)
+                                                {
+                                                    <div class="mb-1">
+                                                        @foreach (var tag in mark.Tags)
+                                                        {
+                                                            <span class="badge bg-secondary me-1">#@tag</span>
+                                                        }
+                                                    </div>
+                                                }
+                                                @if (mark.Qualities?.Count > 0)
+                                                {
+                                                    <div class="mb-1">
+                                                        @foreach (var quality in mark.Qualities)
+                                                        {
+                                                            <span class="badge bg-success me-1">@quality</span>
+                                                        }
+                                                    </div>
+                                                }
+                                                @if (mark.VisitDate.HasValue)
+                                                {
+                                                    <small class="text-muted">Visited: @mark.VisitDate.Value.ToString("MMM dd, yyyy")</small>
+                                                }
+                                            </div>
+                                            <small class="text-muted">@mark.SavedAt.ToString("MMM dd, yyyy")</small>
+                                        </div>
+                                        <div class="d-flex gap-2 mt-2">
+                                            <button class="btn btn-sm btn-outline-primary" 
+                                                    @onclick="() => ViewOnMap(mark)">
+                                                <i class="bi bi-geo-alt"></i> View on Map
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                    
+                    @if (_marks.Count > 20)
+                    {
+                        <div class="mt-3 text-center">
+                            <small class="text-muted">Showing 20 of @_marks.Count Date Marks</small>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="text-center py-4">
+                        <i class="bi bi-geo-alt text-muted" style="font-size: 3rem;"></i>
+                        <h5 class="mt-3 text-muted">No Date Marks</h5>
+                        <p class="text-muted">This user hasn't created any Date Marks yet.</p>
+                    </div>
                 }
             </CardBody>
         </div>
@@ -86,6 +280,11 @@ else
     private string _avatar = "/images/user-avatar.svg";
     private List<string> _photos = new();
     private string? _lastNote;
+    private string? _bio;
+    private List<string> _favoriteCategories = new();
+    private List<string> _uniqueCategories = new();
+    private List<string> _uniqueTags = new();
+    private List<string> _uniqueQualities = new();
     // Defaults for fake user images (match Map.razor): real images first; avatar as fallback only
     private static readonly string DefaultUserAvatar = "/images/user-avatar.svg";
     private static readonly List<string> DefaultUserPhotoUrls = new()
@@ -102,6 +301,11 @@ else
         _marks.Clear();
         _photos.Clear();
         _lastNote = null;
+        _bio = null;
+        _favoriteCategories.Clear();
+        _uniqueCategories.Clear();
+        _uniqueTags.Clear();
+        _uniqueQualities.Clear();
 
         try
         {
@@ -147,6 +351,11 @@ else
                     _photos = DefaultUserPhotoUrls.Take(3).ToList();
                 }
                 _lastNote = _marks.FirstOrDefault(m => !string.IsNullOrWhiteSpace(m.Note))?.Note;
+                _bio = _marks.FirstOrDefault(m => !string.IsNullOrWhiteSpace(m.Bio))?.Bio;
+                _favoriteCategories = _marks.SelectMany(m => m.Categories ?? new List<string>()).Distinct().ToList();
+                _uniqueCategories = _marks.SelectMany(m => m.Categories ?? new List<string>()).Distinct().ToList();
+                _uniqueTags = _marks.SelectMany(m => m.Tags ?? new List<string>()).Distinct().ToList();
+                _uniqueQualities = _marks.SelectMany(m => m.Qualities ?? new List<string>()).Distinct().ToList();
             }
         }
         catch (Exception ex)
@@ -180,6 +389,12 @@ else
         }
     }
 
+    private void ViewOnMap(MarkDate mark)
+    {
+        // Navigate to map and center on this location
+        Nav.NavigateTo($"/map?lat={mark.Latitude}&lng={mark.Longitude}&zoom=15");
+    }
+
     private class MarkDate
     {
         public double Latitude { get; set; }
@@ -189,12 +404,16 @@ else
         public string? PlaceId { get; set; }
         public string CreatedBy { get; set; } = "current user";
         public string? Note { get; set; }
-        public List<string>? Types { get; set; }
+        public List<string>? Categories { get; set; }
+        public List<string>? Tags { get; set; }
+        public List<string>? Qualities { get; set; }
         public string? Url { get; set; }
         public List<string>? PhotoReferences { get; set; }
         public string? PlacePhotoUrl { get; set; }
         public string? UserPhotoUrl { get; set; }
         public List<string>? UserPhotoUrls { get; set; }
         public DateTime SavedAt { get; set; }
+        public DateTime? VisitDate { get; set; }
+        public string? Bio { get; set; }
     }
 }
