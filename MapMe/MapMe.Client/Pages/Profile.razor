@@ -459,12 +459,12 @@ else
                                                     @onclick="() => ViewOnMap(dateMark)">
                                                 <i class="bi bi-geo-alt"></i> View on Map
                                             </button>
+                                            <button class="btn btn-sm btn-outline-secondary" 
+                                                    @onclick="() => EditDateMark(dateMark)">
+                                                <i class="bi bi-pencil"></i> Edit
+                                            </button>
                                             @if (_isEditing)
                                             {
-                                                <button class="btn btn-sm btn-outline-secondary" 
-                                                        @onclick="() => EditDateMark(dateMark)">
-                                                    <i class="bi bi-pencil"></i> Edit
-                                                </button>
                                                 <button class="btn btn-sm btn-outline-danger" 
                                                         @onclick="() => DeleteDateMark(dateMark)">
                                                     <i class="bi bi-trash"></i> Delete
@@ -498,6 +498,83 @@ else
     </div>
 }
 
+<!-- Date Mark Edit Modal -->
+<div class="modal fade" id="editDateMarkModal" tabindex="-1" aria-labelledby="editDateMarkModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editDateMarkModalLabel">Edit Date Mark</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form>
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label">Place Name</label>
+                            <input type="text" class="form-control" @bind="_editingDateMark.Name" placeholder="Place name" />
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Address</label>
+                            <input type="text" class="form-control" @bind="_editingDateMark.Address" placeholder="Address" readonly />
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Note</label>
+                            <textarea class="form-control" rows="3" @bind="_editingDateMark.Note" placeholder="Add your notes about this place..."></textarea>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Categories (comma-separated)</label>
+                            <input type="text" class="form-control" @bind="_categoriesText" placeholder="restaurant, coffee, casual" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Tags (comma-separated)</label>
+                            <input type="text" class="form-control" @bind="_tagsText" placeholder="cozy, wifi, outdoor" />
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Qualities (comma-separated)</label>
+                            <input type="text" class="form-control" @bind="_qualitiesText" placeholder="great service, good food, clean" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Rating</label>
+                            <select class="form-select" @bind="_editingDateMark.Rating">
+                                <option value="">No rating</option>
+                                <option value="1">⭐ 1 star</option>
+                                <option value="2">⭐⭐ 2 stars</option>
+                                <option value="3">⭐⭐⭐ 3 stars</option>
+                                <option value="4">⭐⭐⭐⭐ 4 stars</option>
+                                <option value="5">⭐⭐⭐⭐⭐ 5 stars</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Visit Date</label>
+                            <input type="date" class="form-control" @oninput="VisitDateChanged" value="@(_editingDateMark.VisitDate?.ToString("yyyy-MM-dd") ?? "")" />
+                        </div>
+                        <div class="col-12">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" @bind="_editingDateMark.WouldRecommend" id="wouldRecommend">
+                                <label class="form-check-label" for="wouldRecommend">
+                                    Would recommend this place
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Visibility</label>
+                            <select class="form-select" @bind="_editingDateMark.Visibility">
+                                <option value="public">Public</option>
+                                <option value="friends">Friends only</option>
+                                <option value="private">Private</option>
+                            </select>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" @onclick="SaveDateMarkChanges">Save Changes</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @code {
     private bool _loading = true;
     private UserProfile _userProfile = new();
@@ -506,6 +583,11 @@ else
     private ActivityStatistics _activityStats = new();
     private List<DateMark> _dateMarks = new();
     private bool _isEditing = false;
+    private DateMark _editingDateMark = new();
+    private string _categoriesText = "";
+    private string _tagsText = "";
+    private string _qualitiesText = "";
+    private string _visitDateText = "";
 
     protected override async Task OnInitializedAsync()
     {
@@ -627,15 +709,13 @@ else
 
     private async Task EditDateMark(DateMark dateMark)
     {
-        try
-        {
-            // Navigate to map to edit the Date Mark
-            Nav.NavigateTo($"/map?lat={dateMark.Latitude}&lng={dateMark.Longitude}&zoom=15&edit={dateMark.Id}");
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error editing Date Mark: {ex.Message}");
-        }
+        _editingDateMark = dateMark;
+        _categoriesText = string.Join(", ", dateMark.Categories);
+        _tagsText = string.Join(", ", dateMark.Tags);
+        _qualitiesText = string.Join(", ", dateMark.Qualities);
+        _visitDateText = dateMark.VisitDate?.ToString("yyyy-MM-dd") ?? "";
+        // Show edit modal
+        await Js.InvokeVoidAsync("eval", "new bootstrap.Modal(document.getElementById('editDateMarkModal')).show()");
     }
 
     private async Task DeleteDateMark(DateMark dateMark)
@@ -676,6 +756,71 @@ else
         catch (Exception ex)
         {
             Console.WriteLine($"Error opening lightbox: {ex.Message}");
+        }
+    }
+
+    private async Task SaveDateMarkChanges()
+    {
+        try
+        {
+            // Parse comma-separated values
+            _editingDateMark.Categories = _categoriesText.Split(',', StringSplitOptions.RemoveEmptyEntries).Select(c => c.Trim()).Where(c => !string.IsNullOrWhiteSpace(c)).ToList();
+            _editingDateMark.Tags = _tagsText.Split(',', StringSplitOptions.RemoveEmptyEntries).Select(t => t.Trim()).Where(t => !string.IsNullOrWhiteSpace(t)).ToList();
+            _editingDateMark.Qualities = _qualitiesText.Split(',', StringSplitOptions.RemoveEmptyEntries).Select(q => q.Trim()).Where(q => !string.IsNullOrWhiteSpace(q)).ToList();
+            
+            // VisitDate is already handled by VisitDateChanged method
+
+            var success = await ProfileService.UpdateDateMarkAsync(_editingDateMark);
+            if (success)
+            {
+                // Update the local list
+                var index = _dateMarks.FindIndex(dm => dm.Id == _editingDateMark.Id);
+                if (index >= 0)
+                {
+                    _dateMarks[index] = _editingDateMark;
+                }
+
+                // Reload statistics after saving
+                var userActivityStats = await ProfileService.GetUserActivityStatsAsync(_userProfile.UserId);
+                _activityStats = new ActivityStatistics
+                {
+                    TotalDateMarks = userActivityStats.TotalDateMarks,
+                    UniqueCategories = userActivityStats.UniqueCategories,
+                    UniqueTags = userActivityStats.UniqueTags,
+                    UniqueQualities = userActivityStats.UniqueQualities,
+                    AverageRating = userActivityStats.AverageRating,
+                    RecommendationRate = userActivityStats.RecommendationRate
+                };
+
+                // Close the modal
+                await Js.InvokeVoidAsync("eval", "bootstrap.Modal.getInstance(document.getElementById('editDateMarkModal')).hide()");
+                StateHasChanged();
+            }
+            else
+            {
+                // Show error message
+                await Js.InvokeVoidAsync("alert", "Failed to save changes. Please try again.");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error saving Date Mark: {ex.Message}");
+            await Js.InvokeVoidAsync("alert", "An error occurred while saving. Please try again.");
+        }
+    }
+
+    private void VisitDateChanged(ChangeEventArgs e)
+    {
+        if (e.Value is string dateText)
+        {
+            if (DateTime.TryParseExact(dateText, "yyyy-MM-dd", null, System.Globalization.DateTimeStyles.None, out DateTime date))
+            {
+                _editingDateMark.VisitDate = date;
+            }
+            else
+            {
+                _editingDateMark.VisitDate = null;
+            }
         }
     }
 }

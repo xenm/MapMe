@@ -34,9 +34,9 @@
                                    class="form-control" 
                                    placeholder="Search location..." 
                                    @bind="_searchQuery"
-                                   @onkeyup="OnSearchKeyUp" />
+                                   @onkeyup="OnSearchKeyUpAsync" />
                             <Button Color="ButtonColor.Primary" 
-                                    @onclick="SearchLocation" 
+                                    @onclick="SearchLocationAsync" 
                                     Disabled="@(_isLoading || string.IsNullOrWhiteSpace(_searchQuery))">
                                 <i class="bi bi-search"></i>
                             </Button>
@@ -45,7 +45,7 @@
                     <Button Color="ButtonColor.Primary" 
                             Outline="true" 
                             Size="ButtonSize.Small" 
-                            @onclick="CenterMap" 
+                            @onclick="CenterMapAsync" 
                             Disabled="@_isLoading">
                         @(_isLoading ? "Loading..." : "Center Map")
                     </Button>
@@ -90,7 +90,7 @@
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" @onclick="CancelConfirm">Cancel</button>
-                        <button type="button" class="btn btn-primary" @onclick="ConfirmSave">Save</button>
+                        <button type="button" class="btn btn-primary" @onclick="ConfirmSaveAsync">Save</button>
                     </div>
                 </div>
             </div>
@@ -125,11 +125,14 @@
                                 <div class="text-end">
                                     <small class="text-muted">@mark.CreatedAt.ToString("MMM dd, yyyy")</small>
                                     <div class="mt-1">
-                                        <button class="btn btn-sm btn-outline-primary me-1" @onclick="() => FlyTo(mark)">
+                                        <button class="btn btn-sm btn-outline-primary me-1" @onclick="() => FlyToAsync(mark)">
                                             <i class="bi bi-geo-alt"></i>
                                         </button>
-                                        <button class="btn btn-sm btn-outline-danger" @onclick="() => RemoveMark(mark)">
+                                        <button class="btn btn-sm btn-outline-danger" @onclick="() => RemoveMarkAsync(mark)">
                                             <i class="bi bi-trash"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-secondary" @onclick="() => EditMarkAsync(mark)">
+                                            <i class="bi bi-pencil"></i>
                                         </button>
                                     </div>
                                 </div>
@@ -165,19 +168,34 @@
     private ReverseGeocodeResult? _pendingGeo;
     private string _pendingNote = string.Empty;
     private UserProfile _currentUserProfile = new();
+    private bool _showPopupAfterInit;
+    private string _popupPlaceId = string.Empty;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
         {
-            await LoadCurrentUserProfile();
-            await SetupJavaScriptHooks();
-            await HandleQueryParameters();
-            await InitializeMap();
+            try
+            {
+                _dotNetHelper = DotNetObjectReference.Create(this);
+                _mapModule = await JsRuntime.InvokeAsync<IJSObjectReference>("import", "./js/mapInitializer.js");
+                
+                await HandleQueryParametersAsync();
+                await InitializeMapAsync();
+                await SetupUserProfileHookAsync();
+                await SetupCurrentUserIdentificationAsync();
+                
+                // Load and display saved marks
+                await LoadMarksAsync();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in OnAfterRenderAsync: {ex.Message}");
+            }
         }
     }
 
-    private async Task LoadCurrentUserProfile()
+    private async Task LoadCurrentUserProfileAsync()
     {
         try
         {
@@ -189,7 +207,7 @@
         }
     }
 
-    private async Task SetupJavaScriptHooks()
+    private async Task SetupJavaScriptHooksAsync()
     {
         try
         {
@@ -215,7 +233,7 @@
     }
 
     [JSInvokable]
-    public async Task<object?> GetUserProfileForJS(string username)
+    public async Task<object?> GetUserProfileForJSAsync(string username)
     {
         try
         {
@@ -269,7 +287,7 @@
         }
     }
 
-    private async Task HandleQueryParameters()
+    private async Task HandleQueryParametersAsync()
     {
         var uri = new Uri(Navigation.Uri);
         var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
@@ -297,13 +315,53 @@
                 Task.Run(async () =>
                 {
                     await Task.Delay(2000); // Wait for map and marks to be ready
-                    await ShowPopupForLocation(lat, lng, placeId);
+                    await ShowPopupForLocationAsync(lat, lng, placeId);
                 });
+            }
+            
+            // Handle edit parameter
+            if (!string.IsNullOrWhiteSpace(query["edit"]))
+            {
+                var editDateMarkId = query["edit"];
+                await HandleEditDateMarkAsync(editDateMarkId);
             }
         }
     }
 
-    private async Task InitializeMap()
+    private async Task HandleEditDateMarkAsync(string dateMarkId)
+    {
+        try
+        {
+            // Find the Date Mark to edit
+            var userProfile = await ProfileService.GetCurrentUserProfileAsync();
+            if (userProfile != null)
+            {
+                var dateMarks = await ProfileService.GetUserDateMarksAsync(userProfile.UserId);
+                var dateMarkToEdit = dateMarks.FirstOrDefault(dm => dm.Id == dateMarkId);
+                
+                if (dateMarkToEdit != null)
+                {
+                    // Set up for editing - you could show a modal or navigate to edit view
+                    // For now, let's center the map on the Date Mark and show info
+                    _latitude = dateMarkToEdit.Latitude;
+                    _longitude = dateMarkToEdit.Longitude;
+                    _zoom = 15;
+                    
+                    // Schedule popup to show after map initialization
+                    _showPopupAfterInit = true;
+                    _popupPlaceId = dateMarkToEdit.PlaceId ?? "";
+                    
+                    Console.WriteLine($"Editing Date Mark: {dateMarkToEdit.Name} at {dateMarkToEdit.Address}");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error handling edit Date Mark: {ex.Message}");
+        }
+    }
+
+    private async Task InitializeMapAsync()
     {
         try
         {
@@ -327,9 +385,12 @@
             try
             {
                 var location = await GetCurrentLocationAsync();
-                _latitude = location.Lat;
-                _longitude = location.Lng;
-                _zoom = 15; // Zoom in more when using current location
+                if (location != null)
+                {
+                    _latitude = location.Latitude;
+                    _longitude = location.Longitude;
+                    _zoom = 15; // Zoom in more when using current location
+                }
             }
             catch (Exception ex)
             {
@@ -348,13 +409,13 @@
                 _googleMapsApiKey);
                 
             // Set up the getUserProfile hook for JavaScript to use real user data
-            await SetupUserProfileHook();
+            await SetupUserProfileHookAsync();
                 
             // Load any existing marks from localStorage
             await LoadMarksAsync();
 
             // Render existing marks on the map with custom icons
-            await SyncMarksToMap();
+            await SyncMarksToMapAsync();
 
             _isLoading = false;
             StateHasChanged();
@@ -373,43 +434,25 @@
         }
     }
     
-    private async Task<Location> GetCurrentLocationAsync()
+    private async Task<Location?> GetCurrentLocationAsync()
     {
         try
         {
             var position = await JsRuntime.InvokeAsync<GeolocationPosition>("getCurrentPosition");
-            
-            if (position?.Coords == null)
+            if (position?.Coords != null)
             {
-                Console.WriteLine("Received null or incomplete geolocation data");
-                throw new Exception("Could not retrieve geolocation data");
+                return new Location
+                {
+                    Latitude = position.Coords.Latitude,
+                    Longitude = position.Coords.Longitude
+                };
             }
-            
-            return new Location 
-            { 
-                Lat = position.Coords.Latitude, 
-                Lng = position.Coords.Longitude 
-            };
-        }
-        catch (JSException jsex)
-        {
-            Console.WriteLine($"JavaScript error getting current location: {jsex.Message}");
-            // Return default location (Singapore) if geolocation fails
-            return new Location 
-            { 
-                Lat = 1.3521, 
-                Lng = 103.8198 
-            };
+            return null;
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Error getting current location: {ex.Message}");
-            // Return default location (Singapore) if geolocation fails
-            return new Location 
-            { 
-                Lat = 1.3521, 
-                Lng = 103.8198 
-            };
+            return null;
         }
     }
     
@@ -432,11 +475,11 @@
     
     public class Location
     {
-        public double Lat { get; set; }
-        public double Lng { get; set; }
+        public double Latitude { get; set; }
+        public double Longitude { get; set; }
     }
 
-    private async Task CenterMap()
+    private async Task CenterMapAsync()
     {
         try
         {
@@ -444,9 +487,12 @@
             {
                 // Always recenter to the user's current geolocation
                 var location = await GetCurrentLocationAsync();
-                _latitude = location.Lat;
-                _longitude = location.Lng;
-                _zoom = 15; // Zoom in more when using current location
+                if (location != null)
+                {
+                    _latitude = location.Latitude;
+                    _longitude = location.Longitude;
+                    _zoom = 15; // Zoom in more when using current location
+                }
 
                 // Set the center on the already-initialized map
                 await _mapModule.InvokeVoidAsync("setCenter",
@@ -461,7 +507,7 @@
         }
     }
 
-    private async Task SearchLocation()
+    private async Task SearchLocationAsync()
     {
         if (string.IsNullOrWhiteSpace(_searchQuery) || _mapModule == null) 
         {
@@ -519,11 +565,11 @@
         }
     }
 
-    private async Task OnSearchKeyUp(KeyboardEventArgs e)
+    private async Task OnSearchKeyUpAsync(KeyboardEventArgs e)
     {
         if (e.Key == "Enter")
         {
-            await SearchLocation();
+            await SearchLocationAsync();
         }
     }
     
@@ -580,21 +626,21 @@
 
     // Called from JS when map is clicked
     [JSInvokable]
-    public async Task OnMapClick(double lat, double lng)
+    public async Task OnMapClickAsync(double lat, double lng)
     {
         await BeginConfirmAsync(lat, lng);
     }
 
     // Called from JS when marker drag ends
     [JSInvokable]
-    public async Task OnMarkerDragEnd(double lat, double lng)
+    public async Task OnMarkerDragEndAsync(double lat, double lng)
     {
         await BeginConfirmAsync(lat, lng);
     }
 
     // Called from JS when a POI was clicked and details are available
     [JSInvokable]
-    public Task OnPlaceDetails(PlaceDetailsDto details)
+    public Task OnPlaceDetailsAsync(PlaceDetailsDto details)
     {
         if (details?.Location != null)
         {
@@ -653,7 +699,7 @@
         _pendingGeo = null;
     }
 
-    private async Task ConfirmSave()
+    private async Task ConfirmSaveAsync()
     {
         _showConfirm = false;
         await SaveMarkAsync(_pendingLat, _pendingLng, _pendingNote, _pendingGeo);
@@ -696,7 +742,7 @@
             if (success)
             {
                 _savedMarks.Insert(0, mark);
-                await SyncMarksToMap();
+                await SyncMarksToMapAsync();
                 StateHasChanged();
             }
             else if (existingMark != null)
@@ -718,7 +764,7 @@
             _savedMarks.Clear();
             var userMarks = await ProfileService.GetUserDateMarksAsync(_currentUserProfile.UserId);
             _savedMarks.AddRange(userMarks.OrderByDescending(m => m.CreatedAt));
-            await SyncMarksToMap();
+            await SyncMarksToMapAsync();
         }
         catch (Exception ex)
         {
@@ -726,7 +772,7 @@
         }
     }
 
-    private async Task FlyTo(DateMark mark)
+    private async Task FlyToAsync(DateMark mark)
     {
         try
         {
@@ -741,7 +787,7 @@
         }
     }
 
-    private async Task RemoveMark(DateMark mark)
+    private async Task RemoveMarkAsync(DateMark mark)
     {
         try
         {
@@ -749,7 +795,7 @@
             if (success)
             {
                 _savedMarks.Remove(mark);
-                await SyncMarksToMap();
+                await SyncMarksToMapAsync();
                 StateHasChanged();
             }
         }
@@ -759,7 +805,19 @@
         }
     }
 
-    private async Task SyncMarksToMap()
+    private async Task EditMarkAsync(DateMark mark)
+    {
+        try
+        {
+            Navigation.NavigateTo($"/map?lat={mark.Latitude}&lng={mark.Longitude}&zoom=15&edit={mark.Id}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error editing mark: {ex.Message}");
+        }
+    }
+
+    private async Task SyncMarksToMapAsync()
     {
         try
         {
@@ -785,7 +843,7 @@
         }
     }
 
-    private async Task ShowPopupForLocation(double lat, double lng, string placeId)
+    private async Task ShowPopupForLocationAsync(double lat, double lng, string placeId)
     {
         try
         {
@@ -801,7 +859,7 @@
         }
     }
 
-    private async Task SetupUserProfileHook()
+    private async Task SetupUserProfileHookAsync()
     {
         try
         {
@@ -826,7 +884,7 @@
     }
 
     [JSInvokable]
-    public async Task<object> GetUserProfileForJs(string username)
+    public async Task<object> GetUserProfileForJsAsync(string username)
     {
         try
         {
@@ -868,6 +926,29 @@
                 bio = "MapMe user",
                 avatar = "/images/user-avatar.svg"
             };
+        }
+    }
+
+    private async Task SetupCurrentUserIdentificationAsync()
+    {
+        try
+        {
+            // Get current user profile to identify the user in JavaScript
+            var userProfile = await ProfileService.GetCurrentUserProfileAsync();
+            if (userProfile != null)
+            {
+                await JsRuntime.InvokeVoidAsync("eval", $@"
+                    window.MapMe = window.MapMe || {{}};
+                    window.MapMe.currentUser = '{userProfile.DisplayName}';
+                    window.MapMe.editDateMark = function(dateMarkId) {{
+                        window.location.href = '/map?edit=' + encodeURIComponent(dateMarkId);
+                    }};
+                ");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error setting up current user identification: {ex.Message}");
         }
     }
 

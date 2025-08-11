@@ -670,16 +670,16 @@ function renderMarks(marks) {
             const idx = findGroupIndex(m);
             // Collect photos
             const userArr = [];
-            if (Array.isArray(m.userPhotoUrls) && m.userPhotoUrls.length) userArr.push(...m.userPhotoUrls);
-            if (Array.isArray(m.userPhotos) && m.userPhotos.length) userArr.push(...m.userPhotos);
+            if (Array.isArray(m.userPhotoUrls) && m.userPhotoUrls.length > 0) userArr.push(...m.userPhotoUrls);
+            if (Array.isArray(m.userPhotos) && m.userPhotos.length > 0) userArr.push(...m.userPhotos);
             if (m.userPhotoUrl) userArr.push(m.userPhotoUrl);
             let userPhotos = [...new Set(userArr.filter(Boolean))];
             if (userPhotos.length > 1) userPhotos = userPhotos.filter(u => u !== AVATAR);
             if (!userPhotos.length) userPhotos.push(AVATAR);
 
             const placeArr = [];
-            if (Array.isArray(m.placePhotoUrls) && m.placePhotoUrls.length) placeArr.push(...m.placePhotoUrls);
-            if (Array.isArray(m.placePhotos) && m.placePhotos.length) placeArr.push(...m.placePhotos);
+            if (Array.isArray(m.placePhotoUrls) && m.placePhotoUrls.length > 0) placeArr.push(...m.placePhotoUrls);
+            if (Array.isArray(m.placePhotos) && m.placePhotos.length > 0) placeArr.push(...m.placePhotos);
             if (m.placePhotoUrl) placeArr.push(m.placePhotoUrl);
             let placePhotos = [...new Set(placeArr.filter(Boolean))];
             if (!placePhotos.length) placePhotos.push(PLACE_FALLBACK);
@@ -936,25 +936,27 @@ function renderMarks(marks) {
                 const thumbHtml = (url) => `<img class=\"mm-thumb\" src=\"${url}\" alt=\"Photo\" style=\"width:72px;height:72px;border-radius:8px;object-fit:cover;border:1px solid #e9ecef;cursor:pointer;\"/>`;
                 // Build sections: first place images, then for each user: their images, name link and message
                 const placeUrls = [...new Set(g.items.flatMap(it => it.placePhotos).filter(Boolean))];
-                const byUser = new Map(); // name -> { urls:Set, messages:Set, avatar:string }
+                const byUser = new Map(); // name -> { urls:Set, messages:Set, avatar:string, dateMarks:[] }
                 for (const it of g.items) {
                     const name = it.createdBy || 'Unknown';
-                    if (!byUser.has(name)) byUser.set(name, { urls: new Set(), messages: new Set(), avatar: null });
+                    if (!byUser.has(name)) byUser.set(name, { urls: new Set(), messages: new Set(), avatar: null, dateMarks: [] });
                     const entry = byUser.get(name);
                     (it.userPhotos || []).forEach(u => { if (u) entry.urls.add(u); });
                     const src = it.mark || {};
                     const msg = src.message || src.userMessage || src.note || src.comment || src.caption || src.description || src.text || src.msg || null;
                     if (msg) entry.messages.add(msg);
                     if (!entry.avatar) entry.avatar = (it.userPhotos && it.userPhotos[0]) || src.userPhotoUrl || '/images/user-avatar.svg';
+                    // Store the full DateMark data for editing
+                    entry.dateMarks.push(src);
                 }
-                const userSections = Array.from(byUser.entries()).map(([name, val]) => ({ name, urls: Array.from(val.urls), messages: Array.from(val.messages), avatar: val.avatar }));
+                const userSections = Array.from(byUser.entries()).map(([name, val]) => ({ name, urls: Array.from(val.urls), messages: Array.from(val.messages), avatar: val.avatar, dateMarks: val.dateMarks }));
                 // Optional: sort users alphabetically for consistent order
                 userSections.sort((a,b) => a.name.localeCompare(b.name));
 
                 const sections = [];
                 if (placeUrls.length) sections.push({ type: 'place', label: 'Place photos', urls: placeUrls });
                 for (const us of userSections) {
-                    sections.push({ type: 'user', label: us.name, urls: us.urls, messages: us.messages, avatar: us.avatar });
+                    sections.push({ type: 'user', label: us.name, urls: us.urls, messages: us.messages, avatar: us.avatar, dateMarks: us.dateMarks });
                 }
 
                 const sectionsHtml = sections.map((sec, idx) => {
@@ -966,8 +968,20 @@ function renderMarks(marks) {
                         const items = sec.messages.map(m => `<li>${escapeHtml(m)}</li>`).join('');
                         msgHtml = `<ul style=\"color:#6c757d;font-size:12px;margin:2px 0 4px;padding-left:16px;\">${items}</ul>`;
                     }
+                    // Add edit button for current user's Date Marks
+                    let editButtonHtml = '';
+                    if (sec.type === 'user' && sec.dateMarks && sec.dateMarks.length > 0) {
+                        // Check if this is the current user (we'll use a simple check for now)
+                        const isCurrentUser = window.MapMe && window.MapMe.currentUser && window.MapMe.currentUser === sec.label;
+                        if (isCurrentUser) {
+                            const dateMarkId = sec.dateMarks[0].id || sec.dateMarks[0].Id;
+                            if (dateMarkId) {
+                                editButtonHtml = `<div style=\"margin:6px 0;\"><button class=\"mm-edit-btn\" data-datemark-id=\"${dateMarkId}\" style=\"background:#007bff;color:white;border:none;padding:4px 8px;border-radius:4px;font-size:12px;cursor:pointer;\">✏️ Edit Date Mark</button></div>`;
+                            }
+                        }
+                    }
                     const strip = `<div class=\"mm-scroll\" data-sec-idx=\"${idx}\" style=\"display:flex; gap:8px; overflow-x:auto; padding-bottom:4px; margin:6px 0;\">${sec.urls.map(thumbHtml).join('')}</div>`;
-                    return `<div class=\"mm-sec\">${heading}${msgHtml}${strip}</div>`;
+                    return `<div class=\"mm-sec\">${heading}${msgHtml}${editButtonHtml}${strip}</div>`;
                 }).join('');
                 const content = `<div style=\"max-width:320px; max-height:360px; overflow:auto;\">${title}${addr}${sectionsHtml}</div>`;
                 try { sharedInfoWindow.close(); } catch (_) {}
@@ -1051,7 +1065,7 @@ function renderMarks(marks) {
                                 if (photosEl) {
                                     const urls = Array.isArray(profile.recentPhotos) ? profile.recentPhotos.slice(0, 10) : [];
                                     if (urls.length) {
-                                        photosEl.innerHTML = urls.map(u => `<img src=\"${u}\" alt=\"\" style=\"width:44px;height:44px;border-radius:6px;object-fit:cover;border:1px solid #e5e7eb;\"/>`).join('');
+                                        photosEl.innerHTML = urls.map(u => `<img src=\"${u}\" alt=\"\" style=\"width:44px;height:44px;border-radius:6px;object-fit:cover;border:1px solid #e9ecef;\"/>`).join('');
                                     } else {
                                         photosEl.style.display = 'none';
                                     }
@@ -1071,6 +1085,26 @@ function renderMarks(marks) {
                             a.addEventListener('mouseenter', () => showPopover(a, username, avatar));
                             a.addEventListener('mouseleave', () => hidePopover(150));
                             a.addEventListener('click', (e) => { e.preventDefault(); showPopover(a, username, avatar); });
+                        });
+
+                        // Add event handlers for edit buttons
+                        container.querySelectorAll('.mm-edit-btn').forEach(btn => {
+                            const dateMarkId = btn.getAttribute('data-datemark-id');
+                            btn.addEventListener('click', (e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                try {
+                                    // Call the Blazor component to handle editing
+                                    if (window.MapMe && window.MapMe.editDateMark) {
+                                        window.MapMe.editDateMark(dateMarkId);
+                                    } else {
+                                        // Fallback: navigate to edit page
+                                        window.location.href = `/map?edit=${encodeURIComponent(dateMarkId)}`;
+                                    }
+                                } catch (err) {
+                                    console.error('Error editing Date Mark:', err);
+                                }
+                            });
                         });
                     } catch (_) { /* ignore */ }
                 }, 0);
