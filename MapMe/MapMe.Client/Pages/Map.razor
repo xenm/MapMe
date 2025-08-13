@@ -882,10 +882,32 @@
                 window.MapMe = window.MapMe || {};
                 window.MapMe.getUserProfile = async function(username) {
                     try {
+                        // Check if _dotNetRef is available
+                        if (!window.MapMe._dotNetRef) {
+                            console.warn('DotNet reference not available, falling back to API call');
+                            // Fallback to direct API call
+                            const response = await fetch(`/api/users/${username}`);
+                            if (response.ok) {
+                                return await response.json();
+                            } else {
+                                console.error('API call failed:', response.status);
+                                return null;
+                            }
+                        }
+                        
                         const result = await window.MapMe._dotNetRef.invokeMethodAsync('GetUserProfileForJs', username);
                         return result;
                     } catch (error) {
                         console.error('Error getting user profile:', error);
+                        // Fallback to API call if DotNet call fails
+                        try {
+                            const response = await fetch(`/api/users/${username}`);
+                            if (response.ok) {
+                                return await response.json();
+                            }
+                        } catch (apiError) {
+                            console.error('API fallback also failed:', apiError);
+                        }
                         return null;
                     }
                 };
