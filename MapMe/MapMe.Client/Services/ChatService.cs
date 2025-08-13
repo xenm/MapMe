@@ -229,6 +229,39 @@ public class ChatService
     }
 
     /// <summary>
+    /// Start a chat with a user about a specific Date Mark (creates conversation, sends initial message, and navigates to it)
+    /// </summary>
+    public async Task StartChatAsync(string otherUserId, DateMark dateMark)
+    {
+        var conversationId = await StartConversationAsync(otherUserId);
+        if (!string.IsNullOrEmpty(conversationId))
+        {
+            // Send an initial message about the Date Mark
+            var initialMessage = $"Hi! I saw your Date Mark at {dateMark.Name ?? "this place"} and wanted to chat about it.";
+            
+            try
+            {
+                await SendMessageAsync(otherUserId, initialMessage, "datemark", new MessageMetadata
+                {
+                    DateMarkId = dateMark.Id,
+                    DateMarkName = dateMark.Name,
+                    LocationName = dateMark.Name,
+                    Latitude = dateMark.Latitude,
+                    Longitude = dateMark.Longitude
+                });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error sending initial DateMark message: {ex.Message}");
+                // Continue to navigate even if message sending fails
+            }
+            
+            // Navigate to the chat page with the conversation
+            _navigationManager.NavigateTo($"/chat/{conversationId}");
+        }
+    }
+
+    /// <summary>
     /// Get total unread message count across all conversations
     /// </summary>
     public async Task<int> GetTotalUnreadCountAsync()

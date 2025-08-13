@@ -384,6 +384,23 @@ else
                                                 {
                                                     <small class="text-muted">Visited: @mark.VisitDate.Value.ToString("MMM dd, yyyy")</small>
                                                 }
+                                                
+                                                <!-- Message button for this Date Mark -->
+                                                <div class="mt-2">
+                                                    <button class="btn btn-sm btn-outline-primary" 
+                                                            @onclick="() => StartChatAboutDateMark(mark)" 
+                                                            disabled="@_startingChat">
+                                                        @if (_startingChat)
+                                                        {
+                                                            <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                                                        }
+                                                        else
+                                                        {
+                                                            <i class="bi bi-chat-dots me-1"></i>
+                                                        }
+                                                        Message about this place
+                                                    </button>
+                                                </div>
                                             </div>
                                             <small class="text-muted">@mark.CreatedAt.ToString("MMM dd, yyyy")</small>
                                         </div>
@@ -498,6 +515,23 @@ else
         try
         {
             await ChatService.StartChatAsync(_userProfile.UserId);
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+        finally
+        {
+            _startingChat = false;
+        }
+    }
+
+    private async Task StartChatAboutDateMark(DateMark dateMark)
+    {
+        _startingChat = true;
+        try
+        {
+            await ChatService.StartChatAsync(_userProfile.UserId, dateMark);
         }
         catch (Exception ex)
         {
