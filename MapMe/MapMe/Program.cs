@@ -71,16 +71,22 @@ if (useCosmos)
     builder.Services.AddSingleton(new CosmosContextOptions(cosmosDatabase));
     builder.Services.AddSingleton<IUserProfileRepository, CosmosUserProfileRepository>();
     builder.Services.AddSingleton<IDateMarkByUserRepository, CosmosDateMarkByUserRepository>();
+    // TODO: Add Cosmos implementations for chat repositories when needed
+    builder.Services.AddSingleton<IChatMessageRepository, InMemoryChatMessageRepository>();
+    builder.Services.AddSingleton<IConversationRepository, InMemoryConversationRepository>();
 }
 else
 {
     // Temporary in-memory repositories
     builder.Services.AddSingleton<IUserProfileRepository, InMemoryUserProfileRepository>();
     builder.Services.AddSingleton<IDateMarkByUserRepository, InMemoryDateMarkByUserRepository>();
+    builder.Services.AddSingleton<IChatMessageRepository, InMemoryChatMessageRepository>();
+    builder.Services.AddSingleton<IConversationRepository, InMemoryConversationRepository>();
 }
 
 // Register client-side services
 builder.Services.AddScoped<UserProfileService>();
+builder.Services.AddScoped<ChatService>();
 
 var app = builder.Build();
 
@@ -192,6 +198,158 @@ app.MapGet("/api/map/datemarks", async (
     // Access internal repo data is not exposed; for prototype we iterate by known users via reflection is overkill.
     // Instead, require a userId for now or expand repository later. Here we just return empty to keep API shape stable.
     return Results.Ok(results);
+});
+
+// Chat API Endpoints
+app.MapPost("/api/chat/messages", async (SendMessageRequest req, IChatMessageRepository messageRepo, IConversationRepository conversationRepo, IUserProfileRepository userRepo, HttpContext context) =>
+{
+    // For now, use a default current user ID - in production this would come from authentication
+    var senderId = context.Request.Headers["X-User-Id"].FirstOrDefault() ?? "current_user";
+    
+    if (string.IsNullOrWhiteSpace(req.ReceiverId) || string.IsNullOrWhiteSpace(req.Content))
+        return Results.BadRequest("ReceiverId and Content are required");
+
+    // Verify receiver exists
+    var receiver = await userRepo.GetByUserIdAsync(req.ReceiverId);
+    if (receiver == null)
+        return Results.BadRequest("Receiver not found");
+
+    var now = DateTimeOffset.UtcNow;
+    var message = req.ToChatMessage(senderId, now);
+
+    // Save message
+    await messageRepo.UpsertAsync(message);
+
+    // Get or create conversation
+    var conversation = await conversationRepo.GetOrCreateConversationAsync(senderId, req.ReceiverId);
+
+    // Update conversation metadata
+    await conversationRepo.UpdateConversationMetadataAsync(
+        conversation.Id,
+        message.Id,
+        message.Content,
+        senderId,
+        now);
+
+    // Update unread count for receiver
+    var receiverUnreadCount = await messageRepo.GetUnreadCountAsync(conversation.Id, req.ReceiverId);
+    await conversationRepo.UpdateUnreadCountAsync(conversation.Id, req.ReceiverId, receiverUnreadCount);
+
+    return Results.Created($"/api/chat/messages/{message.Id}", message);
+});
+
+app.MapGet("/api/chat/conversations", async (IConversationRepository conversationRepo, IUserProfileRepository userRepo, HttpContext context) =>
+{
+    // For now, use a default current user ID - in production this would come from authentication
+    var userId = context.Request.Headers["X-User-Id"].FirstOrDefault() ?? "current_user";
+    
+    var conversations = new List<ConversationResponse>();
+    
+    await foreach (var conversation in conversationRepo.GetByUserAsync(userId))
+    {
+        var otherParticipantId = conversation.GetOtherParticipantId(userId);
+        var otherParticipant = await userRepo.GetByUserIdAsync(otherParticipantId);
+        
+        if (otherParticipant == null) continue;
+
+        var conversationResponse = new ConversationResponse(
+            Id: conversation.Id,
+            OtherParticipant: new MapMe.DTOs.UserSummary(
+                UserId: otherParticipant.UserId,
+                DisplayName: otherParticipant.DisplayName,
+                AvatarUrl: otherParticipant.Photos.FirstOrDefault()?.Url
+            ),
+            LastMessage: conversation.LastMessageContent != null ? new MapMe.DTOs.MessageSummary(
+                Id: conversation.LastMessageId!,
+                Content: conversation.LastMessageContent,
+                MessageType: "text", // Default for now
+                SenderId: conversation.LastMessageSenderId!,
+                CreatedAt: conversation.LastMessageAt!.Value,
+                IsRead: conversation.GetUnreadCountForUser(userId) == 0
+            ) : null,
+            UnreadCount: conversation.GetUnreadCountForUser(userId),
+            IsArchived: conversation.IsArchivedForUser(userId),
+            CreatedAt: conversation.CreatedAt,
+            UpdatedAt: conversation.UpdatedAt
+        );
+        
+        conversations.Add(conversationResponse);
+    }
+
+    return Results.Ok(conversations.OrderByDescending(c => c.LastMessage?.CreatedAt ?? c.CreatedAt));
+});
+
+app.MapGet("/api/chat/conversations/{conversationId}/messages", async (
+    string conversationId, 
+    IChatMessageRepository messageRepo,
+    IConversationRepository conversationRepo,
+    HttpContext context,
+    int skip = 0,
+    int take = 50) =>
+{
+    // For now, use a default current user ID - in production this would come from authentication
+    var userId = context.Request.Headers["X-User-Id"].FirstOrDefault() ?? "current_user";
+    
+    // Verify user is participant in conversation
+    var conversation = await conversationRepo.GetByIdAsync(conversationId);
+    if (conversation == null || (conversation.Participant1Id != userId && conversation.Participant2Id != userId))
+        return Results.Ok(new List<ChatMessage>());
+
+    var messages = new List<ChatMessage>();
+    await foreach (var message in messageRepo.GetByConversationAsync(conversationId, skip, take))
+    {
+        messages.Add(message);
+    }
+
+    return Results.Ok(messages);
+});
+
+app.MapPost("/api/chat/messages/read", async (MarkAsReadRequest req, IChatMessageRepository messageRepo, IConversationRepository conversationRepo, HttpContext context) =>
+{
+    // For now, use a default current user ID - in production this would come from authentication
+    var userId = context.Request.Headers["X-User-Id"].FirstOrDefault() ?? "current_user";
+    
+    // Verify user is participant in conversation
+    var conversation = await conversationRepo.GetByIdAsync(req.ConversationId);
+    if (conversation == null || (conversation.Participant1Id != userId && conversation.Participant2Id != userId))
+        return Results.Forbid();
+
+    // Mark messages as read
+    await messageRepo.MarkAsReadAsync(req.ConversationId, userId);
+
+    // Update conversation unread count
+    await conversationRepo.UpdateUnreadCountAsync(req.ConversationId, userId, 0);
+
+    return Results.Ok();
+});
+
+app.MapPost("/api/chat/conversations/archive", async (ArchiveConversationRequest req, IConversationRepository conversationRepo, HttpContext context) =>
+{
+    // For now, use a default current user ID - in production this would come from authentication
+    var userId = context.Request.Headers["X-User-Id"].FirstOrDefault() ?? "current_user";
+    
+    // Verify user is participant in conversation
+    var conversation = await conversationRepo.GetByIdAsync(req.ConversationId);
+    if (conversation == null || (conversation.Participant1Id != userId && conversation.Participant2Id != userId))
+        return Results.Forbid();
+
+    await conversationRepo.SetArchiveStatusAsync(req.ConversationId, userId, req.IsArchived);
+
+    return Results.Ok();
+});
+
+app.MapDelete("/api/chat/messages/{messageId}", async (string messageId, IChatMessageRepository messageRepo, HttpContext context) =>
+{
+    // For now, use a default current user ID - in production this would come from authentication
+    var userId = context.Request.Headers["X-User-Id"].FirstOrDefault() ?? "current_user";
+    
+    var message = await messageRepo.GetByIdAsync(messageId);
+    if (message == null || message.SenderId != userId)
+        return Results.Forbid();
+
+    await messageRepo.DeleteAsync(messageId);
+
+    return Results.Ok();
 });
 
 app.Run()
