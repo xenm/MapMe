@@ -129,8 +129,9 @@
                 <!-- Message Input -->
                 <div class="p-3 border-top bg-white">
                     <div class="input-group">
-                        <input type="text" class="form-control" placeholder="Type a message..." 
-                               @bind="_newMessageText" @onkeypress="HandleKeyPress" disabled="@_sendingMessage">
+                        <textarea class="form-control" placeholder="Type a message..." rows="1"
+                                  @bind="_newMessageText" @onkeypress="HandleKeyPress" disabled="@_sendingMessage"
+                                  style="max-height: 200px; resize: none;"></textarea>
                         <button class="btn btn-outline-secondary" type="button" disabled="@_sendingMessage">
                             <i class="bi bi-paperclip"></i>
                         </button>
@@ -260,8 +261,9 @@
                 <!-- Message Input -->
                 <div class="p-3 border-top bg-white">
                     <div class="input-group">
-                        <input type="text" class="form-control" placeholder="Type a message..." 
-                               @bind="_newMessageText" @onkeypress="HandleKeyPress" disabled="@_sendingMessage">
+                        <textarea class="form-control" placeholder="Type a message..." rows="1"
+                                  @bind="_newMessageText" @onkeypress="HandleKeyPress" disabled="@_sendingMessage"
+                                  style="max-height: 200px; resize: none;"></textarea>
                         <button class="btn btn-outline-secondary" type="button" disabled="@_sendingMessage">
                             <i class="bi bi-paperclip"></i>
                         </button>
