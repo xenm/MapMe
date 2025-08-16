@@ -127,7 +127,7 @@
                 </div>
 
                 <!-- Message Input -->
-                <div class="p-3 border-top bg-white">
+                <div class="p-3 border-top bg-white position-sticky bottom-0" style="z-index: 10;">
                     <div class="input-group">
                         <textarea class="form-control" placeholder="Type a message..." rows="1"
                                   @bind="_newMessageText" @onkeypress="HandleKeyPress" disabled="@_sendingMessage"
@@ -171,7 +171,7 @@
                 </div>
 
                 <!-- Messages Area -->
-                <div class="flex-grow-1 overflow-auto p-3" id="messagesContainer" style="background-color: #f8f9fa;">
+                <div class="flex-grow-1 overflow-auto p-3 pb-5" id="messagesContainer" style="background-color: #f8f9fa;">
                     @if (_loadingMessages)
                     {
                         <div class="text-center">
@@ -259,7 +259,7 @@
                 </div>
 
                 <!-- Message Input -->
-                <div class="p-3 border-top bg-white">
+                <div class="p-3 border-top bg-white position-sticky bottom-0" style="z-index: 10;">
                     <div class="input-group">
                         <textarea class="form-control" placeholder="Type a message..." rows="1"
                                   @bind="_newMessageText" @onkeypress="HandleKeyPress" disabled="@_sendingMessage"
