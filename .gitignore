@@ -39,7 +39,7 @@ tfs/
 .vscode/
 
 # Rider
-#.idea/
+.idea/
 *.sln.iml
 
 # User-specific files
