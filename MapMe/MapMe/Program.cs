@@ -12,6 +12,7 @@ using MapMe.Utils;
 using Microsoft.Azure.Cosmos;
 using System.Net.Http;
 using MapMe.Client.Services;
+using MapMe.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -84,9 +85,15 @@ else
     builder.Services.AddSingleton<IConversationRepository, InMemoryConversationRepository>();
 }
 
+// Register authentication services
+builder.Services.AddSingleton<IUserRepository, InMemoryUserRepository>();
+builder.Services.AddSingleton<ISessionRepository, InMemorySessionRepository>();
+builder.Services.AddScoped<IAuthenticationService, MapMe.Services.AuthenticationService>();
+
 // Register client-side services
 builder.Services.AddScoped<UserProfileService>();
 builder.Services.AddScoped<ChatService>();
+builder.Services.AddScoped<MapMe.Client.Services.AuthenticationService>();
 
 var app = builder.Build();
 
@@ -129,6 +136,69 @@ app.MapGet("/config/maps", (HttpContext http) =>
     }
 
     return Results.Ok(new { ApiKey = apiKey });
+});
+
+// Google Client ID configuration endpoint
+app.MapGet("/config/google-client-id", (HttpContext http) =>
+{
+    var clientId = app.Configuration["Google:ClientId"] ?? Environment.GetEnvironmentVariable("GOOGLE_CLIENT_ID");
+    return Results.Ok(new { ClientId = clientId });
+});
+
+// Authentication API Endpoints
+app.MapPost("/api/auth/login", async (LoginRequest request, IAuthenticationService authService) =>
+{
+    var response = await authService.LoginAsync(request);
+    return response.Success ? Results.Ok(response) : Results.BadRequest(response);
+});
+
+app.MapPost("/api/auth/register", async (RegisterRequest request, IAuthenticationService authService) =>
+{
+    var response = await authService.RegisterAsync(request);
+    return response.Success ? Results.Ok(response) : Results.BadRequest(response);
+});
+
+app.MapPost("/api/auth/google-login", async (GoogleLoginRequest request, IAuthenticationService authService) =>
+{
+    var response = await authService.GoogleLoginAsync(request);
+    return response.Success ? Results.Ok(response) : Results.BadRequest(response);
+});
+
+app.MapPost("/api/auth/logout", async (LogoutRequest request, IAuthenticationService authService) =>
+{
+    var success = await authService.LogoutAsync(request.SessionId ?? "");
+    return success ? Results.Ok() : Results.BadRequest();
+});
+
+app.MapGet("/api/auth/validate-session", async (string sessionId, IAuthenticationService authService) =>
+{
+    var user = await authService.GetCurrentUserAsync(sessionId);
+    return user != null ? Results.Ok(user) : Results.Unauthorized();
+});
+
+app.MapPost("/api/auth/refresh-session", async (dynamic request, IAuthenticationService authService) =>
+{
+    var sessionId = request.SessionId?.ToString() ?? "";
+    var response = await authService.RefreshSessionAsync(sessionId);
+    return response.Success ? Results.Ok(response) : Results.BadRequest(response);
+});
+
+app.MapPost("/api/auth/change-password", async (ChangePasswordRequest request, HttpContext context, IAuthenticationService authService) =>
+{
+    var sessionId = GetSessionIdFromRequest(context);
+    if (string.IsNullOrEmpty(sessionId)) return Results.Unauthorized();
+    
+    var currentUser = await authService.GetCurrentUserAsync(sessionId);
+    if (currentUser == null) return Results.Unauthorized();
+    
+    var success = await authService.ChangePasswordAsync(currentUser.UserId, request);
+    return success ? Results.Ok() : Results.BadRequest();
+});
+
+app.MapPost("/api/auth/password-reset", async (PasswordResetRequest request, IAuthenticationService authService) =>
+{
+    var success = await authService.RequestPasswordResetAsync(request);
+    return success ? Results.Ok() : Results.BadRequest();
 });
 
 // Profiles API
@@ -413,6 +483,34 @@ app.MapGet("/messages/new", async (HttpContext context) =>
 });
 
 app.Run();
+
+/// <summary>
+/// Gets the session ID from the request (Authorization header or X-Session-Id header)
+/// </summary>
+static string? GetSessionIdFromRequest(HttpContext context)
+{
+    // Try Authorization header first (Bearer token)
+    var authHeader = context.Request.Headers.Authorization.FirstOrDefault();
+    if (!string.IsNullOrEmpty(authHeader) && authHeader.StartsWith("Bearer "))
+    {
+        return authHeader["Bearer ".Length..];
+    }
+    
+    // Fallback to X-Session-Id header for backward compatibility
+    return context.Request.Headers["X-Session-Id"].FirstOrDefault();
+}
+
+/// <summary>
+/// Gets the current user ID from the request using session validation
+/// </summary>
+static async Task<string?> GetCurrentUserIdAsync(HttpContext context, IAuthenticationService authService)
+{
+    var sessionId = GetSessionIdFromRequest(context);
+    if (string.IsNullOrEmpty(sessionId)) return null;
+    
+    var user = await authService.GetCurrentUserAsync(sessionId);
+    return user?.UserId;
+}
 
 /// <summary>
 /// Ensures a default user profile exists for development purposes

@@ -1,7 +1,26 @@
-@* Route removed to avoid conflict with Map.razor root route *@
+@page "/"
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.AspNetCore.Authorization
+@attribute [AllowAnonymous]
+@inject AuthenticationStateProvider AuthStateProvider
+@inject NavigationManager Navigation
 
-<PageTitle>Home</PageTitle>
+<PageTitle>MapMe</PageTitle>
 
-<h1>Hello, world!</h1>
-
-Welcome to your new app.
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        
+        if (authState.User.Identity?.IsAuthenticated == true)
+        {
+            // User is authenticated, redirect to map
+            Navigation.NavigateTo("/map");
+        }
+        else
+        {
+            // User is not authenticated, redirect to login
+            Navigation.NavigateTo("/login");
+        }
+    }
+}
