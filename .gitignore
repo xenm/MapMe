@@ -39,7 +39,7 @@ tfs/
 .vscode/
 
 # Rider
-.idea/
+#.idea/
 *.sln.iml
 
 # User-specific files
@@ -85,3 +85,34 @@ logs/
 # ReSharper is a .NET coding add-in
 _ReSharper*/
 *.ReSharper*
+
+# -----------------------------
+# Additional ignores (MapMe)
+# -----------------------------
+
+# OS-generated files
+.DS_Store
+Thumbs.db
+
+# Test artifacts (generic)
+[Tt]est[Rr]esults*/
+**/*.trx
+**/TestResult.xml
+coverage/
+coverage*.xml
+
+# Build/publish artifacts
+[Pp]ublish/
+[Aa]rtifacts/
+
+# Tooling/analysis
+.sonarqube/
+.scannerwork/
+BenchmarkDotNet.Artifacts/
+
+# Environment files
+.env
+.env.*
+
+# Editor histories
+.history/
