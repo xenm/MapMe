@@ -2,32 +2,30 @@
 
 This guide explains how the Azure Pipeline is set up, how to run the same steps locally, and how to work with the test infrastructure.
 
-## Quick: run service tests via scripts (recommended)
+## Quick: run tests locally
 
-From the MapMe folder:
+From the repository root:
 
-- Bash (macOS/Linux)
-  - `bash scripts/test-service.sh`
-- PowerShell (Windows/macOS/Linux)
-  - `pwsh scripts/test-service.ps1`
+```bash
+# Unit tests only (fast)
+dotnet test MapMe/MapMe/MapMe.Tests --filter "Category=Unit"
 
-These scripts will:
-- Run only `Category=Service` tests using in-memory repositories
-- Produce a TRX test results file at `MapMe/TestResults/Service/<timestamp>/Service.trx`
-- If the `trxlog2html` dotnet tool is installed, also generate `test-report.html` in the same folder
+# Integration tests using in-memory repositories
+dotnet test MapMe/MapMe/MapMe.Tests --filter "Category!=Unit"
 
-**No external dependencies required** - service tests use in-memory implementations for fast, reliable testing.
+# All tests
+dotnet test MapMe/MapMe/MapMe.Tests
+```
 
-Optional environment variables for `scripts/test-service.sh`:
-- `TEST_RESULTS_DIR` — override results output directory (defaults to `MapMe/TestResults/Service/<timestamp>`)
+**No external dependencies required** — integration tests use in-memory implementations for fast, reliable testing.
 
 ## Overview
 
 - Azure Pipelines is defined in `azure-pipelines.yml`.
 - .NET 10 SDK builds the solution.
 - Tests are split:
-  - Unit tests: `Category!=Service`
-  - Service tests: `Category=Service` (uses in-memory repositories for integration testing)
+  - Unit tests: `Category=Unit`
+  - Integration tests: `Category!=Unit` (uses in-memory repositories)
 - Merge is blocked when the PR validation pipeline fails (configure Branch Policies).
 
 ## Pipeline Variables
@@ -54,26 +52,19 @@ dotnet build MapMe.sln -c Release --no-restore
 
 ```bash
 cd MapMe
-dotnet test MapMe.Tests/MapMe.Tests.csproj -c Release --filter "Category!=Service"
+dotnet test MapMe.Tests/MapMe.Tests.csproj -c Release --filter "Category=Unit"
 ```
 
 3) Run service tests (integration tests with in-memory repositories)
 
 ```bash
 cd MapMe
-dotnet test MapMe.Tests/MapMe.Tests.csproj -c Release --filter "Category=Service"
-```
-
-Or use the convenience script:
-
-```bash
-cd MapMe
-./scripts/test-service.sh
+dotnet test MapMe.Tests/MapMe.Tests.csproj -c Release --filter "Category!=Unit"
 ```
 
 ## HTML Test Reports
 
-The service test scripts can generate user-friendly HTML test reports from the TRX files:
+You can generate user-friendly HTML test reports from TRX files:
 
 1. **Install the HTML report generator** (one-time setup):
    ```bash
@@ -81,13 +72,14 @@ The service test scripts can generate user-friendly HTML test reports from the T
    dotnet tool install trxlog2html
    ```
 
-2. **Run service tests** - HTML reports will be generated automatically:
+2. **Run tests** and create HTML manually:
    ```bash
-   ./scripts/test-service.sh
+   dotnet test MapMe.Tests -l "trx;LogFileName=test.trx"
+   trxlog2html TestResults/test.trx -o TestResults/test-report.html
    ```
 
 3. **View the HTML report**:
-   - Open `TestResults/Service/<timestamp>/test-report.html` in your browser
+   - Open `TestResults/test-report.html` (or your chosen path) in your browser
    - The report shows test results in a clean, readable format with proper styling
 
 The HTML reports provide a much better viewing experience than raw TRX files, especially for reviewing test results and sharing with team members.

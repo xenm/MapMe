@@ -3,27 +3,27 @@
 ## Test Types and Scopes
 
 ### Automated Tests
-- **Unit Tests**: `Category!=Service` - Fast tests for individual components and services
-- **Service Tests**: `Category=Service` - Integration tests using in-memory repositories
+- **Unit Tests**: `Category=Unit` — Fast tests for individual components and services
+- **Integration Tests**: `Category!=Unit` — API tests using in-memory repositories
 - **Manual Tests**: UI/UX testing for map functionality and user interactions
 
 ### Automated Test Infrastructure
 
-**Service Tests (Integration)**
+**Integration Tests**
 - Use `WebApplicationFactory<Program>` with in-memory repositories
 - Test API endpoints end-to-end without external dependencies
-- Run via: `./scripts/test-service.sh` or `pwsh scripts/test-service.ps1`
-- Generate both TRX and HTML reports
+- Run via dotnet CLI (see commands below)
+- Generate TRX (and optional HTML) reports
 
 **Unit Tests**
 - Test individual components in isolation
-- Run via: `dotnet test --filter "Category!=Service"`
+- Run via dotnet CLI filters
 - Fast execution, suitable for parallel runs
 
 **Test Reporting**
 - **TRX files**: Machine-readable results for CI/CD integration
 - **HTML reports**: User-friendly reports generated via `trxlog2html`
-- Reports located at: `TestResults/Service/<timestamp>/`
+- Reports located at: `TestResults/<Type>/<timestamp>/`
 
 ### Running Tests Locally
 
@@ -32,14 +32,14 @@
 
 **Quick Commands**
 ```bash
-# Run all service tests with HTML reports
-./scripts/test-service.sh
+# Run Unit tests only (fast)
+dotnet test MapMe/MapMe/MapMe.Tests --filter "Category=Unit"
 
-# Run only unit tests
-dotnet test --filter "Category!=Service"
+# Run Integration tests (in-memory repositories)
+dotnet test MapMe/MapMe/MapMe.Tests --filter "Category!=Unit"
 
 # Run all tests
-dotnet test
+dotnet test MapMe/MapMe/MapMe.Tests
 ```
 
 **HTML Report Setup** (one-time)
@@ -48,9 +48,14 @@ cd MapMe
 dotnet tool install trxlog2html
 ```
 
+To generate HTML from TRX manually:
+```bash
+trxlog2html TestResults/Integration/<timestamp>/test.trx -o TestResults/Integration/<timestamp>/test-report.html
+```
+
 ### CI/CD Integration
 - Azure Pipelines defined in `azure-pipelines.yml`
-- Unit and service tests run in separate jobs
+- Unit and integration tests run in separate jobs
 - No external dependencies required (uses in-memory repositories)
 - Test results published as pipeline artifacts
 
@@ -78,8 +83,8 @@ dotnet tool install trxlog2html
 
 ## Test Architecture
 
-**Service Test Configuration**
-- Tests use `ApiSmokeTests` class with `[Trait("Category", "Service")]`
+**Integration Test Configuration**
+- Tests use `Api*` classes with appropriate `[Trait]` attributes
 - `WebApplicationFactory` configured with in-memory repositories:
   - `InMemoryUserProfileRepository`
   - `InMemoryDateMarkByUserRepository`
