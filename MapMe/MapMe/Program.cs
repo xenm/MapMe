@@ -130,7 +130,9 @@ app.UseAuthorization();
 
 app.UseAntiforgery();
 
+app.UseStaticFiles();
 app.MapStaticAssets();
+
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode()
     .AddInteractiveWebAssemblyRenderMode()
@@ -541,6 +543,9 @@ app.MapGet("/messages/new", async (HttpContext context) =>
     // Redirect to chat page with the target user
     return Results.Redirect($"/chat?to={Uri.EscapeDataString(to)}");
 });
+
+// Add fallback routing for Blazor WebAssembly client-side routes
+app.MapFallbackToFile("index.html");
 
 app.Run();
 
