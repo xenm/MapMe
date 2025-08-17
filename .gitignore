@@ -116,3 +116,11 @@ BenchmarkDotNet.Artifacts/
 
 # Editor histories
 .history/
+
+# wwwroot ignores
+wwwroot/lib/
+wwwroot/dist/
+wwwroot/css/site.min.css
+wwwroot/js/site.min.js
+wwwroot/**/*.min.*
+wwwroot/**/Thumbs.db
