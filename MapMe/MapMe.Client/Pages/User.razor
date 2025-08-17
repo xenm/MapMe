@@ -5,6 +5,7 @@
 @inject IJSRuntime Js
 @inject NavigationManager Nav
 @inject UserProfileService ProfileService
+@inject ChatService ChatService
 
 <PageTitle>@username - Profile</PageTitle>
 
@@ -30,7 +31,20 @@ else
     <div class="page">
         <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
             <h1 class="mb-0">@username</h1>
-            <Button Color="ButtonColor.Secondary" Outline="true" @onclick="GoBack">Back</Button>
+            <div class="d-flex gap-2">
+                <Button Color="ButtonColor.Primary" @onclick="StartChat" disabled="@_startingChat">
+                    @if (_startingChat)
+                    {
+                        <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+                    }
+                    else
+                    {
+                        <i class="bi bi-chat-dots me-1"></i>
+                    }
+                    Start Chat
+                </Button>
+                <Button Color="ButtonColor.Secondary" Outline="true" @onclick="GoBack">Back</Button>
+            </div>
         </div>
 
         <!-- Basic Information Card -->
@@ -370,6 +384,23 @@ else
                                                 {
                                                     <small class="text-muted">Visited: @mark.VisitDate.Value.ToString("MMM dd, yyyy")</small>
                                                 }
+                                                
+                                                <!-- Message button for this Date Mark -->
+                                                <div class="mt-2">
+                                                    <button class="btn btn-sm btn-outline-primary" 
+                                                            @onclick="() => StartChatAboutDateMark(mark)" 
+                                                            disabled="@_startingChat">
+                                                        @if (_startingChat)
+                                                        {
+                                                            <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                                                        }
+                                                        else
+                                                        {
+                                                            <i class="bi bi-chat-dots me-1"></i>
+                                                        }
+                                                        Message about this place
+                                                    </button>
+                                                </div>
                                             </div>
                                             <small class="text-muted">@mark.CreatedAt.ToString("MMM dd, yyyy")</small>
                                         </div>
@@ -413,6 +444,7 @@ else
     private string _avatarUrl = "/images/user-avatar.svg";
     private ActivityStatistics _activityStats = new();
     private List<DateMark> _dateMarks = new();
+    private bool _startingChat = false;
 
     protected override async Task OnParametersSetAsync()
     {
@@ -475,5 +507,39 @@ else
             Nav.NavigateTo(url, true);
         }
         catch { }
+    }
+
+    private async Task StartChat()
+    {
+        _startingChat = true;
+        try
+        {
+            await ChatService.StartChatAsync(_userProfile.UserId);
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+        finally
+        {
+            _startingChat = false;
+        }
+    }
+
+    private async Task StartChatAboutDateMark(DateMark dateMark)
+    {
+        _startingChat = true;
+        try
+        {
+            await ChatService.StartChatAsync(_userProfile.UserId, dateMark);
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+        finally
+        {
+            _startingChat = false;
+        }
     }
 }

@@ -201,13 +201,22 @@ Real-time user metrics:
 
 ## Development
 
+### Documentation
+- Full docs index: docs/README.md
+- Setup guide: docs/setup.md
+- Architecture: docs/architecture.md
+- Testing: docs/testing.md
+
 ### Running Tests
 ```bash
-# Unit tests
-dotnet test MapMe.Tests/
+# Unit tests (fast)
+dotnet test MapMe/MapMe/MapMe.Tests --filter "Category=Unit"
 
-# Service-level integration tests
-./test-service.sh
+# Integration tests (in-memory repositories)
+dotnet test MapMe/MapMe/MapMe.Tests --filter "Category!=Unit"
+
+# All tests
+dotnet test MapMe/MapMe/MapMe.Tests
 ```
 
 ### Building for Production

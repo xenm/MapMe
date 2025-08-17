@@ -85,3 +85,42 @@ logs/
 # ReSharper is a .NET coding add-in
 _ReSharper*/
 *.ReSharper*
+
+# -----------------------------
+# Additional ignores (MapMe)
+# -----------------------------
+
+# OS-generated files
+.DS_Store
+Thumbs.db
+
+# Test artifacts (generic)
+[Tt]est[Rr]esults*/
+**/*.trx
+**/TestResult.xml
+coverage/
+coverage*.xml
+
+# Build/publish artifacts
+[Pp]ublish/
+[Aa]rtifacts/
+
+# Tooling/analysis
+.sonarqube/
+.scannerwork/
+BenchmarkDotNet.Artifacts/
+
+# Environment files
+.env
+.env.*
+
+# Editor histories
+.history/
+
+# wwwroot ignores
+wwwroot/lib/
+wwwroot/dist/
+wwwroot/css/site.min.css
+wwwroot/js/site.min.js
+wwwroot/**/*.min.*
+wwwroot/**/Thumbs.db

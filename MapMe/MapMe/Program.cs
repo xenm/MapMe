@@ -71,18 +71,27 @@ if (useCosmos)
     builder.Services.AddSingleton(new CosmosContextOptions(cosmosDatabase));
     builder.Services.AddSingleton<IUserProfileRepository, CosmosUserProfileRepository>();
     builder.Services.AddSingleton<IDateMarkByUserRepository, CosmosDateMarkByUserRepository>();
+    // TODO: Add Cosmos implementations for chat repositories when needed
+    builder.Services.AddSingleton<IChatMessageRepository, InMemoryChatMessageRepository>();
+    builder.Services.AddSingleton<IConversationRepository, InMemoryConversationRepository>();
 }
 else
 {
     // Temporary in-memory repositories
     builder.Services.AddSingleton<IUserProfileRepository, InMemoryUserProfileRepository>();
     builder.Services.AddSingleton<IDateMarkByUserRepository, InMemoryDateMarkByUserRepository>();
+    builder.Services.AddSingleton<IChatMessageRepository, InMemoryChatMessageRepository>();
+    builder.Services.AddSingleton<IConversationRepository, InMemoryConversationRepository>();
 }
 
 // Register client-side services
 builder.Services.AddScoped<UserProfileService>();
+builder.Services.AddScoped<ChatService>();
 
 var app = builder.Build();
+
+// Ensure default user profile exists for development
+await EnsureDefaultUserProfileAsync(app.Services);
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -136,6 +145,21 @@ app.MapPost("/api/profiles", async (CreateProfileRequest req, IUserProfileReposi
 app.MapGet("/api/profiles/{id}", async (string id, IUserProfileRepository repo) =>
 {
     var profile = await repo.GetByIdAsync(id);
+    return profile is null ? Results.NotFound() : Results.Ok(profile);
+});
+
+// Add endpoint for current user (for JavaScript compatibility)
+app.MapGet("/api/users/current_user", async (HttpContext context, IUserProfileRepository repo) =>
+{
+    // Get user ID from header (simulated authentication)
+    var userId = context.Request.Headers["X-User-Id"].FirstOrDefault() ?? "current_user";
+    var profile = await repo.GetByUserIdAsync(userId);
+    return profile is null ? Results.NotFound() : Results.Ok(profile);
+});
+
+app.MapGet("/api/users/{userId}", async (string userId, IUserProfileRepository repo) =>
+{
+    var profile = await repo.GetByUserIdAsync(userId);
     return profile is null ? Results.NotFound() : Results.Ok(profile);
 });
 
@@ -194,8 +218,246 @@ app.MapGet("/api/map/datemarks", async (
     return Results.Ok(results);
 });
 
-app.Run()
-;
+// Chat API Endpoints
+app.MapPost("/api/chat/messages", async (SendMessageRequest req, IChatMessageRepository messageRepo, IConversationRepository conversationRepo, IUserProfileRepository userRepo, HttpContext context) =>
+{
+    // For now, use a default current user ID - in production this would come from authentication
+    var senderId = context.Request.Headers["X-User-Id"].FirstOrDefault() ?? "current_user";
+    
+    if (string.IsNullOrWhiteSpace(req.ReceiverId) || string.IsNullOrWhiteSpace(req.Content))
+        return Results.BadRequest("ReceiverId and Content are required");
+
+    // Allow self-messaging for testing purposes
+    if (req.ReceiverId == senderId)
+    {
+        // For self-messaging, we still need to ensure the user exists
+        var selfUser = await userRepo.GetByUserIdAsync(senderId);
+        if (selfUser == null)
+            return Results.BadRequest("User not found");
+    }
+    else
+    {
+        // Verify receiver exists (for different users)
+        var receiver = await userRepo.GetByUserIdAsync(req.ReceiverId);
+        if (receiver == null)
+            return Results.BadRequest("Receiver not found");
+    }
+
+    var now = DateTimeOffset.UtcNow;
+    var message = req.ToChatMessage(senderId, now);
+
+    // Save message
+    await messageRepo.UpsertAsync(message);
+
+    // Get or create conversation
+    var conversation = await conversationRepo.GetOrCreateConversationAsync(senderId, req.ReceiverId);
+
+    // Update conversation metadata
+    await conversationRepo.UpdateConversationMetadataAsync(
+        conversation.Id,
+        message.Id,
+        message.Content,
+        senderId,
+        now);
+
+    // Update unread count for receiver
+    var receiverUnreadCount = await messageRepo.GetUnreadCountAsync(conversation.Id, req.ReceiverId);
+    await conversationRepo.UpdateUnreadCountAsync(conversation.Id, req.ReceiverId, receiverUnreadCount);
+
+    return Results.Created($"/api/chat/messages/{message.Id}", message);
+});
+
+app.MapGet("/api/chat/conversations", async (IConversationRepository conversationRepo, IUserProfileRepository userRepo, HttpContext context) =>
+{
+    // For now, use a default current user ID - in production this would come from authentication
+    var userId = context.Request.Headers["X-User-Id"].FirstOrDefault() ?? "current_user";
+    
+    var conversations = new List<ConversationResponse>();
+    
+    await foreach (var conversation in conversationRepo.GetByUserAsync(userId))
+    {
+        var otherParticipantId = conversation.GetOtherParticipantId(userId);
+        var otherParticipant = await userRepo.GetByUserIdAsync(otherParticipantId);
+        
+        if (otherParticipant == null) continue;
+
+        var conversationResponse = new ConversationResponse(
+            Id: conversation.Id,
+            OtherParticipant: new MapMe.DTOs.UserSummary(
+                UserId: otherParticipant.UserId,
+                DisplayName: otherParticipant.DisplayName,
+                AvatarUrl: otherParticipant.Photos.FirstOrDefault()?.Url
+            ),
+            LastMessage: conversation.LastMessageContent != null ? new MapMe.DTOs.MessageSummary(
+                Id: conversation.LastMessageId!,
+                Content: conversation.LastMessageContent,
+                MessageType: "text", // Default for now
+                SenderId: conversation.LastMessageSenderId!,
+                CreatedAt: conversation.LastMessageAt!.Value,
+                IsRead: conversation.GetUnreadCountForUser(userId) == 0
+            ) : null,
+            UnreadCount: conversation.GetUnreadCountForUser(userId),
+            IsArchived: conversation.IsArchivedForUser(userId),
+            CreatedAt: conversation.CreatedAt,
+            UpdatedAt: conversation.UpdatedAt
+        );
+        
+        conversations.Add(conversationResponse);
+    }
+
+    return Results.Ok(conversations.OrderByDescending(c => c.LastMessage?.CreatedAt ?? c.CreatedAt));
+});
+
+app.MapGet("/api/chat/conversations/{conversationId}/messages", async (
+    string conversationId, 
+    IChatMessageRepository messageRepo,
+    IConversationRepository conversationRepo,
+    HttpContext context,
+    int skip = 0,
+    int take = 50) =>
+{
+    // For now, use a default current user ID - in production this would come from authentication
+    var userId = context.Request.Headers["X-User-Id"].FirstOrDefault() ?? "current_user";
+    
+    // Verify user is participant in conversation
+    var conversation = await conversationRepo.GetByIdAsync(conversationId);
+    if (conversation == null || (conversation.Participant1Id != userId && conversation.Participant2Id != userId))
+        return Results.Ok(new List<ChatMessage>());
+
+    var messages = new List<ChatMessage>();
+    await foreach (var message in messageRepo.GetByConversationAsync(conversationId, skip, take))
+    {
+        messages.Add(message);
+    }
+
+    return Results.Ok(messages);
+});
+
+app.MapPost("/api/chat/messages/read", async (MarkAsReadRequest req, IChatMessageRepository messageRepo, IConversationRepository conversationRepo, HttpContext context) =>
+{
+    // For now, use a default current user ID - in production this would come from authentication
+    var userId = context.Request.Headers["X-User-Id"].FirstOrDefault() ?? "current_user";
+    
+    // Verify user is participant in conversation
+    var conversation = await conversationRepo.GetByIdAsync(req.ConversationId);
+    if (conversation == null || (conversation.Participant1Id != userId && conversation.Participant2Id != userId))
+        return Results.Forbid();
+
+    // Mark messages as read
+    await messageRepo.MarkAsReadAsync(req.ConversationId, userId);
+
+    // Update conversation unread count
+    await conversationRepo.UpdateUnreadCountAsync(req.ConversationId, userId, 0);
+
+    return Results.Ok();
+});
+
+app.MapPost("/api/chat/conversations/archive", async (ArchiveConversationRequest req, IConversationRepository conversationRepo, HttpContext context) =>
+{
+    // For now, use a default current user ID - in production this would come from authentication
+    var userId = context.Request.Headers["X-User-Id"].FirstOrDefault() ?? "current_user";
+    
+    // Verify user is participant in conversation
+    var conversation = await conversationRepo.GetByIdAsync(req.ConversationId);
+    if (conversation == null || (conversation.Participant1Id != userId && conversation.Participant2Id != userId))
+        return Results.Forbid();
+
+    await conversationRepo.SetArchiveStatusAsync(req.ConversationId, userId, req.IsArchived);
+
+    return Results.Ok();
+});
+
+app.MapDelete("/api/chat/messages/{messageId}", async (string messageId, IChatMessageRepository messageRepo, HttpContext context) =>
+{
+    // For now, use a default current user ID - in production this would come from authentication
+    var userId = context.Request.Headers["X-User-Id"].FirstOrDefault() ?? "current_user";
+    
+    var message = await messageRepo.GetByIdAsync(messageId);
+    if (message == null || message.SenderId != userId)
+        return Results.Forbid();
+
+    await messageRepo.DeleteAsync(messageId);
+
+    return Results.Ok();
+});
+
+app.MapGet("/api/chat/messages/new", async (IChatMessageRepository messageRepo, IConversationRepository conversationRepo, HttpContext context) =>
+{
+    // For now, use a default current user ID - in production this would come from authentication
+    var userId = context.Request.Headers["X-User-Id"].FirstOrDefault() ?? "current_user";
+    
+    // Get all conversations for the user and return recent messages
+    var conversations = new List<Conversation>();
+    await foreach (var conversation in conversationRepo.GetByUserAsync(userId))
+    {
+        conversations.Add(conversation);
+    }
+
+    var recentMessages = new List<ChatMessage>();
+    foreach (var conversation in conversations.Take(10)) // Limit to recent conversations
+    {
+        await foreach (var message in messageRepo.GetByConversationAsync(conversation.Id, 0, 5))
+        {
+            recentMessages.Add(message);
+        }
+    }
+
+    return Results.Ok(recentMessages.OrderByDescending(m => m.CreatedAt).Take(20));
+});
+
+app.MapGet("/messages/new", async (HttpContext context) =>
+{
+    var to = context.Request.Query["to"].FirstOrDefault() ?? "current_user";
+    // Redirect to chat page with the target user
+    return Results.Redirect($"/chat?to={Uri.EscapeDataString(to)}");
+});
+
+app.Run();
+
+/// <summary>
+/// Ensures a default user profile exists for development purposes
+/// </summary>
+static async Task EnsureDefaultUserProfileAsync(IServiceProvider services)
+{
+    using var scope = services.CreateScope();
+    var userRepo = scope.ServiceProvider.GetRequiredService<IUserProfileRepository>();
+    
+    try
+    {
+        // Check if current_user profile exists
+        var existingProfile = await userRepo.GetByUserIdAsync("current_user");
+        if (existingProfile == null)
+        {
+            // Create default user profile using correct model structure
+            var defaultProfile = new UserProfile(
+                Id: Guid.NewGuid().ToString(),
+                UserId: "current_user",
+                DisplayName: "Current User",
+                Bio: "Default user profile for development",
+                Photos: new List<UserPhoto>
+                {
+                    new UserPhoto(
+                        Url: "https://via.placeholder.com/400x400/007bff/ffffff?text=User",
+                        IsPrimary: true
+                    )
+                }.AsReadOnly(),
+                Preferences: new UserPreferences(
+                    Categories: new List<string> { "Technology", "Travel", "Food" }.AsReadOnly()
+                ),
+                Visibility: "public",
+                CreatedAt: DateTimeOffset.UtcNow,
+                UpdatedAt: DateTimeOffset.UtcNow
+            );
+            
+            await userRepo.UpsertAsync(defaultProfile);
+        }
+    }
+    catch (Exception ex)
+    {
+        // Log error but don't fail startup
+        Console.WriteLine($"Warning: Could not ensure default user profile: {ex.Message}");
+    }
+}
 
 // Expose Program for WebApplicationFactory in tests
 public partial class Program { }

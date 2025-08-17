@@ -22,13 +22,8 @@ MapMe.Tests/
 │   └── ApiSmoke.Integration.Tests.cs
 └── README.md                       # This documentation
 
-../scripts/                        # Test Execution Scripts
-├── test-unit.sh                   # Run Unit tests only (Shell)
-├── test-integration.sh            # Run Integration tests only (Shell)
-├── test-all.sh                    # Run all tests (Shell)
-├── test-unit.ps1                  # Run Unit tests only (PowerShell)
-├── test-integration.ps1           # Run Integration tests only (PowerShell)
-└── test-all.ps1                   # Run all tests (PowerShell)
+Dotnet CLI                         # Preferred Execution Method
+└── See commands below             # Unit / Integration / All tests
 ```
 
 ## 🧪 **Test Categories**
@@ -118,50 +113,17 @@ dotnet test MapMe.Tests --filter "FullyQualifiedName~DateMark_FilteringCombinati
 dotnet test MapMe.Tests --logger "trx;LogFileName=MyTests.trx" --verbosity detailed
 ```
 
-### **Test Execution Scripts**
+### **Usage Examples (Dotnet CLI)**
 
-The `../scripts/` directory contains dedicated test execution scripts for different scenarios:
-
-### Shell Scripts (macOS/Linux)
-- **`test-unit.sh`** - Runs only Unit tests (21 tests)
-- **`test-integration.sh`** - Runs only Integration tests (38 tests)  
-- **`test-all.sh`** - Runs all tests (59 tests)
-
-### PowerShell Scripts (Windows/Cross-platform)
-- **`test-unit.ps1`** - Runs only Unit tests (21 tests)
-- **`test-integration.ps1`** - Runs only Integration tests (38 tests)
-- **`test-all.ps1`** - Runs all tests (59 tests)
-
-### Usage Examples
-
-**Shell (macOS/Linux):**
 ```bash
-# Run only Unit tests
-./scripts/test-unit.sh
+# Run Unit tests only (fast)
+dotnet test MapMe.Tests --filter "Category=Unit"
 
-# Run only Integration tests  
-./scripts/test-integration.sh
-
-# Run all tests
-./scripts/test-all.sh
-```
-
-**PowerShell (Windows/Cross-platform):**
-```powershell
-# Run only Unit tests
-./scripts/test-unit.ps1
-
-# Run only Integration tests
-./scripts/test-integration.ps1
+# Run Integration tests only (in-memory repositories)
+dotnet test MapMe.Tests --filter "Category!=Unit"
 
 # Run all tests
-./scripts/test-all.ps1
-
-# Skip HTML report generation
-./scripts/test-all.ps1 -NoHtml
-
-# Custom output directory
-./scripts/test-unit.ps1 -OutputDir "MyTestResults/Unit"
+dotnet test MapMe.Tests
 ```
 
 ## 📊 **Test Coverage Analysis**
