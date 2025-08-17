@@ -10,6 +10,7 @@ using Microsoft.Extensions.DependencyInjection;
 using MapMe.DTOs;
 using MapMe.Models;
 using MapMe.Repositories;
+using MapMe.Services;
 using Xunit;
 
 namespace MapMe.Tests;
@@ -46,13 +47,72 @@ public class ApiIntegrationTests : IClassFixture<WebApplicationFactory<Program>>
         _client = _factory.CreateClient();
     }
 
+    /// <summary>
+    /// Creates a test user and returns a valid session ID for authentication
+    /// </summary>
+    private async Task<string> CreateTestUserAndGetSessionAsync(string username = "test_user", string email = "test@example.com", string password = "TestPassword123!")
+    {
+        // Register a test user
+        var registerRequest = new RegisterRequest(
+            Username: username,
+            Email: email,
+            Password: password,
+            ConfirmPassword: password,
+            DisplayName: "Test User"
+        );
+
+        var registerResponse = await _client.PostAsJsonAsync("/api/auth/register", registerRequest);
+        
+        // If user already exists, try to login instead
+        if (!registerResponse.IsSuccessStatusCode)
+        {
+            var loginRequest = new LoginRequest(
+                Username: username,
+                Password: password,
+                RememberMe: false
+            );
+
+            var loginResponse = await _client.PostAsJsonAsync("/api/auth/login", loginRequest);
+            if (loginResponse.IsSuccessStatusCode)
+            {
+                var loginResult = await loginResponse.Content.ReadFromJsonAsync<AuthenticationResponse>();
+                return loginResult!.SessionId!;
+            }
+        }
+        else
+        {
+            var registerResult = await registerResponse.Content.ReadFromJsonAsync<AuthenticationResponse>();
+            return registerResult!.SessionId!;
+        }
+
+        throw new InvalidOperationException("Failed to create test user or login");
+    }
+
+    /// <summary>
+    /// Adds authentication header to HTTP client for subsequent requests
+    /// </summary>
+    private void AddAuthenticationHeader(string sessionId)
+    {
+        _client.DefaultRequestHeaders.Remove("X-Session-Id");
+        _client.DefaultRequestHeaders.Add("X-Session-Id", sessionId);
+    }
+
     [Fact]
     public async Task UserProfile_CompleteWorkflow_CreatesAndRetrievesProfile()
     {
-        // Arrange
+        // Arrange - Create authenticated user
+        var username = "user_integration_test";
+        var sessionId = await CreateTestUserAndGetSessionAsync(username, "integration@example.com");
+        AddAuthenticationHeader(sessionId);
+        
+        // Get the actual user ID from the authentication response
+        var validateResponse = await _client.GetAsync($"/api/auth/validate-session?sessionId={sessionId}");
+        var authenticatedUser = await validateResponse.Content.ReadFromJsonAsync<AuthenticatedUser>();
+        var actualUserId = authenticatedUser!.UserId;
+        
         var createRequest = new CreateProfileRequest(
             Id: "profile_integration_test",
-            UserId: "user_integration_test",
+            UserId: actualUserId, // Use the actual user ID from authentication
             DisplayName: "Integration Test User",
             Bio: "This is a test user for integration testing",
             Photos: new[] 
@@ -89,8 +149,11 @@ public class ApiIntegrationTests : IClassFixture<WebApplicationFactory<Program>>
     [Fact]
     public async Task DateMark_CompleteWorkflow_CreatesAndListsDateMarks()
     {
-        // Arrange
+        // Arrange - Create authenticated user
         var userId = "user_datemark_test";
+        var sessionId = await CreateTestUserAndGetSessionAsync(userId, "datemark@example.com");
+        AddAuthenticationHeader(sessionId);
+        
         var dateMarkRequest = new UpsertDateMarkRequest(
             Id: "datemark_integration_test",
             UserId: userId,
@@ -144,8 +207,10 @@ public class ApiIntegrationTests : IClassFixture<WebApplicationFactory<Program>>
     [Fact]
     public async Task DateMark_FilteringByCategories_ReturnsCorrectResults()
     {
-        // Arrange
+        // Arrange - Create authenticated user
         var userId = "user_filter_test";
+        var sessionId = await CreateTestUserAndGetSessionAsync(userId, "filter@example.com");
+        AddAuthenticationHeader(sessionId);
         
         // Create multiple DateMarks with different categories
         var restaurantMark = new UpsertDateMarkRequest(

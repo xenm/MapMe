@@ -3,6 +3,8 @@
 @using MapMe.Client.Services
 @using MapMe.Client.Models
 @using System.Web
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
 @inject ChatService ChatService
 @inject UserProfileService ProfileService
 @inject IJSRuntime Js

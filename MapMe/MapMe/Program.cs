@@ -13,6 +13,8 @@ using Microsoft.Azure.Cosmos;
 using System.Net.Http;
 using MapMe.Client.Services;
 using MapMe.Services;
+using Microsoft.AspNetCore.Authentication;
+using MapMeAuth = MapMe.Services.IAuthenticationService;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -88,7 +90,14 @@ else
 // Register authentication services
 builder.Services.AddSingleton<IUserRepository, InMemoryUserRepository>();
 builder.Services.AddSingleton<ISessionRepository, InMemorySessionRepository>();
-builder.Services.AddScoped<IAuthenticationService, MapMe.Services.AuthenticationService>();
+builder.Services.AddScoped<MapMeAuth, MapMe.Services.AuthenticationService>();
+
+// Add ASP.NET Core Authentication and Authorization services
+builder.Services.AddAuthentication("Session")
+    .AddScheme<AuthenticationSchemeOptions, MapMe.Authentication.SessionAuthenticationHandler>(
+        "Session", options => { });
+
+builder.Services.AddAuthorization();
 
 // Register client-side services
 builder.Services.AddScoped<UserProfileService>();
@@ -115,6 +124,9 @@ else
 app.UseStatusCodePagesWithReExecute("/not-found", createScopeForErrors: true);
 
 app.UseHttpsRedirection();
+
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.UseAntiforgery();
 
@@ -146,44 +158,44 @@ app.MapGet("/config/google-client-id", (HttpContext http) =>
 });
 
 // Authentication API Endpoints
-app.MapPost("/api/auth/login", async (LoginRequest request, IAuthenticationService authService) =>
+app.MapPost("/api/auth/login", async (LoginRequest request, MapMeAuth authService) =>
 {
     var response = await authService.LoginAsync(request);
     return response.Success ? Results.Ok(response) : Results.BadRequest(response);
 });
 
-app.MapPost("/api/auth/register", async (RegisterRequest request, IAuthenticationService authService) =>
+app.MapPost("/api/auth/register", async (RegisterRequest request, MapMeAuth authService) =>
 {
     var response = await authService.RegisterAsync(request);
     return response.Success ? Results.Ok(response) : Results.BadRequest(response);
 });
 
-app.MapPost("/api/auth/google-login", async (GoogleLoginRequest request, IAuthenticationService authService) =>
+app.MapPost("/api/auth/google-login", async (GoogleLoginRequest request, MapMeAuth authService) =>
 {
     var response = await authService.GoogleLoginAsync(request);
     return response.Success ? Results.Ok(response) : Results.BadRequest(response);
 });
 
-app.MapPost("/api/auth/logout", async (LogoutRequest request, IAuthenticationService authService) =>
+app.MapPost("/api/auth/logout", async (LogoutRequest request, MapMeAuth authService) =>
 {
     var success = await authService.LogoutAsync(request.SessionId ?? "");
     return success ? Results.Ok() : Results.BadRequest();
 });
 
-app.MapGet("/api/auth/validate-session", async (string sessionId, IAuthenticationService authService) =>
+app.MapGet("/api/auth/validate-session", async (string sessionId, MapMeAuth authService) =>
 {
     var user = await authService.GetCurrentUserAsync(sessionId);
     return user != null ? Results.Ok(user) : Results.Unauthorized();
 });
 
-app.MapPost("/api/auth/refresh-session", async (dynamic request, IAuthenticationService authService) =>
+app.MapPost("/api/auth/refresh-session", async (dynamic request, MapMeAuth authService) =>
 {
     var sessionId = request.SessionId?.ToString() ?? "";
     var response = await authService.RefreshSessionAsync(sessionId);
     return response.Success ? Results.Ok(response) : Results.BadRequest(response);
 });
 
-app.MapPost("/api/auth/change-password", async (ChangePasswordRequest request, HttpContext context, IAuthenticationService authService) =>
+app.MapPost("/api/auth/change-password", async (ChangePasswordRequest request, HttpContext context, MapMeAuth authService) =>
 {
     var sessionId = GetSessionIdFromRequest(context);
     if (string.IsNullOrEmpty(sessionId)) return Results.Unauthorized();
@@ -195,49 +207,77 @@ app.MapPost("/api/auth/change-password", async (ChangePasswordRequest request, H
     return success ? Results.Ok() : Results.BadRequest();
 });
 
-app.MapPost("/api/auth/password-reset", async (PasswordResetRequest request, IAuthenticationService authService) =>
+app.MapPost("/api/auth/password-reset", async (PasswordResetRequest request, MapMeAuth authService) =>
 {
     var success = await authService.RequestPasswordResetAsync(request);
     return success ? Results.Ok() : Results.BadRequest();
 });
 
 // Profiles API
-app.MapPost("/api/profiles", async (CreateProfileRequest req, IUserProfileRepository repo) =>
+app.MapPost("/api/profiles", async (CreateProfileRequest req, IUserProfileRepository repo, HttpContext context, MapMeAuth authService) =>
 {
+    var currentUserId = await GetCurrentUserIdAsync(context, authService);
+    if (currentUserId == null)
+        return Results.Unauthorized();
+        
     if (string.IsNullOrWhiteSpace(req.Id) || string.IsNullOrWhiteSpace(req.UserId) || string.IsNullOrWhiteSpace(req.DisplayName))
         return Results.BadRequest("Id, UserId and DisplayName are required");
+        
+    // Ensure user can only create/update their own profile
+    if (req.UserId != currentUserId)
+        return Results.Forbid();
+        
     var now = DateTimeOffset.UtcNow;
     var profile = req.ToProfile(now);
     await repo.UpsertAsync(profile);
     return Results.Created($"/api/profiles/{profile.Id}", profile);
 });
 
-app.MapGet("/api/profiles/{id}", async (string id, IUserProfileRepository repo) =>
+app.MapGet("/api/profiles/{id}", async (string id, IUserProfileRepository repo, HttpContext context, MapMeAuth authService) =>
 {
+    var currentUserId = await GetCurrentUserIdAsync(context, authService);
+    if (currentUserId == null)
+        return Results.Unauthorized();
+        
     var profile = await repo.GetByIdAsync(id);
     return profile is null ? Results.NotFound() : Results.Ok(profile);
 });
 
 // Add endpoint for current user (for JavaScript compatibility)
-app.MapGet("/api/users/current_user", async (HttpContext context, IUserProfileRepository repo) =>
+app.MapGet("/api/users/current_user", async (HttpContext context, IUserProfileRepository repo, MapMeAuth authService) =>
 {
-    // Get user ID from header (simulated authentication)
-    var userId = context.Request.Headers["X-User-Id"].FirstOrDefault() ?? "current_user";
-    var profile = await repo.GetByUserIdAsync(userId);
+    var currentUserId = await GetCurrentUserIdAsync(context, authService);
+    if (currentUserId == null)
+        return Results.Unauthorized();
+        
+    var profile = await repo.GetByUserIdAsync(currentUserId);
     return profile is null ? Results.NotFound() : Results.Ok(profile);
 });
 
-app.MapGet("/api/users/{userId}", async (string userId, IUserProfileRepository repo) =>
+app.MapGet("/api/users/{userId}", async (string userId, IUserProfileRepository repo, HttpContext context, MapMeAuth authService) =>
 {
+    var currentUserId = await GetCurrentUserIdAsync(context, authService);
+    if (currentUserId == null)
+        return Results.Unauthorized();
+        
     var profile = await repo.GetByUserIdAsync(userId);
     return profile is null ? Results.NotFound() : Results.Ok(profile);
 });
 
 // DateMarks API
-app.MapPost("/api/datemarks", async (UpsertDateMarkRequest req, IDateMarkByUserRepository repo) =>
+app.MapPost("/api/datemarks", async (UpsertDateMarkRequest req, IDateMarkByUserRepository repo, HttpContext context, MapMeAuth authService) =>
 {
+    var currentUserId = await GetCurrentUserIdAsync(context, authService);
+    if (currentUserId == null)
+        return Results.Unauthorized();
+        
     if (string.IsNullOrWhiteSpace(req.Id) || string.IsNullOrWhiteSpace(req.UserId))
         return Results.BadRequest("Id and UserId are required");
+        
+    // Ensure user can only create/update their own DateMarks
+    if (req.UserId != currentUserId)
+        return Results.Forbid();
+        
     var now = DateTimeOffset.UtcNow;
     var mark = req.ToDateMark(now);
     await repo.UpsertAsync(mark);
@@ -252,8 +292,14 @@ app.MapGet("/api/users/{userId}/datemarks", async (
     string[]? tags,
     string[]? qualities,
     IDateMarkByUserRepository repo,
+    HttpContext context,
+    MapMeAuth authService,
     CancellationToken ct) =>
 {
+    var currentUserId = await GetCurrentUserIdAsync(context, authService);
+    if (currentUserId == null)
+        return Results.Unauthorized();
+        
     var cats = categories is { Length: > 0 } ? Normalization.ToNorm(categories!) : Array.Empty<string>();
     var tgs = tags is { Length: > 0 } ? Normalization.ToNorm(tags!) : Array.Empty<string>();
     var qls = qualities is { Length: > 0 } ? Normalization.ToNorm(qualities!) : Array.Empty<string>();
@@ -274,8 +320,14 @@ app.MapGet("/api/map/datemarks", async (
     string[]? tags,
     string[]? qualities,
     IDateMarkByUserRepository repo,
+    HttpContext context,
+    MapMeAuth authService,
     CancellationToken ct) =>
 {
+    var currentUserId = await GetCurrentUserIdAsync(context, authService);
+    if (currentUserId == null)
+        return Results.Unauthorized();
+        
     // For prototype, scan all in-memory marks; will be replaced by DateMarksGeo + prefixes
     var cats = categories is { Length: > 0 } ? Normalization.ToNorm(categories!) : Array.Empty<string>();
     var tgs = tags is { Length: > 0 } ? Normalization.ToNorm(tags!) : Array.Empty<string>();
@@ -289,10 +341,11 @@ app.MapGet("/api/map/datemarks", async (
 });
 
 // Chat API Endpoints
-app.MapPost("/api/chat/messages", async (SendMessageRequest req, IChatMessageRepository messageRepo, IConversationRepository conversationRepo, IUserProfileRepository userRepo, HttpContext context) =>
+app.MapPost("/api/chat/messages", async (SendMessageRequest req, IChatMessageRepository messageRepo, IConversationRepository conversationRepo, IUserProfileRepository userRepo, HttpContext context, MapMeAuth authService) =>
 {
-    // For now, use a default current user ID - in production this would come from authentication
-    var senderId = context.Request.Headers["X-User-Id"].FirstOrDefault() ?? "current_user";
+    var senderId = await GetCurrentUserIdAsync(context, authService);
+    if (senderId == null)
+        return Results.Unauthorized();
     
     if (string.IsNullOrWhiteSpace(req.ReceiverId) || string.IsNullOrWhiteSpace(req.Content))
         return Results.BadRequest("ReceiverId and Content are required");
@@ -337,10 +390,11 @@ app.MapPost("/api/chat/messages", async (SendMessageRequest req, IChatMessageRep
     return Results.Created($"/api/chat/messages/{message.Id}", message);
 });
 
-app.MapGet("/api/chat/conversations", async (IConversationRepository conversationRepo, IUserProfileRepository userRepo, HttpContext context) =>
+app.MapGet("/api/chat/conversations", async (IConversationRepository conversationRepo, IUserProfileRepository userRepo, HttpContext context, MapMeAuth authService) =>
 {
-    // For now, use a default current user ID - in production this would come from authentication
-    var userId = context.Request.Headers["X-User-Id"].FirstOrDefault() ?? "current_user";
+    var userId = await GetCurrentUserIdAsync(context, authService);
+    if (userId == null)
+        return Results.Unauthorized();
     
     var conversations = new List<ConversationResponse>();
     
@@ -383,11 +437,13 @@ app.MapGet("/api/chat/conversations/{conversationId}/messages", async (
     IChatMessageRepository messageRepo,
     IConversationRepository conversationRepo,
     HttpContext context,
+    MapMeAuth authService,
     int skip = 0,
     int take = 50) =>
 {
-    // For now, use a default current user ID - in production this would come from authentication
-    var userId = context.Request.Headers["X-User-Id"].FirstOrDefault() ?? "current_user";
+    var userId = await GetCurrentUserIdAsync(context, authService);
+    if (userId == null)
+        return Results.Unauthorized();
     
     // Verify user is participant in conversation
     var conversation = await conversationRepo.GetByIdAsync(conversationId);
@@ -403,10 +459,11 @@ app.MapGet("/api/chat/conversations/{conversationId}/messages", async (
     return Results.Ok(messages);
 });
 
-app.MapPost("/api/chat/messages/read", async (MarkAsReadRequest req, IChatMessageRepository messageRepo, IConversationRepository conversationRepo, HttpContext context) =>
+app.MapPost("/api/chat/messages/read", async (MarkAsReadRequest req, IChatMessageRepository messageRepo, IConversationRepository conversationRepo, HttpContext context, MapMeAuth authService) =>
 {
-    // For now, use a default current user ID - in production this would come from authentication
-    var userId = context.Request.Headers["X-User-Id"].FirstOrDefault() ?? "current_user";
+    var userId = await GetCurrentUserIdAsync(context, authService);
+    if (userId == null)
+        return Results.Unauthorized();
     
     // Verify user is participant in conversation
     var conversation = await conversationRepo.GetByIdAsync(req.ConversationId);
@@ -422,10 +479,11 @@ app.MapPost("/api/chat/messages/read", async (MarkAsReadRequest req, IChatMessag
     return Results.Ok();
 });
 
-app.MapPost("/api/chat/conversations/archive", async (ArchiveConversationRequest req, IConversationRepository conversationRepo, HttpContext context) =>
+app.MapPost("/api/chat/conversations/archive", async (ArchiveConversationRequest req, IConversationRepository conversationRepo, HttpContext context, MapMeAuth authService) =>
 {
-    // For now, use a default current user ID - in production this would come from authentication
-    var userId = context.Request.Headers["X-User-Id"].FirstOrDefault() ?? "current_user";
+    var userId = await GetCurrentUserIdAsync(context, authService);
+    if (userId == null)
+        return Results.Unauthorized();
     
     // Verify user is participant in conversation
     var conversation = await conversationRepo.GetByIdAsync(req.ConversationId);
@@ -437,10 +495,11 @@ app.MapPost("/api/chat/conversations/archive", async (ArchiveConversationRequest
     return Results.Ok();
 });
 
-app.MapDelete("/api/chat/messages/{messageId}", async (string messageId, IChatMessageRepository messageRepo, HttpContext context) =>
+app.MapDelete("/api/chat/messages/{messageId}", async (string messageId, IChatMessageRepository messageRepo, HttpContext context, MapMeAuth authService) =>
 {
-    // For now, use a default current user ID - in production this would come from authentication
-    var userId = context.Request.Headers["X-User-Id"].FirstOrDefault() ?? "current_user";
+    var userId = await GetCurrentUserIdAsync(context, authService);
+    if (userId == null)
+        return Results.Unauthorized();
     
     var message = await messageRepo.GetByIdAsync(messageId);
     if (message == null || message.SenderId != userId)
@@ -451,10 +510,11 @@ app.MapDelete("/api/chat/messages/{messageId}", async (string messageId, IChatMe
     return Results.Ok();
 });
 
-app.MapGet("/api/chat/messages/new", async (IChatMessageRepository messageRepo, IConversationRepository conversationRepo, HttpContext context) =>
+app.MapGet("/api/chat/messages/new", async (IChatMessageRepository messageRepo, IConversationRepository conversationRepo, HttpContext context, MapMeAuth authService) =>
 {
-    // For now, use a default current user ID - in production this would come from authentication
-    var userId = context.Request.Headers["X-User-Id"].FirstOrDefault() ?? "current_user";
+    var userId = await GetCurrentUserIdAsync(context, authService);
+    if (userId == null)
+        return Results.Unauthorized();
     
     // Get all conversations for the user and return recent messages
     var conversations = new List<Conversation>();
@@ -503,7 +563,7 @@ static string? GetSessionIdFromRequest(HttpContext context)
 /// <summary>
 /// Gets the current user ID from the request using session validation
 /// </summary>
-static async Task<string?> GetCurrentUserIdAsync(HttpContext context, IAuthenticationService authService)
+static async Task<string?> GetCurrentUserIdAsync(HttpContext context, MapMeAuth authService)
 {
     var sessionId = GetSessionIdFromRequest(context);
     if (string.IsNullOrEmpty(sessionId)) return null;
