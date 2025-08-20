@@ -17,7 +17,10 @@ updates:
     directory: "/nuget/helpers/lib/NuGetUpdater"
     schedule:
       interval: "daily"
-  - package-ecosystem: "dotnet-sdk"
-    directory: "/nuget/helpers/lib/NuGetUpdater"
-    schedule:
-      interval: "daily"
+  #
+  # Ignored while .NET 10 is in Prerelease
+  #
+  # - package-ecosystem: "dotnet-sdk"
+  #   directory: "/nuget/helpers/lib/NuGetUpdater"
+  #   schedule:
+  #     interval: "daily"
