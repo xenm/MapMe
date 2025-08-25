@@ -3,7 +3,11 @@
 ## Overview
 Comprehensive test suite for the MapMe dating application with Google Maps integration. The test suite validates core business logic, API endpoints, data persistence, and client-side services with **clear separation between Unit and Integration tests**.
 
-**Current Status: 59/59 tests passing (100% pass rate)**
+**Current Status: 91/91 tests passing (100% pass rate)**
+
+## 📋 **Important Documentation**
+- **[TEST_ARCHITECTURE.md](TEST_ARCHITECTURE.md)** - Complete test architecture documentation including repository approaches, authentication patterns, and bottom-up fixing methodology
+- **[Bottom-Up Test Fixing Guide](TEST_ARCHITECTURE.md#bottom-up-test-fixing-methodology)** - Priority order for fixing failing tests (Unit → Repository → Smoke → Core → Extended → Error → Chat)
 
 ## 📁 **Test Structure & Organization**
 
@@ -15,12 +19,14 @@ MapMe.Tests/
 │   ├── DateMarkBusinessLogic.Unit.Tests.cs
 │   ├── Normalization.Unit.Tests.cs
 │   └── InMemoryRepository.Unit.Tests.cs
-├── Integration/                    # 38 Integration Tests
+├── Integration/                    # 70 Integration Tests
 │   ├── Api.Integration.Tests.cs
 │   ├── ExtendedApi.Integration.Tests.cs
 │   ├── ErrorHandling.Integration.Tests.cs
-│   └── ApiSmoke.Integration.Tests.cs
-└── README.md                       # This documentation
+│   ├── ApiSmoke.Integration.Tests.cs
+│   └── ChatApiIntegrationTests.cs  # 12 Chat API tests
+├── README.md                       # This documentation
+└── TEST_ARCHITECTURE.md            # Complete architecture guide
 
 Dotnet CLI                         # Preferred Execution Method
 └── See commands below             # Unit / Integration / All tests
@@ -56,9 +62,9 @@ Dotnet CLI                         # Preferred Execution Method
 - In-memory data storage and retrieval
 - Filtering and query operations
 
-### **2. Integration Tests** (38 tests) - `Integration/` directory
+### **2. Integration Tests** (70 tests) - `Integration/` directory
 **Purpose:** End-to-end API testing with WebApplicationFactory and in-memory repositories
-**Execution Time:** ~7 seconds
+**Execution Time:** ~10 seconds
 **Dependencies:** ASP.NET Core test server, in-memory repositories
 
 #### **Api.Integration.Tests.cs** (11 tests)
@@ -85,6 +91,13 @@ Dotnet CLI                         # Preferred Execution Method
 #### **ApiSmoke.Integration.Tests.cs** (2 tests)
 - Basic API endpoint smoke tests
 - Service-level validation with in-memory repositories
+
+#### **ChatApiIntegrationTests.cs** (12 tests)
+- Complete chat functionality end-to-end testing
+- Message sending, conversation management, read status
+- Message archiving and deletion workflows
+- **Special Setup**: Uses direct repository population via `SetupTestUsersAsync()`
+- Multi-user conversation scenarios and pagination
 
 ## 🚀 **Running Tests**
 
@@ -161,9 +174,14 @@ dotnet test MapMe.Tests
 ## 📈 **Test Results & Reporting**
 
 ### **Test Execution Results**
-- **Total Tests**: 59
+- **Total Tests**: 91
 - **Unit Tests**: 21/21 passing (100%)
-- **Integration Tests**: 38/38 passing (100%)
+- **Integration Tests**: 70/70 passing (100%)
+  - Core API: 11/11 passing
+  - Extended API: 13/13 passing  
+  - Error Handling: 8/8 passing
+  - API Smoke: 2/2 passing
+  - **Chat API: 12/12 passing** ✅
 - **Overall Pass Rate**: 100%
 - **Build Status**: ✅ Clean builds with 0 errors
 
@@ -183,6 +201,18 @@ TestResults/
 ```
 
 ## 🔧 **Development Workflow**
+
+### **Bottom-Up Test Fixing Priority (When Tests Fail)**
+**Always fix tests in this order - easiest to hardest:**
+1. **Unit Tests** → Fix first (isolated, no dependencies)
+2. **Repository Tests** → Fix second (direct repository access)
+3. **API Smoke Tests** → Fix third (simple API validation)
+4. **Core API Integration Tests** → Fix fourth (standard workflows)
+5. **Extended API Integration Tests** → Fix fifth (complex scenarios)
+6. **Error Handling Integration Tests** → Fix sixth (specialized errors)
+7. **Chat API Integration Tests** → Fix last (most complex, special setup)
+
+**📋 See [TEST_ARCHITECTURE.md](TEST_ARCHITECTURE.md#bottom-up-test-fixing-methodology) for detailed fixing methodology**
 
 ### **Recommended Testing Strategy**
 1. **During Development**: Run Unit tests frequently (`./scripts/test-unit.sh`)

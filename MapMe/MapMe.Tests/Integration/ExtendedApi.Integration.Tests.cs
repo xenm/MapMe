@@ -11,6 +11,7 @@ using Microsoft.Extensions.DependencyInjection;
 using MapMe.DTOs;
 using MapMe.Models;
 using MapMe.Repositories;
+using MapMe.Services;
 using Xunit;
 
 namespace MapMe.Tests;
@@ -45,6 +46,14 @@ public class ExtendedApiIntegrationTests : IClassFixture<WebApplicationFactory<P
                 // Register in-memory implementations for testing
                 services.AddSingleton<IUserProfileRepository, InMemoryUserProfileRepository>();
                 services.AddSingleton<IDateMarkByUserRepository, InMemoryDateMarkByUserRepository>();
+                
+                // Override authentication service for testing
+                var authDescriptors = services.Where(d => d.ServiceType == typeof(IAuthenticationService)).ToList();
+                foreach (var descriptor in authDescriptors)
+                {
+                    services.Remove(descriptor);
+                }
+                services.AddScoped<IAuthenticationService, TestAuthenticationService>();
             });
         });
         
@@ -54,6 +63,10 @@ public class ExtendedApiIntegrationTests : IClassFixture<WebApplicationFactory<P
     [Fact]
     public async Task Profile_Create_WithInvalidData_ReturnsBadRequest()
     {
+        // Arrange - Add authentication
+        _client.DefaultRequestHeaders.Clear();
+        _client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", "test-session-token");
+        
         // Test missing required fields
         var invalidRequests = new[]
         {
@@ -72,10 +85,14 @@ public class ExtendedApiIntegrationTests : IClassFixture<WebApplicationFactory<P
     [Fact]
     public async Task Profile_Update_ExistingProfile_ModifiesCorrectly()
     {
+        // Arrange - Add authentication
+        _client.DefaultRequestHeaders.Clear();
+        _client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", "test-session-token");
+        
         // Arrange - Create initial profile
         var initialRequest = new CreateProfileRequest(
             Id: "update_profile_test",
-            UserId: "update_user_test",
+            UserId: "test_user_id", // Match TestAuthenticationService
             DisplayName: "Initial Name",
             Bio: "Initial bio",
             Photos: new[] { new UserPhoto("https://example.com/initial.jpg", true) },
@@ -91,7 +108,7 @@ public class ExtendedApiIntegrationTests : IClassFixture<WebApplicationFactory<P
         // Act - Update profile with new data
         var updatedRequest = new CreateProfileRequest(
             Id: "update_profile_test", // Same ID for update
-            UserId: "update_user_test",
+            UserId: "test_user_id", // Match TestAuthenticationService
             DisplayName: "Updated Name",
             Bio: "Updated bio with more content",
             Photos: new[]
@@ -139,6 +156,10 @@ public class ExtendedApiIntegrationTests : IClassFixture<WebApplicationFactory<P
     [Fact]
     public async Task DateMark_Create_WithExtremeCoordinates_HandlesCorrectly()
     {
+        // Arrange - Add authentication
+        _client.DefaultRequestHeaders.Clear();
+        _client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", "test-session-token");
+        
         // Test boundary coordinates
         var extremeCoordinates = new[]
         {
@@ -154,7 +175,7 @@ public class ExtendedApiIntegrationTests : IClassFixture<WebApplicationFactory<P
             var (lat, lng) = extremeCoordinates[i];
             var request = new UpsertDateMarkRequest(
                 Id: $"extreme_coords_{i}",
-                UserId: "extreme_user",
+                UserId: "test_user_id", // Match TestAuthenticationService
                 Latitude: lat,
                 Longitude: lng,
                 PlaceId: null,
@@ -178,7 +199,7 @@ public class ExtendedApiIntegrationTests : IClassFixture<WebApplicationFactory<P
         }
 
         // Verify all extreme coordinate DateMarks were created
-        var listResponse = await _client.GetAsync("/api/users/extreme_user/datemarks");
+        var listResponse = await _client.GetAsync("/api/users/test_user_id/datemarks");
         var dateMarks = await listResponse.Content.ReadFromJsonAsync<List<DateMark>>();
         
         dateMarks.Should().HaveCount(5);
@@ -187,8 +208,12 @@ public class ExtendedApiIntegrationTests : IClassFixture<WebApplicationFactory<P
     [Fact]
     public async Task DateMark_FilteringCombinations_ReturnsCorrectResults()
     {
+        // Arrange - Add authentication
+        _client.DefaultRequestHeaders.Clear();
+        _client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", "test-session-token");
+        
         // Arrange - Create DateMarks with various combinations
-        var userId = "combo_filter_user";
+        var userId = "test_user_id"; // Match TestAuthenticationService
         var dateMarks = new[]
         {
             new UpsertDateMarkRequest("combo1", userId, 37.0, -122.0, null, "Restaurant A", null, null, null, null, null, null,
@@ -225,6 +250,10 @@ public class ExtendedApiIntegrationTests : IClassFixture<WebApplicationFactory<P
     [Fact]
     public async Task MapDateMarks_Query_ReturnsEmptyForPrototype()
     {
+        // Arrange - Add authentication
+        _client.DefaultRequestHeaders.Clear();
+        _client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", "test-session-token");
+        
         // The current implementation returns empty results as noted in the code
         var response = await _client.GetAsync("/api/map/datemarks?lat=37.7749&lng=-122.4194&radiusMeters=1000");
         
@@ -238,6 +267,10 @@ public class ExtendedApiIntegrationTests : IClassFixture<WebApplicationFactory<P
     [Fact]
     public async Task ConcurrentOperations_MultipleProfileCreation_HandlesCorrectly()
     {
+        // Arrange - Add authentication
+        _client.DefaultRequestHeaders.Clear();
+        _client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", "test-session-token");
+        
         // Test concurrent profile creation to ensure thread safety
         var tasks = new List<Task<HttpResponseMessage>>();
         
@@ -245,7 +278,7 @@ public class ExtendedApiIntegrationTests : IClassFixture<WebApplicationFactory<P
         {
             var request = new CreateProfileRequest(
                 Id: $"concurrent_profile_{i}",
-                UserId: $"concurrent_user_{i}",
+                UserId: "test_user_id", // Match TestAuthenticationService
                 DisplayName: $"Concurrent User {i}",
                 Bio: $"Bio for user {i}",
                 Photos: Array.Empty<UserPhoto>(),
@@ -279,10 +312,14 @@ public class ExtendedApiIntegrationTests : IClassFixture<WebApplicationFactory<P
     [Fact]
     public async Task DateMark_EmptyArraysAndNulls_HandlesCorrectly()
     {
+        // Arrange - Add authentication
+        _client.DefaultRequestHeaders.Clear();
+        _client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", "test-session-token");
+        
         // Test with explicit empty arrays vs null values
         var request = new UpsertDateMarkRequest(
             Id: "empty_arrays_test",
-            UserId: "empty_user",
+            UserId: "test_user_id", // Match TestAuthenticationService
             Latitude: 37.7749,
             Longitude: -122.4194,
             PlaceId: null,
@@ -305,7 +342,7 @@ public class ExtendedApiIntegrationTests : IClassFixture<WebApplicationFactory<P
         response.EnsureSuccessStatusCode();
 
         // Verify the DateMark was created with empty collections
-        var listResponse = await _client.GetAsync("/api/users/empty_user/datemarks");
+        var listResponse = await _client.GetAsync("/api/users/test_user_id/datemarks");
         var dateMarks = await listResponse.Content.ReadFromJsonAsync<List<DateMark>>();
         
         dateMarks.Should().HaveCount(1);
@@ -320,8 +357,12 @@ public class ExtendedApiIntegrationTests : IClassFixture<WebApplicationFactory<P
     [Fact]
     public async Task DateMark_DateRangeEdgeCases_HandlesCorrectly()
     {
+        // Arrange - Add authentication
+        _client.DefaultRequestHeaders.Clear();
+        _client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", "test-session-token");
+        
         // Arrange - Create DateMarks across different time periods
-        var userId = "date_edge_user";
+        var userId = "test_user_id"; // Match TestAuthenticationService
         var dateMarks = new[]
         {
             new UpsertDateMarkRequest("date1", userId, 37.0, -122.0, null, "Place 1", null, null, null, null, null, null,

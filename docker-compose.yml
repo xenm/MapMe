@@ -23,7 +23,7 @@ services:
   app:
     build:
       context: .
-      dockerfile: MapMe/MapMe/MapMe/Dockerfile
+      dockerfile: Dockerfile
     container_name: mapme-app
     depends_on:
       cosmos:

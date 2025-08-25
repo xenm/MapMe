@@ -1,43 +1,97 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using MapMe.Models;
+using MapMe.Data;
 using Microsoft.Azure.Cosmos;
 
 namespace MapMe.Repositories;
 
-public sealed class CosmosDateMarkByUserRepository : IDateMarkByUserRepository
+/// <summary>
+/// CosmosDB implementation of DateMark repository with geospatial query support
+/// </summary>
+public sealed class CosmosDateMarkByUserRepository : CosmosRepositoryBase<DateMark>, IDateMarkByUserRepository
 {
-    private readonly CosmosClient _client;
-    private readonly CosmosContextOptions _options;
-    private Container Container => _client.GetContainer(_options.DatabaseName, "DateMarksByUser");
+    private const string ContainerName = "DateMarks";
+    private const string PartitionKeyPath = "/userId";
 
-    public CosmosDateMarkByUserRepository(CosmosClient client, CosmosContextOptions options)
+    public CosmosDateMarkByUserRepository(CosmosClient cosmosClient, CosmosContextOptions options)
+        : base(cosmosClient, options, ContainerName)
     {
-        _client = client;
-        _options = options;
+        // Ensure container exists on startup with geospatial indexing
+        _ = Task.Run(async () => await EnsureContainerWithGeospatialIndexAsync());
     }
 
+    /// <summary>
+    /// Ensures the container exists with proper geospatial indexing for location queries
+    /// </summary>
+    private async Task EnsureContainerWithGeospatialIndexAsync()
+    {
+        var database = await _cosmosClient.CreateDatabaseIfNotExistsAsync(_options.DatabaseName);
+        
+        var containerProperties = new ContainerProperties(ContainerName, PartitionKeyPath);
+        
+        // Configure indexing policy for geospatial queries
+        containerProperties.IndexingPolicy.IndexingMode = IndexingMode.Consistent;
+        containerProperties.IndexingPolicy.Automatic = true;
+        
+        // Add geospatial index for location-based queries
+        containerProperties.IndexingPolicy.SpatialIndexes.Add(new SpatialPath
+        {
+            Path = "/location/*",
+            SpatialTypes = { SpatialType.Point }
+        });
+        
+        // Add composite indexes for common query patterns
+        containerProperties.IndexingPolicy.CompositeIndexes.Add(new Collection<CompositePath>
+        {
+            new CompositePath { Path = "/userId", Order = CompositePathSortOrder.Ascending },
+            new CompositePath { Path = "/visitDate", Order = CompositePathSortOrder.Descending }
+        });
+        
+        await database.Database.CreateContainerIfNotExistsAsync(containerProperties, 400);
+    }
+
+    /// <summary>
+    /// Creates or updates a DateMark
+    /// </summary>
     public async Task UpsertAsync(DateMark mark, CancellationToken ct = default)
     {
-        await Container.UpsertItemAsync(mark, new PartitionKey(mark.UserId), cancellationToken: ct);
+        if (mark == null)
+            throw new ArgumentNullException(nameof(mark));
+
+        await UpsertItemAsync(mark, mark.UserId, ct);
     }
 
+    /// <summary>
+    /// Gets a DateMark by user ID and DateMark ID
+    /// </summary>
     public async Task<DateMark?> GetByIdAsync(string userId, string id, CancellationToken ct = default)
     {
-        try
-        {
-            var resp = await Container.ReadItemAsync<DateMark>(id, new PartitionKey(userId), cancellationToken: ct);
-            return resp.Resource;
-        }
-        catch (CosmosException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
-        {
+        if (string.IsNullOrWhiteSpace(userId) || string.IsNullOrWhiteSpace(id))
             return null;
-        }
+
+        return await GetItemAsync(id, userId, ct);
     }
 
+    /// <summary>
+    /// Deletes a DateMark
+    /// </summary>
+    public async Task DeleteAsync(string userId, string id, CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(userId) || string.IsNullOrWhiteSpace(id))
+            return;
+
+        await DeleteItemAsync(id, userId, ct);
+    }
+
+    /// <summary>
+    /// Gets DateMarks for a user with optional filtering
+    /// </summary>
     public async IAsyncEnumerable<DateMark> GetByUserAsync(
         string userId,
         DateOnly? from = null,
@@ -47,54 +101,116 @@ public sealed class CosmosDateMarkByUserRepository : IDateMarkByUserRepository
         IReadOnlyCollection<string>? qualities = null,
         [EnumeratorCancellation] CancellationToken ct = default)
     {
-        var sql = "SELECT * FROM c WHERE c.userId = @userId";
-        var qd = new QueryDefinition(sql).WithParameter("@userId", userId);
-        // Note: We'll keep filtering simple for now; advanced ARRAY_CONTAINS filters will be added later
-        var requestOptions = new QueryRequestOptions
+        if (string.IsNullOrWhiteSpace(userId))
+            yield break;
+
+        // Build dynamic query based on filters
+        var sql = "SELECT * FROM c WHERE c.userId = @userId AND (NOT IS_DEFINED(c.isDeleted) OR c.isDeleted = false)";
+        var queryDefinition = new QueryDefinition(sql).WithParameter("@userId", userId);
+
+        // Add date range filters to SQL for better performance
+        if (from.HasValue)
         {
-            PartitionKey = new PartitionKey(userId),
-            MaxBufferedItemCount = 100,
-            MaxConcurrency = 1,
-            MaxItemCount = 100
-        };
-        using var it = Container.GetItemQueryIterator<DateMark>(qd, requestOptions: requestOptions);
-        while (it.HasMoreResults)
+            sql += " AND c.visitDate >= @fromDate";
+            queryDefinition = queryDefinition.WithParameter("@fromDate", from.Value.ToString("yyyy-MM-dd"));
+        }
+        if (to.HasValue)
         {
-            var resp = await it.ReadNextAsync(ct);
-            foreach (var item in resp)
-            {
-                if (item.IsDeleted) continue;
-                if (from is not null && (item.VisitDate is null || item.VisitDate.Value < from.Value)) continue;
-                if (to is not null && (item.VisitDate is null || item.VisitDate.Value > to.Value)) continue;
-                if (categories is { Count: > 0 })
-                {
-                    var ok = false;
-                    foreach (var c in item.CategoriesNorm)
-                    {
-                        if (categories.Contains(c)) { ok = true; break; }
-                    }
-                    if (!ok) continue;
-                }
-                if (tags is { Count: > 0 })
-                {
-                    var ok = false;
-                    foreach (var t in item.TagsNorm)
-                    {
-                        if (tags.Contains(t)) { ok = true; break; }
-                    }
-                    if (!ok) continue;
-                }
-                if (qualities is { Count: > 0 })
-                {
-                    var ok = false;
-                    foreach (var q in item.QualitiesNorm)
-                    {
-                        if (qualities.Contains(q)) { ok = true; break; }
-                    }
-                    if (!ok) continue;
-                }
-                yield return item;
-            }
+            sql += " AND c.visitDate <= @toDate";
+            queryDefinition = queryDefinition.WithParameter("@toDate", to.Value.ToString("yyyy-MM-dd"));
+        }
+
+        // Add array filters for categories, tags, qualities
+        if (categories is { Count: > 0 })
+        {
+            sql += " AND ARRAY_LENGTH(ARRAY(SELECT VALUE c FROM c IN c.categoriesNorm WHERE c IN (@categories))) > 0";
+            queryDefinition = queryDefinition.WithParameter("@categories", categories.ToArray());
+        }
+        if (tags is { Count: > 0 })
+        {
+            sql += " AND ARRAY_LENGTH(ARRAY(SELECT VALUE t FROM t IN c.tagsNorm WHERE t IN (@tags))) > 0";
+            queryDefinition = queryDefinition.WithParameter("@tags", tags.ToArray());
+        }
+        if (qualities is { Count: > 0 })
+        {
+            sql += " AND ARRAY_LENGTH(ARRAY(SELECT VALUE q FROM q IN c.qualitiesNorm WHERE q IN (@qualities))) > 0";
+            queryDefinition = queryDefinition.WithParameter("@qualities", qualities.ToArray());
+        }
+
+        queryDefinition = new QueryDefinition(sql);
+        queryDefinition = queryDefinition.WithParameter("@userId", userId);
+        
+        if (from.HasValue)
+            queryDefinition = queryDefinition.WithParameter("@fromDate", from.Value.ToString("yyyy-MM-dd"));
+        if (to.HasValue)
+            queryDefinition = queryDefinition.WithParameter("@toDate", to.Value.ToString("yyyy-MM-dd"));
+        if (categories is { Count: > 0 })
+            queryDefinition = queryDefinition.WithParameter("@categories", categories.ToArray());
+        if (tags is { Count: > 0 })
+            queryDefinition = queryDefinition.WithParameter("@tags", tags.ToArray());
+        if (qualities is { Count: > 0 })
+            queryDefinition = queryDefinition.WithParameter("@qualities", qualities.ToArray());
+
+        await foreach (var item in QueryItemsAsyncEnumerable(queryDefinition, ct))
+        {
+            yield return item;
+        }
+    }
+
+    /// <summary>
+    /// Gets DateMarks within a geographic radius (for map viewport queries)
+    /// </summary>
+    public async IAsyncEnumerable<DateMark> GetByLocationAsync(
+        double latitude,
+        double longitude,
+        double radiusMeters,
+        IReadOnlyCollection<string>? categories = null,
+        IReadOnlyCollection<string>? tags = null,
+        IReadOnlyCollection<string>? qualities = null,
+        [EnumeratorCancellation] CancellationToken ct = default)
+    {
+        // Use ST_DISTANCE for geospatial queries
+        var sql = @"SELECT * FROM c 
+                   WHERE ST_DISTANCE(c.location, {'type': 'Point', 'coordinates': [@lng, @lat]}) <= @radius
+                   AND (NOT IS_DEFINED(c.isDeleted) OR c.isDeleted = false)";
+
+        var queryDefinition = new QueryDefinition(sql)
+            .WithParameter("@lat", latitude)
+            .WithParameter("@lng", longitude)
+            .WithParameter("@radius", radiusMeters);
+
+        // Add category/tag/quality filters
+        if (categories is { Count: > 0 })
+        {
+            sql += " AND ARRAY_LENGTH(ARRAY(SELECT VALUE c FROM c IN c.categoriesNorm WHERE c IN (@categories))) > 0";
+            queryDefinition = queryDefinition.WithParameter("@categories", categories.ToArray());
+        }
+        if (tags is { Count: > 0 })
+        {
+            sql += " AND ARRAY_LENGTH(ARRAY(SELECT VALUE t FROM t IN c.tagsNorm WHERE t IN (@tags))) > 0";
+            queryDefinition = queryDefinition.WithParameter("@tags", tags.ToArray());
+        }
+        if (qualities is { Count: > 0 })
+        {
+            sql += " AND ARRAY_LENGTH(ARRAY(SELECT VALUE q FROM q IN c.qualitiesNorm WHERE q IN (@qualities))) > 0";
+            queryDefinition = queryDefinition.WithParameter("@qualities", qualities.ToArray());
+        }
+
+        queryDefinition = new QueryDefinition(sql)
+            .WithParameter("@lat", latitude)
+            .WithParameter("@lng", longitude)
+            .WithParameter("@radius", radiusMeters);
+            
+        if (categories is { Count: > 0 })
+            queryDefinition = queryDefinition.WithParameter("@categories", categories.ToArray());
+        if (tags is { Count: > 0 })
+            queryDefinition = queryDefinition.WithParameter("@tags", tags.ToArray());
+        if (qualities is { Count: > 0 })
+            queryDefinition = queryDefinition.WithParameter("@qualities", qualities.ToArray());
+
+        await foreach (var item in QueryItemsAsyncEnumerable(queryDefinition, ct))
+        {
+            yield return item;
         }
     }
 }

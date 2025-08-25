@@ -1,5 +1,7 @@
 # MapMe
 
+![.NET](https://img.shields.io/badge/.NET-10-blue) ![Blazor](https://img.shields.io/badge/Blazor-WASM%20%2B%20Interactive%20SSR-purple) ![Tests](https://img.shields.io/badge/Tests-Unit%20%2F%20Integration-green) [![License](https://img.shields.io/badge/License-Open%20Source-lightgrey)](./LICENSE)
+
 A modern Blazor dating app with Google Maps integration, featuring comprehensive user profiles, location-based date marking, and social discovery features.
 
 ## Features

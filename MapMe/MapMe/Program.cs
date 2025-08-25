@@ -9,6 +9,7 @@ using MapMe.Repositories;
 using MapMe.DTOs;
 using MapMe.Models;
 using MapMe.Utils;
+using MapMe.Data;
 using Microsoft.Azure.Cosmos;
 using System.Net.Http;
 using MapMe.Client.Services;
