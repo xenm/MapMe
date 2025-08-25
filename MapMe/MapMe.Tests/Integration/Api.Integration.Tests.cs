@@ -13,7 +13,7 @@ using MapMe.Repositories;
 using MapMe.Services;
 using Xunit;
 
-namespace MapMe.Tests;
+namespace MapMe.Tests.Integration;
 
 [Trait("Category", "Integration")]
 public class ApiIntegrationTests : IClassFixture<WebApplicationFactory<Program>>

@@ -16,7 +16,7 @@ using MapMe.Repositories;
 using MapMe.Services;
 using Xunit;
 
-namespace MapMe.Tests;
+namespace MapMe.Tests.Integration;
 
 /// <summary>
 /// Integration tests focused on error handling, malformed requests, and boundary conditions

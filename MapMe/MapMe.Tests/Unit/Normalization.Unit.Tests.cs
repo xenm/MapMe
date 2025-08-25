@@ -2,7 +2,7 @@ using FluentAssertions;
 using MapMe.Utils;
 using Xunit;
 
-namespace MapMe.Tests;
+namespace MapMe.Tests.Unit;
 
 public class NormalizationTests
 {

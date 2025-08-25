@@ -9,7 +9,7 @@ using MapMe.DTOs;
 using MapMe.Models;
 using Xunit;
 
-namespace MapMe.Tests;
+namespace MapMe.Tests.Integration;
 
 [Trait("Category", "Integration")]
 public class ChatNegativeIntegrationTests : IClassFixture<WebApplicationFactory<Program>>

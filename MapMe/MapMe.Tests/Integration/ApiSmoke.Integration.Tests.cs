@@ -8,7 +8,7 @@ using MapMe.Repositories;
 using MapMe.Services;
 using Xunit;
 
-namespace MapMe.Tests;
+namespace MapMe.Tests.Integration;
 
 [Trait("Category", "Service")]
 public class ApiSmokeTests : IClassFixture<WebApplicationFactory<Program>>

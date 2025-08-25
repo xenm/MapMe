@@ -7,7 +7,7 @@ using MapMe.Models;
 using MapMe.Utils;
 using Xunit;
 
-namespace MapMe.Tests;
+namespace MapMe.Tests.Unit;
 
 [Trait("Category", "Unit")]
 public class DateMarkBusinessLogicTests

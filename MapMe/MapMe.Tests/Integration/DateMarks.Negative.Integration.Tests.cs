@@ -8,7 +8,7 @@ using MapMe.Services;
 using MapMe.DTOs;
 using Xunit;
 
-namespace MapMe.Tests;
+namespace MapMe.Tests.Integration;
 
 [Trait("Category", "Integration")]
 public class DateMarksNegativeIntegrationTests : IClassFixture<WebApplicationFactory<Program>>

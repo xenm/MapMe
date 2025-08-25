@@ -14,7 +14,7 @@ using MapMe.Repositories;
 using MapMe.Services;
 using Xunit;
 
-namespace MapMe.Tests;
+namespace MapMe.Tests.Integration;
 
 /// <summary>
 /// Extended integration tests covering advanced scenarios, edge cases, and error conditions
