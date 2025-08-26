@@ -1,35 +1,52 @@
 @inherits LayoutComponentBase
 @inject IJSRuntime JSRuntime
+@inject NavigationManager Navigation
+@using Microsoft.AspNetCore.Components.Authorization
 
-<!-- Bootstrap CSS -->
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-
-<!-- Bootstrap Icons -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-
-<!-- Bootstrap Bundle with Popper -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-
-<!-- Blazor Bootstrap -->
-<script src="_content/Blazor.Bootstrap/blazor.bootstrap.js"></script>
+<HeadContent>
+    <!-- Bootstrap is now loaded from server-side App.razor -->
+</HeadContent>
 
 @if (IsScriptLoaded)
 {
-    <div class="page">
-        <div class="sidebar">
-            <NavMenu/>
-        </div>
-
-        <main>
-            <div class="top-row px-4">
-                <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
-            </div>
-
-            <article class="content px-4">
+    @if (IsPublicPage())
+    {
+        <!-- Public pages (login, signup, etc.) - no authentication required -->
+        <div class="page">
+            <article class="content px-0">
                 @Body
             </article>
-        </main>
-    </div>
+        </div>
+    }
+    else
+    {
+        <!-- Protected pages - require authentication -->
+        <AuthorizeView>
+            <Authorized>
+                <div class="page">
+                    <div class="sidebar">
+                        <NavMenu/>
+                    </div>
+
+                    <main>
+                        <div class="top-row px-4">
+                            <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
+                        </div>
+
+                        <article class="content px-4">
+                            @Body
+                        </article>
+                    </main>
+                </div>
+            </Authorized>
+            <NotAuthorized>
+                @{
+                    // Redirect to login if not authenticated
+                    Navigation.NavigateTo("/login");
+                }
+            </NotAuthorized>
+        </AuthorizeView>
+    }
 
     <div id="blazor-error-ui" data-nosnippet>
         An unhandled error has occurred.
@@ -39,7 +56,15 @@
 }
 else
 {
-    <div class="loading">Loading map scripts...</div>
+    <div class="d-flex justify-content-center align-items-center" style="height: 100vh;">
+        <div class="text-center">
+            <div class="spinner-border text-primary mb-3" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <h4>Loading application...</h4>
+            <p class="text-muted">Initializing MapMe scripts...</p>
+        </div>
+    </div>
 }
 
 @code {
@@ -79,5 +104,29 @@ else
                 Console.WriteLine($"Error initializing scripts: {ex.Message}");
             }
         }
+    }
+
+    /// <summary>
+    /// Determines if the current page should be accessible without authentication
+    /// </summary>
+    private bool IsPublicPage()
+    {
+        var currentPath = Navigation.ToBaseRelativePath(Navigation.Uri).ToLowerInvariant();
+        
+        // List of public pages that don't require authentication
+        var publicPages = new[]
+        {
+            "",           // Root/home page
+            "login",      // Login page
+            "signup",     // Registration page
+            "register",   // Alternative registration route
+            "forgot-password", // Password reset
+            "reset-password"   // Password reset confirmation
+        };
+
+        return publicPages.Any(page => 
+            currentPath == page || 
+            currentPath.StartsWith($"{page}/") ||
+            currentPath.StartsWith($"{page}?"));
     }
 }

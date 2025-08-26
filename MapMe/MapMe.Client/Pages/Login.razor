@@ -159,8 +159,9 @@
             
             if (response.Success)
             {
-                // Redirect to map page after successful login
-                Navigation.NavigateTo("/map");
+                // Wait a moment for authentication state to update, then redirect
+                await Task.Delay(100);
+                Navigation.NavigateTo("/map", forceLoad: true);
             }
             else
             {
@@ -207,7 +208,9 @@
                 
                 if (response.Success)
                 {
-                    Navigation.NavigateTo("/map");
+                    // Wait a moment for authentication state to update, then redirect
+                    await Task.Delay(100);
+                    Navigation.NavigateTo("/map", forceLoad: true);
                 }
                 else
                 {

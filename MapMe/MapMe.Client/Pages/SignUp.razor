@@ -244,7 +244,7 @@
                 
                 // Wait a moment to show success message, then redirect
                 await Task.Delay(2000);
-                Navigation.NavigateTo("/map");
+                Navigation.NavigateTo("/map", forceLoad: true);
             }
             else
             {
@@ -296,7 +296,7 @@
                     StateHasChanged();
                     
                     await Task.Delay(2000);
-                    Navigation.NavigateTo("/map");
+                    Navigation.NavigateTo("/map", forceLoad: true);
                 }
                 else
                 {

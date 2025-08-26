@@ -11,6 +11,8 @@ public class CustomAuthenticationStateProvider : AuthenticationStateProvider, ID
 {
     private readonly AuthenticationService _authService;
     private AuthenticationState _currentAuthenticationState;
+    private bool _isInitialized = false;
+    private readonly SemaphoreSlim _initializationSemaphore = new(1, 1);
 
     public CustomAuthenticationStateProvider(AuthenticationService authService)
     {
@@ -24,58 +26,30 @@ public class CustomAuthenticationStateProvider : AuthenticationStateProvider, ID
     /// <summary>
     /// Gets the current authentication state
     /// </summary>
-    public override Task<AuthenticationState> GetAuthenticationStateAsync()
+    public override async Task<AuthenticationState> GetAuthenticationStateAsync()
     {
-        // Check if user is already authenticated
-        if (_authService.IsAuthenticated)
+        if (!_isInitialized)
         {
-            var user = _authService.CurrentUser;
-            if (user != null)
+            await _initializationSemaphore.WaitAsync();
+            try
             {
-                var claims = new[]
+                if (!_isInitialized)
                 {
-                    new Claim(ClaimTypes.NameIdentifier, user.UserId),
-                    new Claim(ClaimTypes.Name, user.Username),
-                    new Claim(ClaimTypes.Email, user.Email),
-                    new Claim("DisplayName", user.DisplayName ?? user.Username)
-                };
-
-                var identity = new ClaimsIdentity(claims, "custom");
-                var principal = new ClaimsPrincipal(identity);
-                _currentAuthenticationState = new AuthenticationState(principal);
-                return Task.FromResult(_currentAuthenticationState);
+                    await _authService.InitializeAsync();
+                    _isInitialized = true;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error initializing auth service: {ex.Message}");
+            }
+            finally
+            {
+                _initializationSemaphore.Release();
             }
         }
-
-        // Try to restore session from storage
-        try
-        {
-            // Check if user is already restored during service initialization
-            if (_authService.IsAuthenticated && _authService.CurrentUser != null)
-            {
-                var user = _authService.CurrentUser;
-                var claims = new[]
-                {
-                    new Claim(ClaimTypes.NameIdentifier, user.UserId),
-                    new Claim(ClaimTypes.Name, user.Username),
-                    new Claim(ClaimTypes.Email, user.Email),
-                    new Claim("DisplayName", user.DisplayName ?? user.Username)
-                };
-
-                var identity = new ClaimsIdentity(claims, "custom");
-                var principal = new ClaimsPrincipal(identity);
-                _currentAuthenticationState = new AuthenticationState(principal);
-                return Task.FromResult(_currentAuthenticationState);
-            }
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error restoring session: {ex.Message}");
-        }
-
-        // Return unauthenticated state
-        _currentAuthenticationState = new AuthenticationState(new ClaimsPrincipal(new ClaimsIdentity()));
-        return Task.FromResult(_currentAuthenticationState);
+        
+        return _currentAuthenticationState;
     }
 
     /// <summary>
@@ -126,11 +100,12 @@ public class CustomAuthenticationStateProvider : AuthenticationStateProvider, ID
     }
 
     /// <summary>
-    /// Dispose of event subscriptions
+    /// Dispose of event subscriptions and resources
     /// </summary>
     public void Dispose()
     {
         _authService.AuthenticationStateChanged -= OnAuthenticationStateChanged;
+        _initializationSemaphore?.Dispose();
         GC.SuppressFinalize(this);
     }
 }

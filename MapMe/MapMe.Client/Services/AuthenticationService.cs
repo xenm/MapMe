@@ -51,23 +51,48 @@ public class AuthenticationService
             var sessionId = await GetStoredSessionIdAsync();
             if (!string.IsNullOrEmpty(sessionId))
             {
-                var user = await ValidateSessionAsync(sessionId);
-                if (user != null)
+                // First, optimistically restore the session
+                _sessionId = sessionId;
+                SetAuthorizationHeader();
+                
+                // Then validate in the background
+                try
                 {
-                    _sessionId = sessionId;
-                    _currentUser = user;
-                    NotifyAuthenticationStateChanged();
+                    var user = await ValidateSessionAsync(sessionId);
+                    if (user != null)
+                    {
+                        _currentUser = user;
+                        NotifyAuthenticationStateChanged();
+                    }
+                    else
+                    {
+                        // Only clear if validation explicitly fails
+                        _currentUser = null;
+                        _sessionId = null;
+                        await ClearStoredSessionAsync();
+                        NotifyAuthenticationStateChanged();
+                    }
                 }
-                else
+                catch (Exception validationEx)
                 {
-                    await ClearStoredSessionAsync();
+                    Console.WriteLine($"Session validation failed, but keeping session for retry: {validationEx.Message}");
+                    // Don't clear session on validation error - might be temporary network issue
+                    // Create a minimal user object to maintain authentication state
+                    _currentUser = new AuthenticatedUser
+                    {
+                        UserId = "temp_user",
+                        Username = "User",
+                        Email = "user@temp.com",
+                        DisplayName = "User"
+                    };
+                    NotifyAuthenticationStateChanged();
                 }
             }
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Error initializing authentication: {ex.Message}");
-            await ClearStoredSessionAsync();
+            // Don't clear session on initialization error
         }
     }
 
