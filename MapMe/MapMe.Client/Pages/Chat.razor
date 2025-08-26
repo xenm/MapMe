@@ -465,7 +465,7 @@
         }
     }
 
-    private async Task SelectConversation(string conversationId)
+    private void SelectConversation(string conversationId)
     {
         Navigation.NavigateTo($"/chat/{conversationId}");
     }
@@ -585,9 +585,10 @@
         }
     }
 
-    private async Task UpdateUnreadCount()
+    private Task UpdateUnreadCount()
     {
         _totalUnreadCount = _conversations.Sum(c => c.UnreadCount);
+        return Task.CompletedTask;
     }
 
     private string FormatMessageTime(DateTime dateTime)
@@ -618,7 +619,7 @@
         };
     }
 
-    private async Task GoBackToConversations()
+    private void GoBackToConversations()
     {
         Navigation.NavigateTo("/chat");
     }

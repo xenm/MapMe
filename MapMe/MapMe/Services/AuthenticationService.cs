@@ -395,8 +395,7 @@ public class AuthenticationService : IAuthenticationService
         rng.GetBytes(saltBytes);
         var salt = Convert.ToBase64String(saltBytes);
 
-        using var pbkdf2 = new Rfc2898DeriveBytes(password, saltBytes, 100000, HashAlgorithmName.SHA256);
-        var hashBytes = pbkdf2.GetBytes(32);
+        var hashBytes = Rfc2898DeriveBytes.Pbkdf2(password, saltBytes, 100000, HashAlgorithmName.SHA256, 32);
         var hash = Convert.ToBase64String(hashBytes);
 
         return (hash, salt);
@@ -407,8 +406,7 @@ public class AuthenticationService : IAuthenticationService
         try
         {
             var saltBytes = Convert.FromBase64String(salt);
-            using var pbkdf2 = new Rfc2898DeriveBytes(password, saltBytes, 100000, HashAlgorithmName.SHA256);
-            var hashBytes = pbkdf2.GetBytes(32);
+            var hashBytes = Rfc2898DeriveBytes.Pbkdf2(password, saltBytes, 100000, HashAlgorithmName.SHA256, 32);
             var computedHash = Convert.ToBase64String(hashBytes);
             return computedHash == hash;
         }

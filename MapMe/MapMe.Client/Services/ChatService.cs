@@ -207,12 +207,12 @@ public class ChatService
     /// <summary>
     /// Start a new conversation with a user
     /// </summary>
-    public async Task<string?> StartConversationAsync(string otherUserId)
+    public Task<string?> StartConversationAsync(string otherUserId)
     {
         // Create conversation ID using the same logic as backend
         var currentUserId = "current_user";
         var orderedIds = new[] { currentUserId, otherUserId }.OrderBy(x => x).ToArray();
-        return $"conv_{orderedIds[0]}_{orderedIds[1]}";
+        return Task.FromResult<string?>($"conv_{orderedIds[0]}_{orderedIds[1]}");
     }
 
     /// <summary>

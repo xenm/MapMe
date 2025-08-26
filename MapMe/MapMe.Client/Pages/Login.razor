@@ -137,13 +137,14 @@
     private bool _showPassword = false;
     private string? _errorMessage;
 
-    protected override async Task OnInitializedAsync()
+    protected override Task OnInitializedAsync()
     {
         // Redirect if already authenticated
         if (AuthService.IsAuthenticated)
         {
             Navigation.NavigateTo("/map");
         }
+        return Task.CompletedTask;
     }
 
     private async Task HandleLoginAsync()

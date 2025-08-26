@@ -199,7 +199,7 @@ public class ApiIntegrationTests : IClassFixture<WebApplicationFactory<Program>>
         dateMarks.Should().NotBeNull();
         dateMarks!.Should().HaveCount(1);
         
-        var dateMark = dateMarks.First();
+        var dateMark = dateMarks!.First();
         dateMark.Id.Should().Be("datemark_integration_test");
         dateMark.UserId.Should().Be(userId);
         dateMark.Geo.Coordinates[1].Should().Be(37.7749); // Latitude at index 1
@@ -276,7 +276,7 @@ public class ApiIntegrationTests : IClassFixture<WebApplicationFactory<Program>>
         
         dateMarks.Should().NotBeNull();
         dateMarks!.Should().HaveCount(1);
-        dateMarks.First().Id.Should().Be("restaurant_mark");
+        dateMarks!.First().Id.Should().Be("restaurant_mark");
     }
 
     [Fact]
@@ -343,7 +343,7 @@ public class ApiIntegrationTests : IClassFixture<WebApplicationFactory<Program>>
         
         dateMarks.Should().NotBeNull();
         dateMarks!.Should().HaveCount(1);
-        dateMarks.First().Id.Should().Be("new_mark");
+        dateMarks!.First().Id.Should().Be("new_mark");
     }
 
     [Fact]

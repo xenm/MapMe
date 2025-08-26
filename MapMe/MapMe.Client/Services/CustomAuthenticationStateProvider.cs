@@ -24,7 +24,7 @@ public class CustomAuthenticationStateProvider : AuthenticationStateProvider, ID
     /// <summary>
     /// Gets the current authentication state
     /// </summary>
-    public override async Task<AuthenticationState> GetAuthenticationStateAsync()
+    public override Task<AuthenticationState> GetAuthenticationStateAsync()
     {
         // Check if user is already authenticated
         if (_authService.IsAuthenticated)
@@ -43,7 +43,7 @@ public class CustomAuthenticationStateProvider : AuthenticationStateProvider, ID
                 var identity = new ClaimsIdentity(claims, "custom");
                 var principal = new ClaimsPrincipal(identity);
                 _currentAuthenticationState = new AuthenticationState(principal);
-                return _currentAuthenticationState;
+                return Task.FromResult(_currentAuthenticationState);
             }
         }
 
@@ -65,7 +65,7 @@ public class CustomAuthenticationStateProvider : AuthenticationStateProvider, ID
                 var identity = new ClaimsIdentity(claims, "custom");
                 var principal = new ClaimsPrincipal(identity);
                 _currentAuthenticationState = new AuthenticationState(principal);
-                return _currentAuthenticationState;
+                return Task.FromResult(_currentAuthenticationState);
             }
         }
         catch (Exception ex)
@@ -75,7 +75,7 @@ public class CustomAuthenticationStateProvider : AuthenticationStateProvider, ID
 
         // Return unauthenticated state
         _currentAuthenticationState = new AuthenticationState(new ClaimsPrincipal(new ClaimsIdentity()));
-        return _currentAuthenticationState;
+        return Task.FromResult(_currentAuthenticationState);
     }
 
     /// <summary>

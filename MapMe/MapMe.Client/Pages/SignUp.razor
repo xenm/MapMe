@@ -208,13 +208,14 @@
     private string? _errorMessage;
     private string? _successMessage;
 
-    protected override async Task OnInitializedAsync()
+    protected override Task OnInitializedAsync()
     {
         // Redirect if already authenticated
         if (AuthService.IsAuthenticated)
         {
             Navigation.NavigateTo("/map");
         }
+        return Task.CompletedTask;
     }
 
     private async Task HandleRegisterAsync()

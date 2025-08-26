@@ -182,7 +182,6 @@
     private ReverseGeocodeResult? _pendingGeo;
     private string _pendingNote = string.Empty;
     private UserProfile _currentUserProfile = new();
-    private bool _showPopupAfterInit;
     private string _popupPlaceId = string.Empty;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -327,7 +326,7 @@
             {
                 var placeId = query["placeId"] ?? "";
                 // Schedule popup to show after map is initialized and marks are rendered
-                Task.Run(async () =>
+                _ = Task.Run(async () =>
                 {
                     await Task.Delay(2000); // Wait for map and marks to be ready
                     await ShowPopupForLocationAsync(lat, lng, placeId);
@@ -338,7 +337,10 @@
             if (!string.IsNullOrWhiteSpace(query["edit"]))
             {
                 var editDateMarkId = query["edit"];
-                await HandleEditDateMarkAsync(editDateMarkId);
+                if (!string.IsNullOrEmpty(editDateMarkId))
+                {
+                    await HandleEditDateMarkAsync(editDateMarkId);
+                }
             }
         }
     }
@@ -362,8 +364,7 @@
                     _longitude = dateMarkToEdit.Longitude;
                     _zoom = 15;
                     
-                    // Schedule popup to show after map initialization
-                    _showPopupAfterInit = true;
+                    // Store place ID for potential popup display
                     _popupPlaceId = dateMarkToEdit.PlaceId ?? "";
                     
                     Console.WriteLine($"Editing Date Mark: {dateMarkToEdit.Name} at {dateMarkToEdit.Address}");
@@ -736,15 +737,15 @@
                 UserId = _currentUserProfile.UserId,
                 Latitude = lat,
                 Longitude = lng,
-                Name = geocoded?.Name,
-                Address = geocoded?.Address,
-                PlaceId = geocoded?.PlaceId,
+                Name = geocoded?.Name ?? string.Empty,
+                Address = geocoded?.Address ?? string.Empty,
+                PlaceId = geocoded?.PlaceId ?? string.Empty,
                 Note = string.IsNullOrWhiteSpace(note) ? null : note,
-                Types = geocoded?.Types,
-                Url = geocoded?.Url,
-                PhotoReferences = geocoded?.PhotoReferences,
-                PlacePhotoUrl = geocoded?.PlacePhotoUrl,
-                PlacePhotoUrls = geocoded?.PlacePhotoUrls,
+                Types = geocoded?.Types ?? new List<string>(),
+                Url = geocoded?.Url ?? string.Empty,
+                PhotoReferences = geocoded?.PhotoReferences ?? new List<string>(),
+                PlacePhotoUrl = geocoded?.PlacePhotoUrl ?? string.Empty,
+                PlacePhotoUrls = geocoded?.PlacePhotoUrls ?? new List<string>(),
                 UserPhotoUrl = _currentUserProfile.Photos?.FirstOrDefault()?.Url ?? "/images/user-avatar.svg",
                 UserPhotoUrls = _currentUserProfile.Photos?.Select(p => p.Url).ToList() ?? new List<string>(),
                 CreatedAt = DateTime.UtcNow,
@@ -820,7 +821,7 @@
         }
     }
 
-    private async Task EditMarkAsync(DateMark mark)
+    private void EditMarkAsync(DateMark mark)
     {
         try
         {

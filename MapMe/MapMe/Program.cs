@@ -538,7 +538,7 @@ app.MapGet("/api/chat/messages/new", async (IChatMessageRepository messageRepo, 
     return Results.Ok(recentMessages.OrderByDescending(m => m.CreatedAt).Take(20));
 });
 
-app.MapGet("/messages/new", async (HttpContext context) =>
+app.MapGet("/messages/new", (HttpContext context) =>
 {
     var to = context.Request.Query["to"].FirstOrDefault() ?? "current_user";
     // Redirect to chat page with the target user
