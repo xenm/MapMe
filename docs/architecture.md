@@ -8,7 +8,7 @@ Projects
   - ASP.NET Core (.NET 10)
   - Serves Blazor pages and static assets
   - Provides configuration endpoints (e.g., /config/maps)
-  - Recommended JSON library: System.Text.Json
+  - JSON Serialization: System.Text.Json exclusively (including custom Cosmos DB serializer)
 - MapMe/MapMe/MapMe.Client (Blazor Client)
   - Components (Razor) and client-side assets
   - JS interop for Google Maps in wwwroot/js/mapInitializer.js

@@ -14,6 +14,8 @@ This folder contains comprehensive documentation for the MapMe project.
 ### 🏛 Architecture
 - Architecture & Tech Stack: architecture.md
 - API Overview: api.md
+- CosmosDB Integration: CosmosDB-Integration.md
+- System.Text.Json Cosmos Serializer: SystemTextJsonCosmosSerializer.md
 
 ### 🖥 Frontend
 - Map UX (Markers, Popups, Flows): frontend-map.md

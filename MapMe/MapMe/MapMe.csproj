@@ -6,6 +6,8 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <BlazorDisableThrowNavigationException>true</BlazorDisableThrowNavigationException>
         <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+        <!-- Disable Cosmos DB Newtonsoft.Json requirement - we use System.Text.Json -->
+        <AzureCosmosDisableNewtonsoftJsonCheck>true</AzureCosmosDisableNewtonsoftJsonCheck>
       <UserSecretsId>54d8b737-8863-42fd-b29a-0eed39cb916d</UserSecretsId>
   </PropertyGroup>
 

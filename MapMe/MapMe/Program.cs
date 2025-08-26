@@ -61,7 +61,8 @@ if (useCosmos)
                     || cosmosEndpoint.Contains("127.0.0.1");
         var options = new CosmosClientOptions
         {
-            ConnectionMode = ConnectionMode.Gateway
+            ConnectionMode = ConnectionMode.Gateway,
+            Serializer = new SystemTextJsonCosmosSerializer()
         };
         if (isLocal)
         {

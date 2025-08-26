@@ -13,6 +13,12 @@ MapMe now supports both in-memory repositories (for development/testing) and Cos
 - **User Profiles**: `CosmosUserProfileRepository` handles user profile data
 - **DateMarks**: `CosmosDateMarkByUserRepository` handles location-based dating data with geospatial queries
 
+### JSON Serialization
+- **SystemTextJsonCosmosSerializer**: Custom serializer using System.Text.Json exclusively
+- **No Newtonsoft.Json**: Eliminates vulnerable dependencies and security warnings
+- **Performance Optimized**: Better memory usage and faster serialization than Newtonsoft.Json
+- **Consistent**: Single JSON serialization library across entire application stack
+
 ### Containers Structure
 - **UserProfiles**: User profile data with user-based partitioning
 - **DateMarks**: Location and dating preference data with geospatial indexing
@@ -269,6 +275,51 @@ var queryRequestOptions = new QueryRequestOptions
 // View query metrics in logs
 ```
 
+## System.Text.Json Integration
+
+### Custom Cosmos Serializer
+The application uses a custom `SystemTextJsonCosmosSerializer` to ensure consistent JSON serialization:
+
+```csharp
+// SystemTextJsonCosmosSerializer.cs
+public class SystemTextJsonCosmosSerializer : CosmosSerializer
+{
+    private static readonly JsonSerializerOptions DefaultOptions = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        PropertyNameCaseInsensitive = true,
+        WriteIndented = false,
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+    };
+    
+    // Custom serialization methods using System.Text.Json
+}
+```
+
+### CosmosDB Client Configuration
+The Cosmos client is configured to use our custom serializer:
+
+```csharp
+// Program.cs - CosmosDB client with custom serializer
+var options = new CosmosClientOptions
+{
+    ConnectionMode = ConnectionMode.Gateway,
+    Serializer = new SystemTextJsonCosmosSerializer() // Custom serializer
+};
+return new CosmosClient(cosmosEndpoint!, cosmosKey!, options);
+```
+
+### Project Configuration
+The project is configured to bypass Newtonsoft.Json requirements:
+
+```xml
+<!-- MapMe.csproj -->
+<PropertyGroup>
+    <!-- Disable Cosmos DB Newtonsoft.Json requirement -->
+    <AzureCosmosDisableNewtonsoftJsonCheck>true</AzureCosmosDisableNewtonsoftJsonCheck>
+</PropertyGroup>
+```
+
 ## Migration from In-Memory
 
 The application automatically detects CosmosDB configuration and switches from in-memory repositories:
@@ -280,7 +331,7 @@ var useCosmos = !string.IsNullOrWhiteSpace(cosmosEndpoint) &&
 
 if (useCosmos)
 {
-    // Use CosmosDB repositories
+    // Use CosmosDB repositories with custom System.Text.Json serializer
     builder.Services.AddSingleton<IUserProfileRepository, CosmosUserProfileRepository>();
     builder.Services.AddSingleton<IDateMarkByUserRepository, CosmosDateMarkByUserRepository>();
 }
