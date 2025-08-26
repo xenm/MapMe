@@ -7,23 +7,23 @@ using System.Text;
 namespace MapMe.Services;
 
 /// <summary>
-/// Service for user authentication and session management
+/// Service for user authentication and JWT token management
 /// </summary>
 public class AuthenticationService : IAuthenticationService
 {
     private readonly IUserRepository _userRepository;
-    private readonly ISessionRepository _sessionRepository;
+    private readonly IJwtService _jwtService;
     private readonly IUserProfileRepository _userProfileRepository;
     private readonly ILogger<AuthenticationService> _logger;
 
     public AuthenticationService(
         IUserRepository userRepository,
-        ISessionRepository sessionRepository,
+        IJwtService jwtService,
         IUserProfileRepository userProfileRepository,
         ILogger<AuthenticationService> logger)
     {
         _userRepository = userRepository;
-        _sessionRepository = sessionRepository;
+        _jwtService = jwtService;
         _userProfileRepository = userProfileRepository;
         _logger = logger;
     }
@@ -60,9 +60,8 @@ public class AuthenticationService : IAuthenticationService
             // Update last login time
             await _userRepository.UpdateLastLoginAsync(user.Id, DateTimeOffset.UtcNow);
 
-            // Create session
-            var sessionDuration = request.RememberMe ? TimeSpan.FromDays(30) : TimeSpan.FromHours(24);
-            var session = await _sessionRepository.CreateSessionAsync(user.Id, sessionDuration);
+            // Generate JWT token
+            var (token, expiresAt) = _jwtService.GenerateToken(user, request.RememberMe);
 
             var authenticatedUser = new AuthenticatedUser(
                 user.Id,
@@ -77,8 +76,8 @@ public class AuthenticationService : IAuthenticationService
                 true,
                 "Login successful",
                 authenticatedUser,
-                session.SessionId,
-                session.ExpiresAt
+                token,
+                expiresAt
             );
         }
         catch (Exception ex)
@@ -121,8 +120,8 @@ public class AuthenticationService : IAuthenticationService
             // Create user profile
             await CreateDefaultUserProfileAsync(userId, request.Username, request.DisplayName);
 
-            // Create session
-            var session = await _sessionRepository.CreateSessionAsync(userId, TimeSpan.FromHours(24));
+            // Generate JWT token
+            var (token, expiresAt) = _jwtService.GenerateToken(user, false);
 
             var authenticatedUser = new AuthenticatedUser(
                 user.Id,
@@ -137,8 +136,8 @@ public class AuthenticationService : IAuthenticationService
                 true,
                 "Registration successful",
                 authenticatedUser,
-                session.SessionId,
-                session.ExpiresAt
+                token,
+                expiresAt
             );
         }
         catch (Exception ex)
@@ -165,7 +164,7 @@ public class AuthenticationService : IAuthenticationService
                 }
 
                 await _userRepository.UpdateLastLoginAsync(existingUser.Id, DateTimeOffset.UtcNow);
-                var session = await _sessionRepository.CreateSessionAsync(existingUser.Id, TimeSpan.FromHours(24));
+                var (token, expiresAt) = _jwtService.GenerateToken(existingUser, false);
 
                 var authenticatedUser = new AuthenticatedUser(
                     existingUser.Id,
@@ -179,8 +178,8 @@ public class AuthenticationService : IAuthenticationService
                     true,
                     "Login successful",
                     authenticatedUser,
-                    session.SessionId,
-                    session.ExpiresAt
+                    token,
+                    expiresAt
                 );
             }
             else
@@ -214,7 +213,7 @@ public class AuthenticationService : IAuthenticationService
                 await _userRepository.CreateAsync(user);
                 await CreateDefaultUserProfileAsync(userId, username, request.DisplayName);
 
-                var session = await _sessionRepository.CreateSessionAsync(userId, TimeSpan.FromHours(24));
+                var (token, expiresAt) = _jwtService.GenerateToken(user, false);
 
                 var authenticatedUser = new AuthenticatedUser(
                     user.Id,
@@ -229,8 +228,8 @@ public class AuthenticationService : IAuthenticationService
                     true,
                     "Registration successful",
                     authenticatedUser,
-                    session.SessionId,
-                    session.ExpiresAt
+                    token,
+                    expiresAt
                 );
             }
         }
@@ -241,41 +240,43 @@ public class AuthenticationService : IAuthenticationService
         }
     }
 
-    public async Task<bool> LogoutAsync(string sessionId)
+    public async Task<bool> LogoutAsync(string token)
     {
         try
         {
-            await _sessionRepository.InvalidateSessionAsync(sessionId);
-            return true;
+            // JWT tokens are stateless, so logout is mainly for client-side cleanup
+            // In a production system, you might want to maintain a blacklist of revoked tokens
+            _logger.LogInformation("User logged out (JWT token invalidated client-side)");
+            return await Task.FromResult(true);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error during logout for session: {SessionId}", sessionId);
+            _logger.LogError(ex, "Error during logout");
             return false;
         }
     }
 
-    public async Task<UserSession?> ValidateSessionAsync(string sessionId)
+    public async Task<UserSession?> ValidateTokenAsync(string token)
     {
         try
         {
-            return await _sessionRepository.GetValidSessionAsync(sessionId);
+            return await Task.FromResult(_jwtService.ValidateToken(token));
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error validating session: {SessionId}", sessionId);
+            _logger.LogError(ex, "Error validating JWT token");
             return null;
         }
     }
 
-    public async Task<AuthenticatedUser?> GetCurrentUserAsync(string sessionId)
+    public async Task<AuthenticatedUser?> GetCurrentUserAsync(string token)
     {
         try
         {
-            var session = await ValidateSessionAsync(sessionId);
-            if (session == null) return null;
+            var userSession = await ValidateTokenAsync(token);
+            if (userSession == null) return null;
 
-            var user = await _userRepository.GetByIdAsync(session.UserId);
+            var user = await _userRepository.GetByIdAsync(userSession.UserId);
             if (user == null || !user.IsActive) return null;
 
             return new AuthenticatedUser(
@@ -288,7 +289,7 @@ public class AuthenticationService : IAuthenticationService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error getting current user for session: {SessionId}", sessionId);
+            _logger.LogError(ex, "Error getting current user from JWT token");
             return null;
         }
     }
@@ -354,35 +355,48 @@ public class AuthenticationService : IAuthenticationService
         }
     }
 
-    public async Task<AuthenticationResponse> RefreshSessionAsync(string sessionId)
+    public async Task<AuthenticationResponse> RefreshTokenAsync(string token)
     {
         try
         {
-            var session = await ValidateSessionAsync(sessionId);
-            if (session == null)
+            var userSession = await ValidateTokenAsync(token);
+            if (userSession == null)
             {
-                return new AuthenticationResponse(false, "Invalid session");
+                return new AuthenticationResponse(false, "Invalid token");
             }
 
-            var newSession = await _sessionRepository.RefreshSessionAsync(sessionId, TimeSpan.FromHours(24));
-            if (newSession == null)
+            var user = await _userRepository.GetByIdAsync(userSession.UserId);
+            if (user == null || !user.IsActive)
             {
-                return new AuthenticationResponse(false, "Unable to refresh session");
+                return new AuthenticationResponse(false, "User not found or inactive");
             }
 
-            var user = await GetCurrentUserAsync(newSession.SessionId);
+            var refreshResult = _jwtService.RefreshToken(token, user);
+            if (refreshResult == null)
+            {
+                return new AuthenticationResponse(false, "Token does not need refresh yet");
+            }
+
+            var authenticatedUser = new AuthenticatedUser(
+                user.Id,
+                user.Username,
+                user.Email,
+                await GetDisplayNameAsync(user.Id),
+                user.IsEmailVerified
+            );
+
             return new AuthenticationResponse(
                 true,
-                "Session refreshed",
-                user,
-                newSession.SessionId,
-                newSession.ExpiresAt
+                "Token refreshed",
+                authenticatedUser,
+                refreshResult.Value.token,
+                refreshResult.Value.expiresAt
             );
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error refreshing session: {SessionId}", sessionId);
-            return new AuthenticationResponse(false, "An error occurred while refreshing session");
+            _logger.LogError(ex, "Error refreshing JWT token");
+            return new AuthenticationResponse(false, "An error occurred while refreshing token");
         }
     }
 

@@ -23,7 +23,7 @@ public class TestAuthenticationService : IAuthenticationService
                 DisplayName: request.Username,
                 IsEmailVerified: true
             ),
-            SessionId: "test-session-token",
+            Token: "test-jwt-token",
             ExpiresAt: DateTimeOffset.UtcNow.AddHours(24)
         );
         
@@ -43,7 +43,7 @@ public class TestAuthenticationService : IAuthenticationService
                 DisplayName: request.DisplayName,
                 IsEmailVerified: false
             ),
-            SessionId: "test-session-token",
+            Token: "test-jwt-token",
             ExpiresAt: DateTimeOffset.UtcNow.AddHours(24)
         );
         
@@ -63,30 +63,30 @@ public class TestAuthenticationService : IAuthenticationService
                 DisplayName: request.DisplayName,
                 IsEmailVerified: true
             ),
-            SessionId: "test-session-token",
+            Token: "test-jwt-token",
             ExpiresAt: DateTimeOffset.UtcNow.AddHours(24)
         );
         
         return Task.FromResult(response);
     }
 
-    public Task<bool> LogoutAsync(string sessionId)
+    public Task<bool> LogoutAsync(string token)
     {
         // Always return successful logout
         return Task.FromResult(true);
     }
 
-    public Task<UserSession?> ValidateSessionAsync(string sessionId)
+    public Task<UserSession?> ValidateTokenAsync(string token)
     {
-        // Return valid session for any session token that starts with "test-"
-        if (!string.IsNullOrEmpty(sessionId) && sessionId.StartsWith("test-"))
+        // Return valid session for any JWT token that starts with "test-"
+        if (!string.IsNullOrEmpty(token) && token.StartsWith("test-"))
         {
             // Use a generic test user ID that works for all tests
             var session = new UserSession(
                 UserId: "test_user_id",
                 Username: "test_user",
                 Email: "test@example.com",
-                SessionId: sessionId,
+                SessionId: token,
                 ExpiresAt: DateTimeOffset.UtcNow.AddHours(23),
                 CreatedAt: DateTimeOffset.UtcNow.AddHours(-1)
             );
@@ -96,10 +96,10 @@ public class TestAuthenticationService : IAuthenticationService
         return Task.FromResult<UserSession?>(null);
     }
 
-    public Task<AuthenticatedUser?> GetCurrentUserAsync(string sessionId)
+    public Task<AuthenticatedUser?> GetCurrentUserAsync(string token)
     {
-        // Return test user for any session token that starts with "test-"
-        if (!string.IsNullOrEmpty(sessionId) && sessionId.StartsWith("test-"))
+        // Return test user for any JWT token that starts with "test-"
+        if (!string.IsNullOrEmpty(token) && token.StartsWith("test-"))
         {
             var user = new AuthenticatedUser(
                 UserId: "test_user_id",
@@ -126,12 +126,12 @@ public class TestAuthenticationService : IAuthenticationService
         return Task.FromResult(true);
     }
 
-    public Task<AuthenticationResponse> RefreshSessionAsync(string sessionId)
+    public Task<AuthenticationResponse> RefreshTokenAsync(string token)
     {
-        // Return successful session refresh
+        // Return successful token refresh
         var response = new AuthenticationResponse(
             Success: true,
-            Message: "Session refreshed",
+            Message: "Token refreshed",
             User: new AuthenticatedUser(
                 UserId: "u_test",
                 Username: "test_user",
@@ -139,7 +139,7 @@ public class TestAuthenticationService : IAuthenticationService
                 DisplayName: "Test User",
                 IsEmailVerified: true
             ),
-            SessionId: "test-session-token-refreshed",
+            Token: "test-jwt-token-refreshed",
             ExpiresAt: DateTimeOffset.UtcNow.AddHours(24)
         );
         

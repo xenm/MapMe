@@ -101,7 +101,7 @@ public record AuthenticationResponse(
     [property: JsonPropertyName("success")] bool Success,
     [property: JsonPropertyName("message")] string Message,
     [property: JsonPropertyName("user")] AuthenticatedUser? User = null,
-    [property: JsonPropertyName("sessionId")] string? SessionId = null,
+    [property: JsonPropertyName("token")] string? Token = null,
     [property: JsonPropertyName("expiresAt")] DateTimeOffset? ExpiresAt = null
 );
 
@@ -154,5 +154,5 @@ public record ChangePasswordRequest(
 /// Request DTO for logout
 /// </summary>
 public record LogoutRequest(
-    [property: JsonPropertyName("sessionId")] string? SessionId = null
+    [property: JsonPropertyName("token")] string? Token = null
 );

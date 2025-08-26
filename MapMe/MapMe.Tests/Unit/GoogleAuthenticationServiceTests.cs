@@ -15,7 +15,7 @@ namespace MapMe.Tests.Unit;
 public class GoogleAuthenticationServiceTests
 {
     private readonly Mock<IUserRepository> _mockUserRepository;
-    private readonly Mock<ISessionRepository> _mockSessionRepository;
+    private readonly Mock<IJwtService> _mockJwtService;
     private readonly Mock<IUserProfileRepository> _mockUserProfileRepository;
     private readonly Mock<ILogger<AuthenticationService>> _mockLogger;
     private readonly AuthenticationService _authService;
@@ -23,12 +23,12 @@ public class GoogleAuthenticationServiceTests
     public GoogleAuthenticationServiceTests()
     {
         _mockUserRepository = new Mock<IUserRepository>();
-        _mockSessionRepository = new Mock<ISessionRepository>();
+        _mockJwtService = new Mock<IJwtService>();
         _mockUserProfileRepository = new Mock<IUserProfileRepository>();
         _mockLogger = new Mock<ILogger<AuthenticationService>>();
         _authService = new AuthenticationService(
             _mockUserRepository.Object, 
-            _mockSessionRepository.Object,
+            _mockJwtService.Object,
             _mockUserProfileRepository.Object,
             _mockLogger.Object);
     }
@@ -50,15 +50,8 @@ public class GoogleAuthenticationServiceTests
         _mockUserRepository.Setup(r => r.CreateAsync(It.IsAny<User>()))
             .ReturnsAsync((User user) => user);
 
-        _mockSessionRepository.Setup(r => r.CreateSessionAsync(It.IsAny<string>(), It.IsAny<TimeSpan>()))
-            .ReturnsAsync(new UserSession(
-                UserId: "new-user-id",
-                Username: "newuser",
-                Email: request.Email,
-                SessionId: "session-123",
-                ExpiresAt: DateTimeOffset.UtcNow.AddHours(24),
-                CreatedAt: DateTimeOffset.UtcNow
-            ));
+        _mockJwtService.Setup(r => r.GenerateToken(It.IsAny<User>(), It.IsAny<bool>()))
+            .Returns(("test-jwt-token", DateTimeOffset.UtcNow.AddHours(24)));
 
         // Act
         var result = await _authService.GoogleLoginAsync(request);
@@ -106,15 +99,8 @@ public class GoogleAuthenticationServiceTests
         _mockUserRepository.Setup(r => r.GetByGoogleIdAsync(request.GoogleId))
             .ReturnsAsync(existingUser);
 
-        _mockSessionRepository.Setup(r => r.CreateSessionAsync(existingUser.Id, It.IsAny<TimeSpan>()))
-            .ReturnsAsync(new UserSession(
-                UserId: existingUser.Id,
-                Username: existingUser.Username,
-                Email: existingUser.Email,
-                SessionId: "session-456",
-                ExpiresAt: DateTimeOffset.UtcNow.AddHours(24),
-                CreatedAt: DateTimeOffset.UtcNow
-            ));
+        _mockJwtService.Setup(r => r.GenerateToken(existingUser, It.IsAny<bool>()))
+            .Returns(("test-jwt-token", DateTimeOffset.UtcNow.AddHours(24)));
 
         // Act
         var result = await _authService.GoogleLoginAsync(request);
@@ -145,8 +131,8 @@ public class GoogleAuthenticationServiceTests
             .ReturnsAsync((User?)null);
         _mockUserRepository.Setup(r => r.CreateAsync(It.IsAny<User>()))
             .ReturnsAsync((User user) => user);
-        _mockSessionRepository.Setup(r => r.CreateSessionAsync(It.IsAny<string>(), It.IsAny<TimeSpan>()))
-            .ReturnsAsync(new UserSession("user-id", "username", "", "session-id", DateTimeOffset.UtcNow.AddHours(24), DateTimeOffset.UtcNow));
+        _mockJwtService.Setup(r => r.GenerateToken(It.IsAny<User>(), It.IsAny<bool>()))
+            .Returns(("test-jwt-token", DateTimeOffset.UtcNow.AddHours(24)));
 
         // Act
         var result = await _authService.GoogleLoginAsync(request);
@@ -172,8 +158,8 @@ public class GoogleAuthenticationServiceTests
             .ReturnsAsync((User?)null);
         _mockUserRepository.Setup(r => r.CreateAsync(It.IsAny<User>()))
             .ReturnsAsync((User user) => user);
-        _mockSessionRepository.Setup(r => r.CreateSessionAsync(It.IsAny<string>(), It.IsAny<TimeSpan>()))
-            .ReturnsAsync(new UserSession("user-id", "username", "test@gmail.com", "session-id", DateTimeOffset.UtcNow.AddHours(24), DateTimeOffset.UtcNow));
+        _mockJwtService.Setup(r => r.GenerateToken(It.IsAny<User>(), It.IsAny<bool>()))
+            .Returns(("test-jwt-token", DateTimeOffset.UtcNow.AddHours(24)));
 
         // Act
         var result = await _authService.GoogleLoginAsync(request);
@@ -201,15 +187,8 @@ public class GoogleAuthenticationServiceTests
         _mockUserRepository.Setup(r => r.CreateAsync(It.IsAny<User>()))
             .ReturnsAsync((User user) => user);
 
-        _mockSessionRepository.Setup(r => r.CreateSessionAsync(It.IsAny<string>(), It.IsAny<TimeSpan>()))
-            .ReturnsAsync(new UserSession(
-                UserId: "new-user-id",
-                Username: "test",
-                Email: request.Email,
-                SessionId: "session-123",
-                ExpiresAt: DateTimeOffset.UtcNow.AddHours(24),
-                CreatedAt: DateTimeOffset.UtcNow
-            ));
+        _mockJwtService.Setup(r => r.GenerateToken(It.IsAny<User>(), It.IsAny<bool>()))
+            .Returns(("test-jwt-token", DateTimeOffset.UtcNow.AddHours(24)));
 
         // Act
         var result = await _authService.GoogleLoginAsync(request);
@@ -237,8 +216,8 @@ public class GoogleAuthenticationServiceTests
             .ReturnsAsync((User?)null);
         _mockUserRepository.Setup(r => r.CreateAsync(It.IsAny<User>()))
             .ReturnsAsync((User user) => user);
-        _mockSessionRepository.Setup(r => r.CreateSessionAsync(It.IsAny<string>(), It.IsAny<TimeSpan>()))
-            .ReturnsAsync(new UserSession("user-id", "username", "invalid-email", "session-id", DateTimeOffset.UtcNow.AddHours(24), DateTimeOffset.UtcNow));
+        _mockJwtService.Setup(r => r.GenerateToken(It.IsAny<User>(), It.IsAny<bool>()))
+            .Returns(("test-jwt-token", DateTimeOffset.UtcNow.AddHours(24)));
 
         // Act
         var result = await _authService.GoogleLoginAsync(request);
@@ -291,15 +270,8 @@ public class GoogleAuthenticationServiceTests
         _mockUserRepository.Setup(r => r.CreateAsync(It.IsAny<User>()))
             .ReturnsAsync((User user) => user);
 
-        _mockSessionRepository.Setup(r => r.CreateSessionAsync(It.IsAny<string>(), It.IsAny<TimeSpan>()))
-            .ReturnsAsync(new UserSession(
-                UserId: "new-user-id",
-                Username: "testuser", // The actual implementation generates usernames from display name
-                Email: email,
-                SessionId: "session-123",
-                ExpiresAt: DateTimeOffset.UtcNow.AddHours(24),
-                CreatedAt: DateTimeOffset.UtcNow
-            ));
+        _mockJwtService.Setup(r => r.GenerateToken(It.IsAny<User>(), It.IsAny<bool>()))
+            .Returns(("test-jwt-token", DateTimeOffset.UtcNow.AddHours(24)));
 
         // Act
         var result = await _authService.GoogleLoginAsync(request);
@@ -329,15 +301,8 @@ public class GoogleAuthenticationServiceTests
         _mockUserRepository.Setup(r => r.CreateAsync(It.IsAny<User>()))
             .ReturnsAsync((User user) => user);
 
-        _mockSessionRepository.Setup(r => r.CreateSessionAsync(It.IsAny<string>(), It.IsAny<TimeSpan>()))
-            .ReturnsAsync(new UserSession(
-                UserId: "new-user-id",
-                Username: "test",
-                Email: request.Email,
-                SessionId: "session-123",
-                ExpiresAt: DateTimeOffset.UtcNow.AddHours(24),
-                CreatedAt: DateTimeOffset.UtcNow
-            ));
+        _mockJwtService.Setup(r => r.GenerateToken(It.IsAny<User>(), It.IsAny<bool>()))
+            .Returns(("test-jwt-token", DateTimeOffset.UtcNow.AddHours(24)));
 
         // Act
         var result = await _authService.GoogleLoginAsync(request);

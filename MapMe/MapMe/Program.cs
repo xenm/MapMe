@@ -15,13 +15,117 @@ using System.Net.Http;
 using MapMe.Client.Services;
 using MapMe.Services;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authorization;
 using MapMeAuth = MapMe.Services.IAuthenticationService;
+
+// Logging and Observability
+using Serilog;
+using Serilog.Events;
+using OpenTelemetry.Trace;
+using OpenTelemetry.Metrics;
+using System.Diagnostics;
+using System.Diagnostics.Metrics;
+using MapMe.Logging;
+using MapMe.Observability;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-// Add services to the container.
-builder.Services.AddBlazorBootstrap();
+// Configure Serilog only when explicitly enabled via configuration
+var enableSerilog = builder.Configuration.GetValue<bool>("Logging:EnableSerilog", false) || 
+                   builder.Environment.IsProduction();
+
+if (enableSerilog)
+{
+    // Configure Serilog early in the startup process
+    Log.Logger = new LoggerConfiguration()
+        .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
+        .Enrich.FromLogContext()
+        .Enrich.WithMachineName()
+        .Enrich.WithEnvironmentName()
+        .WriteTo.Console()
+        .CreateBootstrapLogger();
+        
+    Log.Information("Starting MapMe application with JWT authentication");
+    
+    // Configure Serilog from configuration
+    builder.Host.UseSerilog((context, services, configuration) => configuration
+        .ReadFrom.Configuration(context.Configuration)
+        .ReadFrom.Services(services)
+        .Enrich.FromLogContext()
+        .Enrich.WithMachineName()
+        .Enrich.WithEnvironmentName()
+        .Enrich.With<CorrelationIdEnricher>()
+        .Enrich.With<UserContextEnricher>());
+}
+
+try
+{
+
+    // Configure OpenTelemetry (only when explicitly enabled)
+    var activitySource = new ActivitySource("MapMe.Authentication");
+    var enableTelemetry = builder.Configuration.GetValue<bool>("OpenTelemetry:Enabled", false) || 
+                         builder.Environment.IsProduction();
+    
+    if (enableTelemetry)
+    {
+        builder.Services.AddOpenTelemetry()
+            .WithTracing(tracerProviderBuilder =>
+            {
+                tracerProviderBuilder
+                    .AddSource("MapMe.Authentication")
+                    .SetSampler(new AlwaysOnSampler())
+                    .AddAspNetCoreInstrumentation(options =>
+                    {
+                        options.RecordException = true;
+                        options.Filter = (httpContext) => 
+                        {
+                            // Don't trace static files and health checks
+                            var path = httpContext.Request.Path.Value;
+                            return !path?.StartsWith("/css") == true && 
+                                   !path?.StartsWith("/js") == true &&
+                                   !path?.StartsWith("/images") == true &&
+                                   !path?.StartsWith("/favicon") == true;
+                        };
+                    })
+                    .AddHttpClientInstrumentation()
+                    .AddConsoleExporter();
+                    
+                // Add Jaeger exporter if configured
+                var jaegerEndpoint = builder.Configuration["OpenTelemetry:Jaeger:Endpoint"];
+                if (!string.IsNullOrEmpty(jaegerEndpoint))
+                {
+                    tracerProviderBuilder.AddJaegerExporter();
+                }
+            })
+            .WithMetrics(meterProviderBuilder =>
+            {
+                meterProviderBuilder
+                    .AddMeter("MapMe.Authentication")
+                    .AddAspNetCoreInstrumentation()
+                    .AddHttpClientInstrumentation()
+                    .AddConsoleExporter();
+                    
+                // Add Prometheus exporter if in production
+                if (builder.Environment.IsProduction())
+                {
+                    meterProviderBuilder.AddPrometheusExporter();
+                }
+            });
+    }
+    
+    // Register observability services (always register for compatibility)
+    builder.Services.AddSingleton(activitySource);
+    builder.Services.AddSingleton<JwtMetrics>();
+    
+    // Register log enrichers (only when Serilog is enabled)
+    if (enableSerilog)
+    {
+        builder.Services.AddSingleton<CorrelationIdEnricher>();
+        builder.Services.AddSingleton<UserContextEnricher>();
+    }
+    
+    // Add services to the container.
+    builder.Services.AddBlazorBootstrap();
 
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents(options =>
@@ -91,22 +195,59 @@ else
 
 // Register authentication services
 builder.Services.AddSingleton<IUserRepository, InMemoryUserRepository>();
-builder.Services.AddSingleton<ISessionRepository, InMemorySessionRepository>();
+// Note: Session repository no longer needed for JWT authentication
+builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<MapMeAuth, MapMe.Services.AuthenticationService>();
 
-// Add ASP.NET Core Authentication and Authorization services
-builder.Services.AddAuthentication("Session")
-    .AddScheme<AuthenticationSchemeOptions, MapMe.Authentication.SessionAuthenticationHandler>(
-        "Session", options => { });
+// Add ASP.NET Core Authentication and Authorization services with JWT
+builder.Services.AddAuthentication("JWT")
+    .AddScheme<AuthenticationSchemeOptions, MapMe.Authentication.JwtAuthenticationHandler>(
+        "JWT", options => { });
 
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(options =>
+{
+    // Ensure no global authorization policy that would override AllowAnonymous
+    options.FallbackPolicy = null;
+    options.DefaultPolicy = new AuthorizationPolicyBuilder()
+        .RequireAuthenticatedUser()
+        .Build();
+});
 
 // Register client-side services
 builder.Services.AddScoped<UserProfileService>();
 builder.Services.AddScoped<ChatService>();
 builder.Services.AddScoped<MapMe.Client.Services.AuthenticationService>();
 
-var app = builder.Build();
+    var app = builder.Build();
+    
+    // Configure Serilog request logging (only when Serilog is enabled)
+    if (enableSerilog)
+    {
+        app.UseSerilogRequestLogging(options =>
+        {
+            options.MessageTemplate = "HTTP {RequestMethod} {RequestPath} responded {StatusCode} in {Elapsed:0.0000} ms";
+            options.GetLevel = (httpContext, elapsed, ex) => ex != null
+                ? LogEventLevel.Error
+                : httpContext.Response.StatusCode > 499
+                    ? LogEventLevel.Error
+                    : httpContext.Response.StatusCode > 399
+                        ? LogEventLevel.Warning
+                        : LogEventLevel.Information;
+            options.EnrichDiagnosticContext = (diagnosticContext, httpContext) =>
+            {
+                diagnosticContext.Set("RequestHost", httpContext.Request.Host.Value);
+                diagnosticContext.Set("RequestScheme", httpContext.Request.Scheme);
+                diagnosticContext.Set("UserAgent", httpContext.Request.Headers["User-Agent"].FirstOrDefault());
+                diagnosticContext.Set("ClientIP", httpContext.Connection.RemoteIpAddress?.ToString());
+                
+                if (httpContext.User.Identity?.IsAuthenticated == true)
+                {
+                    diagnosticContext.Set("UserId", httpContext.User.FindFirst("userId")?.Value);
+                    diagnosticContext.Set("Username", httpContext.User.FindFirst("username")?.Value);
+                }
+            };
+        });
+    }
 
 // Ensure default user profile exists for development
 await EnsureDefaultUserProfileAsync(app.Services);
@@ -130,16 +271,10 @@ app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
 
-app.UseAntiforgery();
+// Ensure API endpoints are mapped before Blazor components to take precedence
+app.UseRouting();
 
-app.UseStaticFiles();
-app.MapStaticAssets();
-
-app.MapRazorComponents<App>()
-    .AddInteractiveServerRenderMode()
-    .AddInteractiveWebAssemblyRenderMode()
-    .AddAdditionalAssemblies(typeof(MapMe.Client._Imports).Assembly);
-
+// Map API endpoints IMMEDIATELY after UseRouting() to ensure they take precedence over Blazor routing
 // Minimal API to provide client with Google Maps API key (prefer config/user-secrets over env var)
 app.MapGet("/config/maps", (HttpContext http) =>
 {
@@ -162,49 +297,76 @@ app.MapGet("/config/google-client-id", (HttpContext http) =>
 });
 
 // Authentication API Endpoints
-app.MapPost("/api/auth/login", async (LoginRequest request, MapMeAuth authService) =>
+app.MapPost("/api/auth/login", async (LoginRequest request, MapMeAuth authService, ILogger<Program> logger) =>
 {
+    logger.LogInformation("[DEBUG] /api/auth/login endpoint called for user: {Username}", request.Username);
     var response = await authService.LoginAsync(request);
+    logger.LogInformation("[DEBUG] Login response - Success: {Success}, Token: {HasToken}", response.Success, !string.IsNullOrEmpty(response.Token));
+    if (response.Success && !string.IsNullOrEmpty(response.Token))
+    {
+        logger.LogInformation("[DEBUG] Generated token preview: {TokenPreview}", response.Token.Substring(0, Math.Min(20, response.Token.Length)) + "...");
+    }
     return response.Success ? Results.Ok(response) : Results.BadRequest(response);
-});
+}).AllowAnonymous();
 
-app.MapPost("/api/auth/register", async (RegisterRequest request, MapMeAuth authService) =>
+app.MapPost("/api/auth/register", async (RegisterRequest request, MapMeAuth authService, ILogger<Program> logger) =>
 {
+    logger.LogInformation("[DEBUG] /api/auth/register endpoint called for user: {Username}", request.Username);
     var response = await authService.RegisterAsync(request);
+    logger.LogInformation("[DEBUG] Registration response - Success: {Success}, Token: {HasToken}", response.Success, !string.IsNullOrEmpty(response.Token));
+    if (response.Success && !string.IsNullOrEmpty(response.Token))
+    {
+        logger.LogInformation("[DEBUG] Generated token preview: {TokenPreview}", response.Token.Substring(0, Math.Min(20, response.Token.Length)) + "...");
+    }
     return response.Success ? Results.Ok(response) : Results.BadRequest(response);
-});
+}).AllowAnonymous();
 
 app.MapPost("/api/auth/google-login", async (GoogleLoginRequest request, MapMeAuth authService) =>
 {
     var response = await authService.GoogleLoginAsync(request);
     return response.Success ? Results.Ok(response) : Results.BadRequest(response);
-});
+}).AllowAnonymous();
 
 app.MapPost("/api/auth/logout", async (LogoutRequest request, MapMeAuth authService) =>
 {
-    var success = await authService.LogoutAsync(request.SessionId ?? "");
+    var success = await authService.LogoutAsync(request.Token ?? "");
     return success ? Results.Ok() : Results.BadRequest();
 });
 
-app.MapGet("/api/auth/validate-session", async (string sessionId, MapMeAuth authService) =>
+app.MapGet("/api/auth/validate-token", async (HttpContext context, MapMeAuth authService, ILogger<Program> logger) =>
 {
-    var user = await authService.GetCurrentUserAsync(sessionId);
+    logger.LogInformation("[DEBUG] /api/auth/validate-token endpoint called");
+    
+    var token = GetJwtTokenFromRequest(context);
+    logger.LogInformation("[DEBUG] Extracted token: {TokenPreview}", token?.Substring(0, Math.Min(20, token?.Length ?? 0)) + "...");
+    
+    if (string.IsNullOrEmpty(token)) 
+    {
+        logger.LogWarning("[DEBUG] No token found in request headers");
+        return Results.Unauthorized();
+    }
+    
+    var user = await authService.GetCurrentUserAsync(token);
+    logger.LogInformation("[DEBUG] User validation result: {UserFound}", user != null ? $"Found user {user.Username}" : "No user found");
+    
     return user != null ? Results.Ok(user) : Results.Unauthorized();
-});
+}).AllowAnonymous();
 
-app.MapPost("/api/auth/refresh-session", async (dynamic request, MapMeAuth authService) =>
+app.MapPost("/api/auth/refresh-token", async (HttpContext context, MapMeAuth authService) =>
 {
-    var sessionId = request.SessionId?.ToString() ?? "";
-    var response = await authService.RefreshSessionAsync(sessionId);
+    var token = GetJwtTokenFromRequest(context);
+    if (string.IsNullOrEmpty(token)) return Results.Unauthorized();
+    
+    var response = await authService.RefreshTokenAsync(token);
     return response.Success ? Results.Ok(response) : Results.BadRequest(response);
 });
 
 app.MapPost("/api/auth/change-password", async (ChangePasswordRequest request, HttpContext context, MapMeAuth authService) =>
 {
-    var sessionId = GetSessionIdFromRequest(context);
-    if (string.IsNullOrEmpty(sessionId)) return Results.Unauthorized();
+    var token = GetJwtTokenFromRequest(context);
+    if (string.IsNullOrEmpty(token)) return Results.Unauthorized();
     
-    var currentUser = await authService.GetCurrentUserAsync(sessionId);
+    var currentUser = await authService.GetCurrentUserAsync(token);
     if (currentUser == null) return Results.Unauthorized();
     
     var success = await authService.ChangePasswordAsync(currentUser.UserId, request);
@@ -546,15 +708,38 @@ app.MapGet("/messages/new", (HttpContext context) =>
     return Results.Redirect($"/chat?to={Uri.EscapeDataString(to)}");
 });
 
+// Add middleware after API endpoints
+app.UseAntiforgery();
+app.UseStaticFiles();
+app.MapStaticAssets();
+
+// Map Blazor components AFTER all API endpoints to ensure API routes take precedence
+app.MapRazorComponents<App>()
+    .AddInteractiveServerRenderMode()
+    .AddInteractiveWebAssemblyRenderMode()
+    .AddAdditionalAssemblies(typeof(MapMe.Client._Imports).Assembly);
+
 // Add fallback routing for Blazor WebAssembly client-side routes
 app.MapFallbackToFile("index.html");
 
-app.Run();
+    Log.Information("MapMe application started successfully");
+    app.Run();
+}
+catch (Exception ex)
+{
+    Log.Fatal(ex, "MapMe application terminated unexpectedly");
+    throw;
+}
+finally
+{
+    Log.Information("MapMe application shutting down");
+    Log.CloseAndFlush();
+}
 
 /// <summary>
-/// Gets the session ID from the request (Authorization header or X-Session-Id header)
+/// Gets the JWT token from the request (Authorization header)
 /// </summary>
-static string? GetSessionIdFromRequest(HttpContext context)
+static string? GetJwtTokenFromRequest(HttpContext context)
 {
     // Try Authorization header first (Bearer token)
     var authHeader = context.Request.Headers.Authorization.FirstOrDefault();
@@ -563,19 +748,18 @@ static string? GetSessionIdFromRequest(HttpContext context)
         return authHeader["Bearer ".Length..];
     }
     
-    // Fallback to X-Session-Id header for backward compatibility
-    return context.Request.Headers["X-Session-Id"].FirstOrDefault();
+    return null;
 }
 
 /// <summary>
-/// Gets the current user ID from the request using session validation
+/// Gets the current user ID from the request using JWT token validation
 /// </summary>
 static async Task<string?> GetCurrentUserIdAsync(HttpContext context, MapMeAuth authService)
 {
-    var sessionId = GetSessionIdFromRequest(context);
-    if (string.IsNullOrEmpty(sessionId)) return null;
+    var token = GetJwtTokenFromRequest(context);
+    if (string.IsNullOrEmpty(token)) return null;
     
-    var user = await authService.GetCurrentUserAsync(sessionId);
+    var user = await authService.GetCurrentUserAsync(token);
     return user?.UserId;
 }
 

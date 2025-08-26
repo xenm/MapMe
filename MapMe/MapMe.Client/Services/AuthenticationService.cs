@@ -13,7 +13,7 @@ public class AuthenticationService
     private readonly HttpClient _httpClient;
     private readonly IJSRuntime _jsRuntime;
     private AuthenticatedUser? _currentUser;
-    private string? _sessionId;
+    private string? _jwtToken;
 
     public AuthenticationService(HttpClient httpClient, IJSRuntime jsRuntime)
     {
@@ -37,28 +37,28 @@ public class AuthenticationService
     public bool IsAuthenticated => _currentUser != null;
 
     /// <summary>
-    /// Gets the current session ID
+    /// Gets the current JWT token
     /// </summary>
-    public string? SessionId => _sessionId;
+    public string? Token => _jwtToken;
 
     /// <summary>
-    /// Initializes the authentication service by checking for existing session
+    /// Initializes the authentication service by checking for existing JWT token
     /// </summary>
     public async Task InitializeAsync()
     {
         try
         {
-            var sessionId = await GetStoredSessionIdAsync();
-            if (!string.IsNullOrEmpty(sessionId))
+            var token = await GetStoredTokenAsync();
+            if (!string.IsNullOrEmpty(token))
             {
-                // First, optimistically restore the session
-                _sessionId = sessionId;
+                // First, optimistically restore the token
+                _jwtToken = token;
                 SetAuthorizationHeader();
                 
                 // Then validate in the background
                 try
                 {
-                    var user = await ValidateSessionAsync(sessionId);
+                    var user = await ValidateTokenAsync(token);
                     if (user != null)
                     {
                         _currentUser = user;
@@ -68,15 +68,15 @@ public class AuthenticationService
                     {
                         // Only clear if validation explicitly fails
                         _currentUser = null;
-                        _sessionId = null;
-                        await ClearStoredSessionAsync();
+                        _jwtToken = null;
+                        await ClearStoredTokenAsync();
                         NotifyAuthenticationStateChanged();
                     }
                 }
                 catch (Exception validationEx)
                 {
-                    Console.WriteLine($"Session validation failed, but keeping session for retry: {validationEx.Message}");
-                    // Don't clear session on validation error - might be temporary network issue
+                    Console.WriteLine($"Token validation failed, but keeping token for retry: {validationEx.Message}");
+                    // Don't clear token on validation error - might be temporary network issue
                     // Create a minimal user object to maintain authentication state
                     _currentUser = new AuthenticatedUser
                     {
@@ -92,7 +92,7 @@ public class AuthenticationService
         catch (Exception ex)
         {
             Console.WriteLine($"Error initializing authentication: {ex.Message}");
-            // Don't clear session on initialization error
+            // Don't clear token on initialization error
         }
     }
 
@@ -103,22 +103,33 @@ public class AuthenticationService
     {
         try
         {
+            Console.WriteLine($"[DEBUG] LoginAsync called for user: {request.Username}");
             var response = await _httpClient.PostAsJsonAsync("/api/auth/login", request);
-            var result = await response.Content.ReadFromJsonAsync<AuthenticationResponse>();
+            Console.WriteLine($"[DEBUG] Login response status: {response.StatusCode}");
             
-            if (result != null && result.Success && result.User != null && result.SessionId != null)
+            var result = await response.Content.ReadFromJsonAsync<AuthenticationResponse>();
+            Console.WriteLine($"[DEBUG] Login result - Success: {result?.Success}, HasToken: {!string.IsNullOrEmpty(result?.Token)}");
+            
+            if (result != null && result.Success && result.User != null && result.Token != null)
             {
+                Console.WriteLine($"[DEBUG] Setting up authentication - Token: {result.Token.Substring(0, Math.Min(20, result.Token.Length))}...");
                 _currentUser = result.User;
-                _sessionId = result.SessionId;
-                await StoreSessionIdAsync(result.SessionId);
+                _jwtToken = result.Token;
+                await StoreTokenAsync(result.Token);
+                SetAuthorizationHeader();
+                Console.WriteLine($"[DEBUG] Authorization header set after login");
                 NotifyAuthenticationStateChanged();
+            }
+            else if (result != null)
+            {
+                Console.WriteLine($"[DEBUG] Login failed: {result.Message}");
             }
 
             return result ?? new AuthenticationResponse { Success = false, Message = "Invalid response from server" };
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error during login: {ex.Message}");
+            Console.WriteLine($"[ERROR] Error during login: {ex.Message}");
             return new AuthenticationResponse { Success = false, Message = "An error occurred during login" };
         }
     }
@@ -130,22 +141,33 @@ public class AuthenticationService
     {
         try
         {
+            Console.WriteLine($"[DEBUG] RegisterAsync called for user: {request.Username}");
             var response = await _httpClient.PostAsJsonAsync("/api/auth/register", request);
-            var result = await response.Content.ReadFromJsonAsync<AuthenticationResponse>();
+            Console.WriteLine($"[DEBUG] Registration response status: {response.StatusCode}");
             
-            if (result != null && result.Success && result.User != null && result.SessionId != null)
+            var result = await response.Content.ReadFromJsonAsync<AuthenticationResponse>();
+            Console.WriteLine($"[DEBUG] Registration result - Success: {result?.Success}, HasToken: {!string.IsNullOrEmpty(result?.Token)}");
+            
+            if (result != null && result.Success && result.User != null && result.Token != null)
             {
+                Console.WriteLine($"[DEBUG] Setting up authentication after registration - Token: {result.Token.Substring(0, Math.Min(20, result.Token.Length))}...");
                 _currentUser = result.User;
-                _sessionId = result.SessionId;
-                await StoreSessionIdAsync(result.SessionId);
+                _jwtToken = result.Token;
+                await StoreTokenAsync(result.Token);
+                SetAuthorizationHeader();
+                Console.WriteLine($"[DEBUG] Authorization header set after registration");
                 NotifyAuthenticationStateChanged();
+            }
+            else if (result != null)
+            {
+                Console.WriteLine($"[DEBUG] Registration failed: {result.Message}");
             }
 
             return result ?? new AuthenticationResponse { Success = false, Message = "Invalid response from server" };
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error during registration: {ex.Message}");
+            Console.WriteLine($"[ERROR] Error during registration: {ex.Message}");
             return new AuthenticationResponse { Success = false, Message = "An error occurred during registration" };
         }
     }
@@ -160,11 +182,12 @@ public class AuthenticationService
             var response = await _httpClient.PostAsJsonAsync("/api/auth/google-login", request);
             var result = await response.Content.ReadFromJsonAsync<AuthenticationResponse>();
             
-            if (result != null && result.Success && result.User != null && result.SessionId != null)
+            if (result != null && result.Success && result.User != null && result.Token != null)
             {
                 _currentUser = result.User;
-                _sessionId = result.SessionId;
-                await StoreSessionIdAsync(result.SessionId);
+                _jwtToken = result.Token;
+                await StoreTokenAsync(result.Token);
+                SetAuthorizationHeader();
                 NotifyAuthenticationStateChanged();
             }
 
@@ -184,15 +207,15 @@ public class AuthenticationService
     {
         try
         {
-            if (!string.IsNullOrEmpty(_sessionId))
+            if (!string.IsNullOrEmpty(_jwtToken))
             {
-                var request = new LogoutRequest { SessionId = _sessionId };
+                var request = new LogoutRequest { Token = _jwtToken };
                 await _httpClient.PostAsJsonAsync("/api/auth/logout", request);
             }
 
             _currentUser = null;
-            _sessionId = null;
-            await ClearStoredSessionAsync();
+            _jwtToken = null;
+            await ClearStoredTokenAsync();
             NotifyAuthenticationStateChanged();
             return true;
         }
@@ -210,7 +233,7 @@ public class AuthenticationService
     {
         try
         {
-            if (string.IsNullOrEmpty(_sessionId))
+            if (string.IsNullOrEmpty(_jwtToken))
             {
                 return false;
             }
@@ -270,18 +293,18 @@ public class AuthenticationService
     {
         try
         {
-            if (string.IsNullOrEmpty(_sessionId))
+            if (string.IsNullOrEmpty(_jwtToken))
             {
                 return false;
             }
 
-            var response = await _httpClient.PostAsJsonAsync("/api/auth/refresh-session", new { SessionId = _sessionId });
+            var response = await _httpClient.PostAsJsonAsync("/api/auth/refresh-token", new { Token = _jwtToken });
             var result = await response.Content.ReadFromJsonAsync<AuthenticationResponse>();
             
-            if (result != null && result.Success && result.SessionId != null)
+            if (result != null && result.Success && result.Token != null)
             {
-                _sessionId = result.SessionId;
-                await StoreSessionIdAsync(result.SessionId);
+                _jwtToken = result.Token;
+                await StoreTokenAsync(result.Token);
                 return true;
             }
             
@@ -299,7 +322,7 @@ public class AuthenticationService
     /// </summary>
     public string? GetAuthorizationHeader()
     {
-        return string.IsNullOrEmpty(_sessionId) ? null : $"Bearer {_sessionId}";
+        return string.IsNullOrEmpty(_jwtToken) ? null : $"Bearer {_jwtToken}";
     }
 
     /// <summary>
@@ -311,7 +334,7 @@ public class AuthenticationService
         if (!string.IsNullOrEmpty(authHeader))
         {
             _httpClient.DefaultRequestHeaders.Authorization = 
-                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", _sessionId);
+                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", _jwtToken);
         }
         else
         {
@@ -321,17 +344,66 @@ public class AuthenticationService
 
     #region Private Methods
 
+    /// <summary>
+    /// Validates a JWT token with the server and returns user info
+    /// </summary>
+    private async Task<AuthenticatedUser?> ValidateTokenAsync(string token)
+    {
+        try
+        {
+            Console.WriteLine($"[DEBUG] ValidateTokenAsync called with token: {token?.Substring(0, Math.Min(20, token?.Length ?? 0))}...");
+            
+            // Set the Authorization header for this request
+            var previousAuth = _httpClient.DefaultRequestHeaders.Authorization;
+            _httpClient.DefaultRequestHeaders.Authorization = 
+                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+            
+            Console.WriteLine($"[DEBUG] Authorization header set: Bearer {token?.Substring(0, Math.Min(20, token?.Length ?? 0))}...");
+            
+            try
+            {
+                Console.WriteLine($"[DEBUG] Making GET request to /api/auth/validate-token");
+                var response = await _httpClient.GetAsync("/api/auth/validate-token");
+                Console.WriteLine($"[DEBUG] Response status: {response.StatusCode}");
+                
+                if (response.IsSuccessStatusCode)
+                {
+                    var result = await response.Content.ReadFromJsonAsync<AuthenticatedUser>();
+                    Console.WriteLine($"[DEBUG] Token validation successful, user: {result?.Username}");
+                    return result;
+                }
+                else
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync();
+                    Console.WriteLine($"[DEBUG] Token validation failed: {response.StatusCode} - {errorContent}");
+                }
+                return null;
+            }
+            finally
+            {
+                // Restore previous authorization header
+                _httpClient.DefaultRequestHeaders.Authorization = previousAuth;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[ERROR] Error validating token: {ex.Message}");
+            Console.WriteLine($"[ERROR] Stack trace: {ex.StackTrace}");
+            return null;
+        }
+    }
+
     private void NotifyAuthenticationStateChanged()
     {
         AuthenticationStateChanged?.Invoke(_currentUser);
         SetAuthorizationHeader();
     }
 
-    private async Task<string?> GetStoredSessionIdAsync()
+    private async Task<string?> GetStoredTokenAsync()
     {
         try
         {
-            return await _jsRuntime.InvokeAsync<string?>("localStorage.getItem", "mapme_session_id");
+            return await _jsRuntime.InvokeAsync<string?>("localStorage.getItem", "mapme_jwt_token");
         }
         catch
         {
@@ -339,27 +411,27 @@ public class AuthenticationService
         }
     }
 
-    private async Task StoreSessionIdAsync(string sessionId)
+    private async Task StoreTokenAsync(string token)
     {
         try
         {
-            await _jsRuntime.InvokeVoidAsync("localStorage.setItem", "mapme_session_id", sessionId);
+            await _jsRuntime.InvokeVoidAsync("localStorage.setItem", "mapme_jwt_token", token);
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error storing session ID: {ex.Message}");
+            Console.WriteLine($"Error storing JWT token: {ex.Message}");
         }
     }
 
-    private async Task ClearStoredSessionAsync()
+    private async Task ClearStoredTokenAsync()
     {
         try
         {
-            await _jsRuntime.InvokeVoidAsync("localStorage.removeItem", "mapme_session_id");
+            await _jsRuntime.InvokeVoidAsync("localStorage.removeItem", "mapme_jwt_token");
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error clearing stored session: {ex.Message}");
+            Console.WriteLine($"Error clearing stored token: {ex.Message}");
         }
     }
 

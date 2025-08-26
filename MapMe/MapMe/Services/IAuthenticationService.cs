@@ -24,19 +24,19 @@ public interface IAuthenticationService
     Task<AuthenticationResponse> GoogleLoginAsync(GoogleLoginRequest request);
     
     /// <summary>
-    /// Logs out a user and invalidates their session
+    /// Logs out a user (JWT tokens are stateless, so this is mainly for client cleanup)
     /// </summary>
-    Task<bool> LogoutAsync(string sessionId);
+    Task<bool> LogoutAsync(string token);
     
     /// <summary>
-    /// Validates a user session
+    /// Validates a JWT token
     /// </summary>
-    Task<UserSession?> ValidateSessionAsync(string sessionId);
+    Task<UserSession?> ValidateTokenAsync(string token);
     
     /// <summary>
-    /// Gets the current authenticated user from session
+    /// Gets the current authenticated user from JWT token
     /// </summary>
-    Task<AuthenticatedUser?> GetCurrentUserAsync(string sessionId);
+    Task<AuthenticatedUser?> GetCurrentUserAsync(string token);
     
     /// <summary>
     /// Changes a user's password
@@ -49,7 +49,7 @@ public interface IAuthenticationService
     Task<bool> RequestPasswordResetAsync(PasswordResetRequest request);
     
     /// <summary>
-    /// Refreshes a user session
+    /// Refreshes a JWT token
     /// </summary>
-    Task<AuthenticationResponse> RefreshSessionAsync(string sessionId);
+    Task<AuthenticationResponse> RefreshTokenAsync(string token);
 }

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
 using FluentAssertions;
@@ -56,9 +57,9 @@ public class ApiIntegrationTests : IClassFixture<WebApplicationFactory<Program>>
     }
 
     /// <summary>
-    /// Creates a test user and returns a valid session ID for authentication
+    /// Creates a test user and returns a valid JWT token for authentication
     /// </summary>
-    private async Task<string> CreateTestUserAndGetSessionAsync(string username = "test_user", string email = "test@example.com", string password = "TestPassword123!")
+    private async Task<string> CreateTestUserAndGetTokenAsync(string username = "test_user", string email = "test@example.com", string password = "TestPassword123!")
     {
         // Register a test user
         var registerRequest = new RegisterRequest(
@@ -84,25 +85,24 @@ public class ApiIntegrationTests : IClassFixture<WebApplicationFactory<Program>>
             if (loginResponse.IsSuccessStatusCode)
             {
                 var loginResult = await loginResponse.Content.ReadFromJsonAsync<AuthenticationResponse>();
-                return loginResult!.SessionId!;
+                return loginResult!.Token!;
             }
         }
         else
         {
             var registerResult = await registerResponse.Content.ReadFromJsonAsync<AuthenticationResponse>();
-            return registerResult!.SessionId!;
+            return registerResult!.Token!;
         }
 
         throw new InvalidOperationException("Failed to create test user or login");
     }
 
     /// <summary>
-    /// Adds authentication header to HTTP client for subsequent requests
+    /// Adds JWT authentication header to HTTP client for subsequent requests
     /// </summary>
-    private void AddAuthenticationHeader(string sessionId)
+    private void AddAuthenticationHeader(string token)
     {
-        _client.DefaultRequestHeaders.Remove("X-Session-Id");
-        _client.DefaultRequestHeaders.Add("X-Session-Id", sessionId);
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
     }
 
     [Fact]
@@ -110,11 +110,11 @@ public class ApiIntegrationTests : IClassFixture<WebApplicationFactory<Program>>
     {
         // Arrange - Create authenticated user
         var username = "user_integration_test";
-        var sessionId = await CreateTestUserAndGetSessionAsync(username, "integration@example.com");
-        AddAuthenticationHeader(sessionId);
+        var token = await CreateTestUserAndGetTokenAsync(username, "integration@example.com");
+        AddAuthenticationHeader(token);
         
         // Get the actual user ID from the authentication response
-        var validateResponse = await _client.GetAsync($"/api/auth/validate-session?sessionId={sessionId}");
+        var validateResponse = await _client.GetAsync("/api/auth/validate-token");
         var authenticatedUser = await validateResponse.Content.ReadFromJsonAsync<AuthenticatedUser>();
         var actualUserId = authenticatedUser!.UserId;
         
@@ -159,8 +159,8 @@ public class ApiIntegrationTests : IClassFixture<WebApplicationFactory<Program>>
     {
         // Arrange - Create authenticated user
         var userId = "test_user_id"; // Match TestAuthenticationService
-        var sessionId = await CreateTestUserAndGetSessionAsync(userId, "datemark@example.com");
-        AddAuthenticationHeader(sessionId);
+        var token = await CreateTestUserAndGetTokenAsync(userId, "datemark@example.com");
+        AddAuthenticationHeader(token);
         
         var dateMarkRequest = new UpsertDateMarkRequest(
             Id: "datemark_integration_test",
@@ -217,8 +217,8 @@ public class ApiIntegrationTests : IClassFixture<WebApplicationFactory<Program>>
     {
         // Arrange - Create authenticated user
         var userId = "test_user_id"; // Match TestAuthenticationService
-        var sessionId = await CreateTestUserAndGetSessionAsync(userId, "filter@example.com");
-        AddAuthenticationHeader(sessionId);
+        var token = await CreateTestUserAndGetTokenAsync(userId, "filter@example.com");
+        AddAuthenticationHeader(token);
         
         // Create multiple DateMarks with different categories
         var restaurantMark = new UpsertDateMarkRequest(

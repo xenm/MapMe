@@ -92,8 +92,8 @@ public class AuthenticationResponse
     [JsonPropertyName("user")]
     public AuthenticatedUser? User { get; set; }
     
-    [JsonPropertyName("sessionId")]
-    public string? SessionId { get; set; }
+    [JsonPropertyName("token")]
+    public string? Token { get; set; }
     
     [JsonPropertyName("expiresAt")]
     public DateTimeOffset? ExpiresAt { get; set; }
@@ -160,6 +160,6 @@ public class ChangePasswordRequest
 /// </summary>
 public class LogoutRequest
 {
-    [JsonPropertyName("sessionId")]
-    public string? SessionId { get; set; }
+    [JsonPropertyName("token")]
+    public string? Token { get; set; }
 }
