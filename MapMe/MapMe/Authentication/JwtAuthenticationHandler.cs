@@ -5,6 +5,7 @@ using System.Text.Encodings.Web;
 using System.Diagnostics;
 using MapMe.Services;
 using MapMe.Models;
+using MapMe.Utilities;
 
 namespace MapMe.Authentication;
 
@@ -31,10 +32,10 @@ public class JwtAuthenticationHandler : AuthenticationHandler<AuthenticationSche
     {
         using var activity = Activity.Current?.Source.StartActivity("JwtAuthenticationHandler.HandleAuthenticate");
         var startTime = DateTimeOffset.UtcNow;
-        var requestPath = SanitizeForLog(Request.Path.Value ?? "[unknown]");
-        var requestMethod = SanitizeForLog(Request.Method);
-        var userAgent = SanitizeForLog(Request.Headers["User-Agent"].ToString());
-        var clientIp = SanitizeForLog(Request.HttpContext.Connection.RemoteIpAddress?.ToString() ?? "[unknown]");
+        var requestPath = SecureLogging.SanitizePathForLog(Request.Path.Value);
+        var requestMethod = SecureLogging.SanitizeForLog(Request.Method, maxLength: 10);
+        var userAgent = SecureLogging.SanitizeHeaderForLog(Request.Headers["User-Agent"].ToString(), "User-Agent");
+        var clientIp = SecureLogging.SanitizeForLog(Request.HttpContext.Connection.RemoteIpAddress?.ToString(), maxLength: 45, placeholder: "[unknown-ip]");
         
         activity?.SetTag("http.method", requestMethod);
         activity?.SetTag("http.path", requestPath);
@@ -70,7 +71,7 @@ public class JwtAuthenticationHandler : AuthenticationHandler<AuthenticationSche
                 activity?.SetTag("auth.result", "invalid_scheme");
                 _logger.LogDebug(
                     "Invalid authorization scheme. Expected Bearer, got: {Scheme}. Path: {Path}, Method: {Method}, ClientIP: {ClientIP}",
-                    SanitizeForLog(authHeader.Split(' ').FirstOrDefault() ?? "[empty]"), requestPath, requestMethod, clientIp);
+                    SecureLogging.SanitizeForLog(authHeader.Split(' ').FirstOrDefault() ?? "[empty]", maxLength: 20), requestPath, requestMethod, clientIp);
                 return Task.FromResult(AuthenticateResult.NoResult());
             }
 
@@ -90,7 +91,7 @@ public class JwtAuthenticationHandler : AuthenticationHandler<AuthenticationSche
             
             _logger.LogDebug(
                 "Parsing Authorization header. Scheme: '{Scheme}', SpaceIndex: {SpaceIndex}, Path: {Path}",
-                SanitizeForLog(authHeader.Split(' ').FirstOrDefault() ?? "[empty]"), bearerIndex, requestPath);
+                SecureLogging.SanitizeForLog(authHeader.Split(' ').FirstOrDefault() ?? "[empty]", maxLength: 20), bearerIndex, requestPath);
             
             if (bearerIndex == -1 || bearerIndex != 6) // "Bearer" is 6 characters, space should be at index 6
             {
@@ -114,7 +115,7 @@ public class JwtAuthenticationHandler : AuthenticationHandler<AuthenticationSche
                 return Task.FromResult(AuthenticateResult.Fail("Invalid Authorization header format"));
             }
 
-            var tokenPreview = ToTokenPreview(token);
+            var tokenPreview = SecureLogging.ToTokenPreview(token);
             activity?.SetTag("token.preview", tokenPreview);
 
             // Validate the JWT token
@@ -188,16 +189,4 @@ public class JwtAuthenticationHandler : AuthenticationHandler<AuthenticationSche
         }
     }
 
-    private static string SanitizeForLog(string? input)
-    {
-        if (string.IsNullOrEmpty(input)) return string.Empty;
-        return input.Replace("\r", " ").Replace("\n", " ").Trim();
-    }
-
-    private static string ToTokenPreview(string? token)
-    {
-        if (string.IsNullOrEmpty(token)) return "[empty-token]";
-        var sanitized = SanitizeForLog(token);
-        return sanitized.Length > 20 ? sanitized.Substring(0, 20) + "..." : "[short-token]";
-    }
 }

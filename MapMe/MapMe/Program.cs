@@ -27,6 +27,7 @@ using System.Diagnostics;
 using System.Diagnostics.Metrics;
 using MapMe.Logging;
 using MapMe.Observability;
+using MapMe.Utilities;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -218,6 +219,9 @@ builder.Services.AddScoped<UserProfileService>();
 builder.Services.AddScoped<ChatService>();
 builder.Services.AddScoped<MapMe.Client.Services.AuthenticationService>();
 
+// Add secure logging support
+builder.Services.AddHttpContextAccessor();
+
     var app = builder.Build();
     
     // Configure Serilog request logging (only when Serilog is enabled)
@@ -235,15 +239,15 @@ builder.Services.AddScoped<MapMe.Client.Services.AuthenticationService>();
                         : LogEventLevel.Information;
             options.EnrichDiagnosticContext = (diagnosticContext, httpContext) =>
             {
-                diagnosticContext.Set("RequestHost", SanitizeForLog(httpContext.Request.Host.Value));
-                diagnosticContext.Set("RequestScheme", SanitizeForLog(httpContext.Request.Scheme));
-                diagnosticContext.Set("UserAgent", SanitizeForLog(httpContext.Request.Headers["User-Agent"].FirstOrDefault()));
-                diagnosticContext.Set("ClientIP", SanitizeForLog(httpContext.Connection.RemoteIpAddress?.ToString()));
+                diagnosticContext.Set("RequestHost", SecureLogging.SanitizeForLog(httpContext.Request.Host.Value));
+                diagnosticContext.Set("RequestScheme", SecureLogging.SanitizeForLog(httpContext.Request.Scheme));
+                diagnosticContext.Set("UserAgent", SecureLogging.SanitizeHeaderForLog(httpContext.Request.Headers["User-Agent"].FirstOrDefault(), "User-Agent"));
+                diagnosticContext.Set("ClientIP", SecureLogging.SanitizeForLog(httpContext.Connection.RemoteIpAddress?.ToString(), maxLength: 45, placeholder: "[unknown-ip]"));
                 
                 if (httpContext.User.Identity?.IsAuthenticated == true)
                 {
-                    diagnosticContext.Set("UserId", SanitizeForLog(httpContext.User.FindFirst("userId")?.Value));
-                    diagnosticContext.Set("Username", SanitizeForLog(httpContext.User.FindFirst("username")?.Value));
+                    diagnosticContext.Set("UserId", SecureLogging.SanitizeUserIdForLog(httpContext.User.FindFirst("userId")?.Value));
+                    diagnosticContext.Set("Username", SecureLogging.SanitizeForLog(httpContext.User.FindFirst("username")?.Value));
                 }
             };
         });
@@ -299,24 +303,24 @@ app.MapGet("/config/google-client-id", (HttpContext http) =>
 // Authentication API Endpoints
 app.MapPost("/api/auth/login", async (LoginRequest request, MapMeAuth authService, ILogger<Program> logger) =>
 {
-    logger.LogInformation("[DEBUG] /api/auth/login endpoint called for user: {Username}", SanitizeForLog(request.Username));
+    logger.LogInformation("[DEBUG] /api/auth/login endpoint called for user: {Username}", SecureLogging.SanitizeForLog(request.Username));
     var response = await authService.LoginAsync(request);
     logger.LogInformation("[DEBUG] Login response - Success: {Success}, Token: {HasToken}", response.Success, !string.IsNullOrEmpty(response.Token));
     if (response.Success && !string.IsNullOrEmpty(response.Token))
     {
-        logger.LogInformation("[DEBUG] Generated token preview: {TokenPreview}", ToTokenPreview(response.Token));
+        logger.LogInformation("[DEBUG] Generated token preview: {TokenPreview}", SecureLogging.ToTokenPreview(response.Token));
     }
     return response.Success ? Results.Ok(response) : Results.BadRequest(response);
 }).AllowAnonymous();
 
 app.MapPost("/api/auth/register", async (RegisterRequest request, MapMeAuth authService, ILogger<Program> logger) =>
 {
-    logger.LogInformation("[DEBUG] /api/auth/register endpoint called for user: {Username}", SanitizeForLog(request.Username));
+    logger.LogInformation("[DEBUG] /api/auth/register endpoint called for user: {Username}", SecureLogging.SanitizeForLog(request.Username));
     var response = await authService.RegisterAsync(request);
     logger.LogInformation("[DEBUG] Registration response - Success: {Success}, Token: {HasToken}", response.Success, !string.IsNullOrEmpty(response.Token));
     if (response.Success && !string.IsNullOrEmpty(response.Token))
     {
-        logger.LogInformation("[DEBUG] Generated token preview: {TokenPreview}", ToTokenPreview(response.Token));
+        logger.LogInformation("[DEBUG] Generated token preview: {TokenPreview}", SecureLogging.ToTokenPreview(response.Token));
     }
     return response.Success ? Results.Ok(response) : Results.BadRequest(response);
 }).AllowAnonymous();
@@ -347,7 +351,7 @@ app.MapGet("/api/auth/validate-token", async (HttpContext context, MapMeAuth aut
     logger.LogInformation("[DEBUG] /api/auth/validate-token endpoint called");
     
     var token = GetJwtTokenFromRequest(context);
-    logger.LogInformation("[DEBUG] Extracted token: {TokenPreview}", ToTokenPreview(token));
+    logger.LogInformation("[DEBUG] Extracted token: {TokenPreview}", SecureLogging.ToTokenPreview(token));
     
     if (string.IsNullOrEmpty(token)) 
     {
@@ -356,7 +360,7 @@ app.MapGet("/api/auth/validate-token", async (HttpContext context, MapMeAuth aut
     }
     
     var user = await authService.GetCurrentUserAsync(token);
-    logger.LogInformation("[DEBUG] User validation result: {UserFound}", user != null ? $"Found user {SanitizeForLog(user.Username)}" : "No user found");
+    logger.LogInformation("[DEBUG] User validation result: {UserFound}", user != null ? $"Found user {SecureLogging.SanitizeForLog(user.Username)}" : "No user found");
     
     return user != null ? Results.Ok(user) : Results.Unauthorized();
 }).AllowAnonymous();
@@ -764,18 +768,6 @@ static string? GetJwtTokenFromRequest(HttpContext context)
     return null;
 }
 
-static string SanitizeForLog(string? input)
-{
-    if (string.IsNullOrEmpty(input)) return string.Empty;
-    return input.Replace("\r", " ").Replace("\n", " ").Trim();
-}
-
-static string ToTokenPreview(string? token)
-{
-    if (string.IsNullOrEmpty(token)) return "[empty-token]";
-    var sanitized = SanitizeForLog(token);
-    return sanitized.Length > 20 ? sanitized.Substring(0, 20) + "..." : "[short-token]";
-}
 
 /// <summary>
 /// Gets the current user ID from the request using JWT token validation

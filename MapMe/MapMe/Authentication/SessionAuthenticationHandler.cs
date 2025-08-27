@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Options;
 using System.Security.Claims;
 using System.Text.Encodings.Web;
+using MapMe.Utilities;
 
 namespace MapMe.Authentication;
 
@@ -58,7 +59,8 @@ public class SessionAuthenticationHandler : AuthenticationHandler<Authentication
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Error during authentication");
+            var httpContext = SecureLogging.CreateSafeHttpContext(Context);
+            Logger.LogError(ex, "Error during authentication. Context: {@HttpContext}", httpContext);
             return AuthenticateResult.Fail("Authentication error");
         }
     }
