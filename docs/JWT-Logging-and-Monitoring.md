@@ -306,12 +306,26 @@ public class JwtMetrics
 
 ## Log Analysis and Troubleshooting
 
+### Secure Logging Policy (Mandatory)
+
+To prevent sensitive data exposure and log injection, MapMe enforces the following secure logging rules across authentication and token handling:
+
+- **Never log full JWT tokens**. Only log a sanitized preview using `ToTokenPreview(token)` (first 20 chars + ellipsis) and remove newlines.
+- **Never log raw email addresses**. Instead, log metadata: `HasEmail` (true/false) and `EmailLength` (number), or use non-sensitive user identifiers.
+- **Sanitize all user-controlled inputs** before logging with `SanitizeForLog(value)` to strip `\r` and `\n` and trim whitespace.
+- **Do not log Authorization headers** or any secrets.
+- **Structured properties only**. Avoid concatenating untrusted input into message strings.
+
+Implementation references:
+- Server helpers are implemented in `JwtService` and `JwtAuthenticationHandler` as `SanitizeForLog(string?)` and `ToTokenPreview(string?)`.
+- Request metadata (path, method, user agent, client IP) are sanitized before logging in `Program.cs` and the authentication handler.
+
 ### Common Log Patterns
 
 #### Successful Authentication Flow
 ```
-[INF] JWT token generated successfully. UserId: user-123, Username: john@example.com, TokenId: abc-def-123, ExpiresAt: 2025-08-27T20:57:34Z, RememberMe: false, Duration: 45.23ms
-[DBG] JWT authentication successful. UserId: user-123, Username: john@example.com, TokenId: abc-def-123, Path: /api/profile, Method: GET, ClientIP: 192.168.1.100, Duration: 12.45ms
+[INF] JWT token generated successfully. UserId: user-123, Username: john_doe, TokenId: abc-def-123, ExpiresAt: 2025-08-27T20:57:34Z, RememberMe: false, Duration: 45.23ms
+[DBG] JWT authentication successful. UserId: user-123, Username: john_doe, TokenId: abc-def-123, Path: /api/profile, Method: GET, ClientIP: 192.168.1.100, Duration: 12.45ms
 ```
 
 #### Failed Authentication Flow
@@ -326,6 +340,12 @@ public class JwtMetrics
 [WRN] Empty Bearer token provided. Path: /api/sensitive, Method: POST, ClientIP: 192.168.1.200
 [ERR] Unexpected error during JWT authentication. Path: /api/admin, Method: DELETE, ClientIP: 192.168.1.200, Duration: 15.34ms, Error: ArgumentException
 ```
+
+### Do/Don't Quick Reference
+
+- **Do** log `TokenPreview`, `UserId`, sanitized `Username` (only if not an email), and metadata like `ExpiresAt`, durations.
+- **Don't** log raw emails, full tokens, or Authorization headers.
+- **Do** sanitize `path`, `method`, `user-agent`, and `client IP` before logging.
 
 ### Troubleshooting Guide
 

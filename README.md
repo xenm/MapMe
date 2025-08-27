@@ -207,6 +207,11 @@ Real-time user metrics:
 - **Input Validation**: Comprehensive validation on both client and server
 - **Error Handling**: Graceful degradation and user-friendly error messages
 
+### Secure Logging Policy
+- No raw JWT tokens or Authorization headers are ever logged. Only sanitized previews via `ToTokenPreview()`.
+- Emails are treated as sensitive. Logs include only metadata (e.g., `HasEmail`, `EmailLength`) — never the raw address.
+- All user-controlled values are sanitized with `SanitizeForLog()` to remove newlines and prevent log injection.
+
 ## Development
 
 ### Documentation

@@ -35,6 +35,20 @@ public class JwtService : IJwtService
         }
     }
 
+    private static string? SanitizeForLog(string? value)
+    {
+        if (string.IsNullOrEmpty(value)) return value;
+        return value.Replace("\r", string.Empty).Replace("\n", string.Empty).Trim();
+    }
+
+    private static string ToTokenPreview(string? token)
+    {
+        if (string.IsNullOrEmpty(token)) return "[empty-token]";
+        var sanitized = SanitizeForLog(token)!;
+        return sanitized.Length > 20 ? sanitized.Substring(0, 20) + "..." : "[short-token]";
+    }
+
+
     public (string token, DateTimeOffset expiresAt) GenerateToken(User user, bool rememberMe = false)
     {
         if (user == null)
@@ -48,7 +62,7 @@ public class JwtService : IJwtService
         activity?.SetTag("remember_me", rememberMe.ToString());
         
         var startTime = DateTimeOffset.UtcNow;
-        
+
         try
         {
             var tokenHandler = new JwtSecurityTokenHandler();
@@ -118,7 +132,7 @@ public class JwtService : IJwtService
 
         using var activity = Activity.Current?.Source.StartActivity("JwtService.ValidateToken");
         var startTime = DateTimeOffset.UtcNow;
-        var tokenPreview = token.Length > 20 ? $"{token[..20]}..." : "[short-token]";
+        var tokenPreview = ToTokenPreview(token);
         
         activity?.SetTag("token.preview", tokenPreview);
         
@@ -154,8 +168,12 @@ public class JwtService : IJwtService
             {
                 activity?.SetTag("validation.result", "missing_claims");
                 _logger.LogWarning(
-                    "JWT token validation failed due to missing required claims. TokenId: {TokenId}, UserId: {UserId}, Username: {Username}, Email: {Email}",
-                    tokenId, userId ?? "[missing]", username ?? "[missing]", email ?? "[missing]");
+                    "JWT token validation failed due to missing required claims. TokenId: {TokenId}, UserId: {UserId}, Username: {Username}, HasEmail: {HasEmail}, EmailLength: {EmailLength}",
+                    tokenId,
+                    SanitizeForLog(userId) ?? "[missing]",
+                    SanitizeForLog(username) ?? "[missing]",
+                    !string.IsNullOrEmpty(email),
+                    email?.Length ?? 0);
                 return null;
             }
 
@@ -222,7 +240,7 @@ public class JwtService : IJwtService
     public string? ExtractUserIdFromToken(string token)
     {
         using var activity = Activity.Current?.Source.StartActivity("JwtService.ExtractUserIdFromToken");
-        var tokenPreview = token.Length > 20 ? $"{token[..20]}..." : "[short-token]";
+        var tokenPreview = ToTokenPreview(token);
         activity?.SetTag("token.preview", tokenPreview);
         
         try
@@ -263,7 +281,7 @@ public class JwtService : IJwtService
     {
         using var activity = Activity.Current?.Source.StartActivity("JwtService.RefreshToken");
         var startTime = DateTimeOffset.UtcNow;
-        var tokenPreview = token.Length > 20 ? $"{token[..20]}..." : "[short-token]";
+        var tokenPreview = ToTokenPreview(token);
         
         activity?.SetTag("user.id", user.Id);
         activity?.SetTag("user.username", user.Username);

@@ -1,3 +1,7 @@
+### Log Content Rules
+- Prefer structured properties; avoid interpolating untrusted input directly in message text.
+- Use `TokenPreview` in logs; avoid any log that might include `token` or `Authorization` raw values.
+
 # JWT Authentication Implementation Guide
 
 ## Overview
@@ -69,6 +73,13 @@ JWT__EXPIRYMINUTES=1440
 - **Expiration Check**: Automatic token expiration enforcement
 - **Issuer/Audience**: Validate token issuer and audience claims
 - **Claims Validation**: Verify required claims (UserId, Username)
+
+### Secure Logging (Sensitive Data Protection)
+- **Never log full JWT tokens**. Use sanitized previews only (first 20 chars + ellipsis) via `ToTokenPreview(token)`.
+- **Never log raw emails**. Log only metadata such as `HasEmail` and `EmailLength` when necessary.
+- **Sanitize user inputs** (path, method, user agent, client IP, usernames) with `SanitizeForLog(value)` before logging to remove newlines and trim whitespace.
+- **Do not log Authorization headers** or secrets.
+- See: `MapMe/MapMe/MapMe/Services/JwtService.cs` and `MapMe/MapMe/MapMe/Authentication/JwtAuthenticationHandler.cs` for helper implementations.
 
 ## API Endpoints
 
