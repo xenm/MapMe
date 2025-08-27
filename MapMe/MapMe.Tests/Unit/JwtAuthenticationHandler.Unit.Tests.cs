@@ -248,24 +248,23 @@ public class JwtAuthenticationHandlerCorrectedTests
     }
 
     [Fact]
-    public async Task HandleAuthenticateAsync_MultipleAuthorizationHeaders_UsesFirst()
+    public async Task HandleAuthenticateAsync_MultipleAuthorizationHeaders_ReturnsFailure()
     {
         // Arrange
         var token1 = "first.jwt.token";
         var token2 = "second.jwt.token";
-        var userSession = CreateTestUserSession();
         
         _httpContext.Request.Headers["Authorization"] = new[] { $"Bearer {token1}", $"Bearer {token2}" };
-        _mockJwtService.Setup(s => s.ValidateToken(token1))
-            .Returns(userSession);
 
         // Act
         var result = await _handler.AuthenticateAsync();
 
         // Assert
-        Assert.True(result.Succeeded);
-        _mockJwtService.Verify(s => s.ValidateToken(token1), Times.Once);
-        _mockJwtService.Verify(s => s.ValidateToken(token2), Times.Never);
+        Assert.False(result.Succeeded);
+        Assert.True(result.Failure != null);
+        Assert.Contains("Multiple Authorization headers not allowed", result.Failure.Message);
+        // Verify no JWT validation was attempted for security
+        _mockJwtService.Verify(s => s.ValidateToken(It.IsAny<string>()), Times.Never);
     }
 
     #endregion

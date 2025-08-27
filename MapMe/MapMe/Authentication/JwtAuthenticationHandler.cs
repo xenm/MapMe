@@ -53,23 +53,45 @@ public class JwtAuthenticationHandler : AuthenticationHandler<AuthenticationSche
                 return Task.FromResult(AuthenticateResult.NoResult());
             }
 
-            // Handle multiple Authorization headers by using the first one
+            // Handle multiple Authorization headers - reject for security
             var authHeaders = Request.Headers["Authorization"];
             if (authHeaders.Count > 1)
             {
+                activity?.SetTag("auth.result", "multiple_headers");
                 _logger.LogWarning(
-                    "Multiple Authorization headers detected. Using first header. Count: {Count}, Path: {Path}, Method: {Method}, ClientIP: {ClientIP}",
+                    "Multiple Authorization headers detected - rejecting for security. Count: {Count}, Path: {Path}, Method: {Method}, ClientIP: {ClientIP}",
                     authHeaders.Count, requestPath, requestMethod, clientIp);
+                return Task.FromResult(AuthenticateResult.Fail("Multiple Authorization headers not allowed"));
             }
             
             var authHeader = authHeaders.FirstOrDefault() ?? "";
-            if (!authHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+            if (!authHeader.StartsWith("Bearer", StringComparison.OrdinalIgnoreCase))
             {
                 activity?.SetTag("auth.result", "invalid_scheme");
                 _logger.LogDebug(
                     "Invalid authorization scheme. Expected Bearer, got: {Scheme}. Path: {Path}, Method: {Method}, ClientIP: {ClientIP}",
                     authHeader.Split(' ').FirstOrDefault() ?? "[empty]", requestPath, requestMethod, clientIp);
                 return Task.FromResult(AuthenticateResult.NoResult());
+            }
+
+            // Handle case where header is just "Bearer" without space or token
+            if (authHeader.Equals("Bearer", StringComparison.OrdinalIgnoreCase))
+            {
+                activity?.SetTag("auth.result", "bearer_without_token");
+                _logger.LogWarning(
+                    "Bearer authorization header without token. Path: {Path}, Method: {Method}, ClientIP: {ClientIP}",
+                    requestPath, requestMethod, clientIp);
+                return Task.FromResult(AuthenticateResult.Fail("Invalid Authorization header format"));
+            }
+
+            // Ensure there's a space after "Bearer"
+            if (!authHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+            {
+                activity?.SetTag("auth.result", "invalid_bearer_format");
+                _logger.LogWarning(
+                    "Invalid Bearer format. Expected 'Bearer <token>', got: {Header}. Path: {Path}, Method: {Method}, ClientIP: {ClientIP}",
+                    authHeader, requestPath, requestMethod, clientIp);
+                return Task.FromResult(AuthenticateResult.Fail("Invalid Authorization header format"));
             }
 
             var token = authHeader.Substring("Bearer ".Length).Trim();
