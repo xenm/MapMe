@@ -31,10 +31,10 @@ public class JwtAuthenticationHandler : AuthenticationHandler<AuthenticationSche
     {
         using var activity = Activity.Current?.Source.StartActivity("JwtAuthenticationHandler.HandleAuthenticate");
         var startTime = DateTimeOffset.UtcNow;
-        var requestPath = Request.Path.Value ?? "[unknown]";
-        var requestMethod = Request.Method;
-        var userAgent = Request.Headers["User-Agent"].ToString();
-        var clientIp = Request.HttpContext.Connection.RemoteIpAddress?.ToString() ?? "[unknown]";
+        var requestPath = SanitizeForLog(Request.Path.Value ?? "[unknown]");
+        var requestMethod = SanitizeForLog(Request.Method);
+        var userAgent = SanitizeForLog(Request.Headers["User-Agent"].ToString());
+        var clientIp = SanitizeForLog(Request.HttpContext.Connection.RemoteIpAddress?.ToString() ?? "[unknown]");
         
         activity?.SetTag("http.method", requestMethod);
         activity?.SetTag("http.path", requestPath);
@@ -70,7 +70,7 @@ public class JwtAuthenticationHandler : AuthenticationHandler<AuthenticationSche
                 activity?.SetTag("auth.result", "invalid_scheme");
                 _logger.LogDebug(
                     "Invalid authorization scheme. Expected Bearer, got: {Scheme}. Path: {Path}, Method: {Method}, ClientIP: {ClientIP}",
-                    authHeader.Split(' ').FirstOrDefault() ?? "[empty]", requestPath, requestMethod, clientIp);
+                    SanitizeForLog(authHeader.Split(' ').FirstOrDefault() ?? "[empty]"), requestPath, requestMethod, clientIp);
                 return Task.FromResult(AuthenticateResult.NoResult());
             }
 
@@ -89,15 +89,15 @@ public class JwtAuthenticationHandler : AuthenticationHandler<AuthenticationSche
             var bearerIndex = authHeader.IndexOf(' ');
             
             _logger.LogDebug(
-                "Parsing Authorization header. Header: '{Header}', SpaceIndex: {SpaceIndex}, Path: {Path}",
-                authHeader, bearerIndex, requestPath);
+                "Parsing Authorization header. Scheme: '{Scheme}', SpaceIndex: {SpaceIndex}, Path: {Path}",
+                SanitizeForLog(authHeader.Split(' ').FirstOrDefault() ?? "[empty]"), bearerIndex, requestPath);
             
             if (bearerIndex == -1 || bearerIndex != 6) // "Bearer" is 6 characters, space should be at index 6
             {
                 activity?.SetTag("auth.result", "invalid_bearer_format");
                 _logger.LogWarning(
-                    "Invalid Bearer format. Expected 'Bearer <token>', got: {Header}. SpaceIndex: {SpaceIndex}, Path: {Path}, Method: {Method}, ClientIP: {ClientIP}",
-                    authHeader, bearerIndex, requestPath, requestMethod, clientIp);
+                    "Invalid Bearer format. Expected 'Bearer <token>'. SpaceIndex: {SpaceIndex}, Path: {Path}, Method: {Method}, ClientIP: {ClientIP}",
+                    bearerIndex, requestPath, requestMethod, clientIp);
                 return Task.FromResult(AuthenticateResult.Fail("Invalid Authorization header format"));
             }
 
@@ -114,7 +114,7 @@ public class JwtAuthenticationHandler : AuthenticationHandler<AuthenticationSche
                 return Task.FromResult(AuthenticateResult.Fail("Invalid Authorization header format"));
             }
 
-            var tokenPreview = token.Length > 20 ? $"{token[..20]}..." : "[short-token]";
+            var tokenPreview = ToTokenPreview(token);
             activity?.SetTag("token.preview", tokenPreview);
 
             // Validate the JWT token
@@ -186,5 +186,18 @@ public class JwtAuthenticationHandler : AuthenticationHandler<AuthenticationSche
                 
             return Task.FromResult(AuthenticateResult.Fail("Authentication error"));
         }
+    }
+
+    private static string SanitizeForLog(string? input)
+    {
+        if (string.IsNullOrEmpty(input)) return string.Empty;
+        return input.Replace("\r", " ").Replace("\n", " ").Trim();
+    }
+
+    private static string ToTokenPreview(string? token)
+    {
+        if (string.IsNullOrEmpty(token)) return "[empty-token]";
+        var sanitized = SanitizeForLog(token);
+        return sanitized.Length > 20 ? sanitized.Substring(0, 20) + "..." : "[short-token]";
     }
 }

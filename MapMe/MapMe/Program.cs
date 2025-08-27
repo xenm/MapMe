@@ -235,15 +235,15 @@ builder.Services.AddScoped<MapMe.Client.Services.AuthenticationService>();
                         : LogEventLevel.Information;
             options.EnrichDiagnosticContext = (diagnosticContext, httpContext) =>
             {
-                diagnosticContext.Set("RequestHost", httpContext.Request.Host.Value);
-                diagnosticContext.Set("RequestScheme", httpContext.Request.Scheme);
-                diagnosticContext.Set("UserAgent", httpContext.Request.Headers["User-Agent"].FirstOrDefault());
-                diagnosticContext.Set("ClientIP", httpContext.Connection.RemoteIpAddress?.ToString());
+                diagnosticContext.Set("RequestHost", SanitizeForLog(httpContext.Request.Host.Value));
+                diagnosticContext.Set("RequestScheme", SanitizeForLog(httpContext.Request.Scheme));
+                diagnosticContext.Set("UserAgent", SanitizeForLog(httpContext.Request.Headers["User-Agent"].FirstOrDefault()));
+                diagnosticContext.Set("ClientIP", SanitizeForLog(httpContext.Connection.RemoteIpAddress?.ToString()));
                 
                 if (httpContext.User.Identity?.IsAuthenticated == true)
                 {
-                    diagnosticContext.Set("UserId", httpContext.User.FindFirst("userId")?.Value);
-                    diagnosticContext.Set("Username", httpContext.User.FindFirst("username")?.Value);
+                    diagnosticContext.Set("UserId", SanitizeForLog(httpContext.User.FindFirst("userId")?.Value));
+                    diagnosticContext.Set("Username", SanitizeForLog(httpContext.User.FindFirst("username")?.Value));
                 }
             };
         });
@@ -299,24 +299,24 @@ app.MapGet("/config/google-client-id", (HttpContext http) =>
 // Authentication API Endpoints
 app.MapPost("/api/auth/login", async (LoginRequest request, MapMeAuth authService, ILogger<Program> logger) =>
 {
-    logger.LogInformation("[DEBUG] /api/auth/login endpoint called for user: {Username}", request.Username);
+    logger.LogInformation("[DEBUG] /api/auth/login endpoint called for user: {Username}", SanitizeForLog(request.Username));
     var response = await authService.LoginAsync(request);
     logger.LogInformation("[DEBUG] Login response - Success: {Success}, Token: {HasToken}", response.Success, !string.IsNullOrEmpty(response.Token));
     if (response.Success && !string.IsNullOrEmpty(response.Token))
     {
-        logger.LogInformation("[DEBUG] Generated token preview: {TokenPreview}", response.Token.Substring(0, Math.Min(20, response.Token.Length)) + "...");
+        logger.LogInformation("[DEBUG] Generated token preview: {TokenPreview}", ToTokenPreview(response.Token));
     }
     return response.Success ? Results.Ok(response) : Results.BadRequest(response);
 }).AllowAnonymous();
 
 app.MapPost("/api/auth/register", async (RegisterRequest request, MapMeAuth authService, ILogger<Program> logger) =>
 {
-    logger.LogInformation("[DEBUG] /api/auth/register endpoint called for user: {Username}", request.Username);
+    logger.LogInformation("[DEBUG] /api/auth/register endpoint called for user: {Username}", SanitizeForLog(request.Username));
     var response = await authService.RegisterAsync(request);
     logger.LogInformation("[DEBUG] Registration response - Success: {Success}, Token: {HasToken}", response.Success, !string.IsNullOrEmpty(response.Token));
     if (response.Success && !string.IsNullOrEmpty(response.Token))
     {
-        logger.LogInformation("[DEBUG] Generated token preview: {TokenPreview}", response.Token.Substring(0, Math.Min(20, response.Token.Length)) + "...");
+        logger.LogInformation("[DEBUG] Generated token preview: {TokenPreview}", ToTokenPreview(response.Token));
     }
     return response.Success ? Results.Ok(response) : Results.BadRequest(response);
 }).AllowAnonymous();
@@ -347,7 +347,7 @@ app.MapGet("/api/auth/validate-token", async (HttpContext context, MapMeAuth aut
     logger.LogInformation("[DEBUG] /api/auth/validate-token endpoint called");
     
     var token = GetJwtTokenFromRequest(context);
-    logger.LogInformation("[DEBUG] Extracted token: {TokenPreview}", token?.Substring(0, Math.Min(20, token?.Length ?? 0)) + "...");
+    logger.LogInformation("[DEBUG] Extracted token: {TokenPreview}", ToTokenPreview(token));
     
     if (string.IsNullOrEmpty(token)) 
     {
@@ -356,7 +356,7 @@ app.MapGet("/api/auth/validate-token", async (HttpContext context, MapMeAuth aut
     }
     
     var user = await authService.GetCurrentUserAsync(token);
-    logger.LogInformation("[DEBUG] User validation result: {UserFound}", user != null ? $"Found user {user.Username}" : "No user found");
+    logger.LogInformation("[DEBUG] User validation result: {UserFound}", user != null ? $"Found user {SanitizeForLog(user.Username)}" : "No user found");
     
     return user != null ? Results.Ok(user) : Results.Unauthorized();
 }).AllowAnonymous();
@@ -762,6 +762,19 @@ static string? GetJwtTokenFromRequest(HttpContext context)
     }
     
     return null;
+}
+
+static string SanitizeForLog(string? input)
+{
+    if (string.IsNullOrEmpty(input)) return string.Empty;
+    return input.Replace("\r", " ").Replace("\n", " ").Trim();
+}
+
+static string ToTokenPreview(string? token)
+{
+    if (string.IsNullOrEmpty(token)) return "[empty-token]";
+    var sanitized = SanitizeForLog(token);
+    return sanitized.Length > 20 ? sanitized.Substring(0, 20) + "..." : "[short-token]";
 }
 
 /// <summary>
