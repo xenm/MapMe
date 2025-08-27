@@ -81,6 +81,24 @@ JWT__EXPIRYMINUTES=1440
 - **Do not log Authorization headers** or secrets.
 - See: `MapMe/MapMe/MapMe/Services/JwtService.cs` and `MapMe/MapMe/MapMe/Authentication/JwtAuthenticationHandler.cs` for helper implementations.
 
+Example (sanitized logging in JwtService):
+```csharp
+var tokenPreview = ToTokenPreview(token);
+_logger.LogDebug(
+    "JWT token validated successfully. UserId: {UserId}, Username: {Username}, TokenId: {TokenId}, ExpiresAt: {ExpiresAt}, Duration: {Duration}ms",
+    SanitizeForLog(userId) ?? "[null]",
+    SanitizeForLog(username) ?? "[null]",
+    tokenId,
+    expiresAt,
+    duration.TotalMilliseconds);
+
+_logger.LogError(ex,
+    "Unexpected error during JWT token validation. TokenPreview: {TokenPreview}, Duration: {Duration}ms, Error: {ErrorType}",
+    tokenPreview,
+    duration.TotalMilliseconds,
+    ex.GetType().Name);
+```
+
 ## API Endpoints
 
 ### Authentication Endpoints

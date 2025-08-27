@@ -320,6 +320,30 @@ Implementation references:
 - Server helpers are implemented in `JwtService` and `JwtAuthenticationHandler` as `SanitizeForLog(string?)` and `ToTokenPreview(string?)`.
 - Request metadata (path, method, user agent, client IP) are sanitized before logging in `Program.cs` and the authentication handler.
 
+#### Implementation Example (JwtService)
+
+```csharp
+// Token preview is already sanitized and truncated
+var tokenPreview = ToTokenPreview(token);
+
+// Claims/user-controlled values are sanitized before logging
+_logger.LogDebug(
+    "JWT token validated successfully. UserId: {UserId}, Username: {Username}, TokenId: {TokenId}, ExpiresAt: {ExpiresAt}, Duration: {Duration}ms",
+    SanitizeForLog(userId) ?? "[null]",
+    SanitizeForLog(username) ?? "[null]",
+    tokenId,
+    expiresAt,
+    duration.TotalMilliseconds);
+
+_logger.LogError(ex,
+    "Unexpected error during JWT token validation. TokenPreview: {TokenPreview}, Duration: {Duration}ms, Error: {ErrorType}",
+    tokenPreview,
+    duration.TotalMilliseconds,
+    ex.GetType().Name);
+```
+
+References: OWASP Log Injection, CWE-117 (Log Injection).
+
 ### Common Log Patterns
 
 #### Successful Authentication Flow

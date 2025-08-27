@@ -115,7 +115,7 @@ public class JwtService : IJwtService
 
             _logger.LogInformation(
                 "JWT token generated successfully. UserId: {UserId}, Username: {Username}, TokenId: {TokenId}, ExpiresAt: {ExpiresAt}, RememberMe: {RememberMe}, Duration: {Duration}ms",
-                user.Id, user.Username, tokenId, expiresAt, rememberMe, duration.TotalMilliseconds);
+                SanitizeForLog(user.Id) ?? "[null]", SanitizeForLog(user.Username) ?? "[null]", tokenId, expiresAt, rememberMe, duration.TotalMilliseconds);
                 
             return (tokenString, expiresAt);
         }
@@ -128,7 +128,7 @@ public class JwtService : IJwtService
             
             _logger.LogError(ex, 
                 "Failed to generate JWT token. UserId: {UserId}, Username: {Username}, RememberMe: {RememberMe}, Duration: {Duration}ms, Error: {ErrorType}",
-                user.Id, user.Username, rememberMe, duration.TotalMilliseconds, ex.GetType().Name);
+                SanitizeForLog(user.Id) ?? "[null]", SanitizeForLog(user.Username) ?? "[null]", rememberMe, duration.TotalMilliseconds, ex.GetType().Name);
             throw;
         }
     }
@@ -197,7 +197,7 @@ public class JwtService : IJwtService
 
             _logger.LogDebug(
                 "JWT token validated successfully. UserId: {UserId}, Username: {Username}, TokenId: {TokenId}, ExpiresAt: {ExpiresAt}, Duration: {Duration}ms",
-                userId, username, tokenId, expiresAt, duration.TotalMilliseconds);
+                SanitizeForLog(userId) ?? "[null]", SanitizeForLog(username) ?? "[null]", tokenId, expiresAt, duration.TotalMilliseconds);
 
             // Create UserSession equivalent for JWT
             return new UserSession(
@@ -266,7 +266,7 @@ public class JwtService : IJwtService
             
             if (userId != null)
             {
-                _logger.LogDebug("Successfully extracted UserId from JWT token. UserId: {UserId}", userId);
+                _logger.LogDebug("Successfully extracted UserId from JWT token. UserId: {UserId}", SanitizeForLog(userId) ?? "[null]");
             }
             else
             {
@@ -305,7 +305,7 @@ public class JwtService : IJwtService
                 activity?.SetTag("refresh.result", "invalid_token");
                 _logger.LogInformation(
                     "Token refresh failed - invalid or expired token. UserId: {UserId}, TokenPreview: {TokenPreview}",
-                    user.Id, tokenPreview);
+                    SanitizeForLog(user.Id) ?? "[null]", tokenPreview);
                 return null;
             }
 
@@ -320,7 +320,7 @@ public class JwtService : IJwtService
                 
                 _logger.LogDebug(
                     "Token refresh not needed - token still valid for {TimeUntilExpiry} minutes. UserId: {UserId}, TokenId: {TokenId}",
-                    timeUntilExpiry.TotalMinutes, user.Id, userSession.SessionId);
+                    timeUntilExpiry.TotalMinutes, SanitizeForLog(user.Id) ?? "[null]", userSession.SessionId);
                 return null;
             }
 
@@ -338,7 +338,7 @@ public class JwtService : IJwtService
             
             _logger.LogInformation(
                 "JWT token refreshed successfully. UserId: {UserId}, Username: {Username}, OriginalTokenId: {OriginalTokenId}, RememberMe: {RememberMe}, Duration: {Duration}ms",
-                user.Id, user.Username, userSession.SessionId, rememberMe, duration.TotalMilliseconds);
+                SanitizeForLog(user.Id) ?? "[null]", SanitizeForLog(user.Username) ?? "[null]", userSession.SessionId, rememberMe, duration.TotalMilliseconds);
 
             return refreshResult;
         }
@@ -351,7 +351,7 @@ public class JwtService : IJwtService
             
             _logger.LogError(ex, 
                 "Error refreshing JWT token. UserId: {UserId}, Username: {Username}, TokenPreview: {TokenPreview}, Duration: {Duration}ms, Error: {ErrorType}",
-                user.Id, user.Username, tokenPreview, duration.TotalMilliseconds, ex.GetType().Name);
+                SanitizeForLog(user.Id) ?? "[null]", SanitizeForLog(user.Username) ?? "[null]", tokenPreview, duration.TotalMilliseconds, ex.GetType().Name);
             return null;
         }
     }
