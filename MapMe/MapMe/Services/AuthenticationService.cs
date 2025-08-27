@@ -242,7 +242,7 @@ public class AuthenticationService : IAuthenticationService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error during Google login for email: {Email}", request.Email);
+            _logger.LogError(ex, "Error during Google login");
             return new AuthenticationResponse(false, "An error occurred during Google login");
         }
     }
@@ -352,12 +352,12 @@ public class AuthenticationService : IAuthenticationService
             }
 
             // In a real implementation, you would send a password reset email here
-            _logger.LogInformation("Password reset requested for email: {Email}", request.Email);
+            _logger.LogInformation("Password reset requested");
             return true;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error requesting password reset for email: {Email}", request.Email);
+            _logger.LogError(ex, "Error requesting password reset");
             return false;
         }
     }
