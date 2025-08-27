@@ -741,11 +741,15 @@ finally
 /// </summary>
 static string? GetJwtTokenFromRequest(HttpContext context)
 {
-    // Try Authorization header first (Bearer token)
+    // Try Authorization header first (Bearer token) - case insensitive
     var authHeader = context.Request.Headers.Authorization.FirstOrDefault();
-    if (!string.IsNullOrEmpty(authHeader) && authHeader.StartsWith("Bearer "))
+    if (!string.IsNullOrEmpty(authHeader) && authHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
     {
-        return authHeader["Bearer ".Length..];
+        var spaceIndex = authHeader.IndexOf(' ');
+        if (spaceIndex > 0 && spaceIndex < authHeader.Length - 1)
+        {
+            return authHeader.Substring(spaceIndex + 1).Trim();
+        }
     }
     
     return null;

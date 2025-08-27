@@ -84,17 +84,27 @@ public class JwtAuthenticationHandler : AuthenticationHandler<AuthenticationSche
                 return Task.FromResult(AuthenticateResult.Fail("Invalid Authorization header format"));
             }
 
-            // Ensure there's a space after "Bearer"
-            if (!authHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+            // Extract token using case-insensitive parsing
+            string token;
+            var bearerIndex = authHeader.IndexOf(' ');
+            
+            _logger.LogDebug(
+                "Parsing Authorization header. Header: '{Header}', SpaceIndex: {SpaceIndex}, Path: {Path}",
+                authHeader, bearerIndex, requestPath);
+            
+            if (bearerIndex == -1 || bearerIndex != 6) // "Bearer" is 6 characters, space should be at index 6
             {
                 activity?.SetTag("auth.result", "invalid_bearer_format");
                 _logger.LogWarning(
-                    "Invalid Bearer format. Expected 'Bearer <token>', got: {Header}. Path: {Path}, Method: {Method}, ClientIP: {ClientIP}",
-                    authHeader, requestPath, requestMethod, clientIp);
+                    "Invalid Bearer format. Expected 'Bearer <token>', got: {Header}. SpaceIndex: {SpaceIndex}, Path: {Path}, Method: {Method}, ClientIP: {ClientIP}",
+                    authHeader, bearerIndex, requestPath, requestMethod, clientIp);
                 return Task.FromResult(AuthenticateResult.Fail("Invalid Authorization header format"));
             }
 
-            var token = authHeader.Substring("Bearer ".Length).Trim();
+            token = authHeader.Substring(bearerIndex + 1).Trim();
+            _logger.LogDebug(
+                "Extracted token from header. TokenLength: {TokenLength}, Path: {Path}",
+                token?.Length ?? 0, requestPath);
             if (string.IsNullOrEmpty(token))
             {
                 activity?.SetTag("auth.result", "empty_token");

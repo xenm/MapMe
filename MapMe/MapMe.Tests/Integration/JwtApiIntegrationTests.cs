@@ -492,17 +492,25 @@ public class JwtApiIntegrationCorrectedTests : IClassFixture<WebApplicationFacto
         // Arrange
         var token = await RegisterUserAndGetToken();
 
-        // Test different casing for Bearer
-        var testCases = new[] { "Bearer", "bearer", "BEARER", "Bearer " };
+        // Test different casing for Bearer by setting raw header values
+        var testCases = new[] { "Bearer", "bearer", "BEARER", "BeArEr" };
 
         foreach (var bearerCase in testCases)
         {
-            // Act
-            _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(bearerCase.Trim(), token);
+            // Clear previous authorization header
+            _client.DefaultRequestHeaders.Authorization = null;
+            
+            // Act - Set raw Authorization header with different casing
+            _client.DefaultRequestHeaders.Remove("Authorization");
+            _client.DefaultRequestHeaders.Add("Authorization", $"{bearerCase} {token}");
+            
             var response = await _client.GetAsync("/api/auth/validate-token");
 
             // Assert
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+            
+            // Clean up for next iteration
+            _client.DefaultRequestHeaders.Remove("Authorization");
         }
     }
 
