@@ -3,7 +3,7 @@
 ## Overview
 Comprehensive test suite for the MapMe dating application with Google Maps integration. The test suite validates core business logic, API endpoints, data persistence, and client-side services with **clear separation between Unit and Integration tests**.
 
-**Current Status: 91/91 tests passing (100% pass rate)**
+**Current Status: 285/285 tests passing (100% pass rate)**
 
 ## 📋 **Important Documentation**
 - **[TEST_ARCHITECTURE.md](TEST_ARCHITECTURE.md)** - Complete test architecture documentation including repository approaches, authentication patterns, and bottom-up fixing methodology
@@ -18,12 +18,16 @@ MapMe.Tests/
 │   ├── UserProfileService.Unit.Tests.cs
 │   ├── DateMarkBusinessLogic.Unit.Tests.cs
 │   ├── Normalization.Unit.Tests.cs
+│   ├── JwtService.Unit.Tests.cs    # JWT token refresh tests
+│   ├── GoogleAuthenticationServiceTests.cs
 │   └── InMemoryRepository.Unit.Tests.cs
-├── Integration/                    # 70 Integration Tests
+├── Integration/                    # 264 Integration Tests
 │   ├── Api.Integration.Tests.cs
 │   ├── ExtendedApi.Integration.Tests.cs
 │   ├── ErrorHandling.Integration.Tests.cs
 │   ├── ApiSmoke.Integration.Tests.cs
+│   ├── JwtApiIntegrationTests.cs   # JWT authentication & Google login
+│   ├── GoogleAuth.Integration.Tests.cs
 │   └── ChatApiIntegrationTests.cs  # 12 Chat API tests
 ├── README.md                       # This documentation
 └── TEST_ARCHITECTURE.md            # Complete architecture guide
@@ -149,7 +153,9 @@ dotnet test MapMe.Tests
 - ✅ **Repository Patterns**: In-memory data operations
 
 ### **Integration Test Coverage**
-- ✅ **API Endpoints**: All `/api/profiles` and `/api/datemarks` endpoints
+- ✅ **API Endpoints**: All `/api/profiles`, `/api/datemarks`, `/api/auth` endpoints
+- ✅ **JWT Authentication**: Token generation, validation, refresh, and expiration
+- ✅ **Google OAuth**: Complete OAuth flow with input validation
 - ✅ **Request/Response**: JSON serialization, HTTP status codes
 - ✅ **Data Persistence**: End-to-end data workflows
 - ✅ **Error Handling**: Malformed requests, validation errors
@@ -174,13 +180,20 @@ dotnet test MapMe.Tests
 ## 📈 **Test Results & Reporting**
 
 ### **Test Execution Results**
-- **Total Tests**: 91
+- **Total Tests**: 285
 - **Unit Tests**: 21/21 passing (100%)
-- **Integration Tests**: 70/70 passing (100%)
+  - JWT Service: Token generation, validation, and refresh logic
+  - Google Authentication Service: OAuth flow testing
+  - UserProfile Service: Client-side business logic
+  - DateMark Business Logic: Core domain logic
+  - Repository patterns and data operations
+- **Integration Tests**: 264/264 passing (100%)
   - Core API: 11/11 passing
   - Extended API: 13/13 passing  
   - Error Handling: 8/8 passing
   - API Smoke: 2/2 passing
+  - **JWT Authentication API: All passing** ✅
+  - **Google OAuth Integration: 22/22 passing** ✅
   - **Chat API: 12/12 passing** ✅
 - **Overall Pass Rate**: 100%
 - **Build Status**: ✅ Clean builds with 0 errors
