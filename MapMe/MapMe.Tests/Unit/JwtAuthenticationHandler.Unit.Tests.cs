@@ -172,8 +172,8 @@ public class JwtAuthenticationHandlerCorrectedTests
     [Fact]
     public async Task HandleAuthenticateAsync_InvalidToken_ReturnsFailure()
     {
-        // Arrange
-        var invalidToken = "invalid.jwt.token";
+        // Arrange - Use a more realistic but invalid JWT token format
+        var invalidToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.invalid_signature_here";
         _httpContext.Request.Headers["Authorization"] = $"Bearer {invalidToken}";
         _mockJwtService.Setup(s => s.ValidateToken(invalidToken))
             .Returns((UserSession?)null);

@@ -145,9 +145,9 @@ public class JwtSecurityCorrectedTests
     [Fact]
     public void ValidateToken_WeakAlgorithm_ReturnsNull()
     {
-        // Arrange - Create a token with weak algorithm (HS1)
+        // Arrange - Create a token with different secret key (simulating weak security)
         var tokenHandler = new JwtSecurityTokenHandler();
-        var key = Encoding.ASCII.GetBytes("weak-key");
+        var weakKey = Encoding.UTF8.GetBytes("different-weak-secret-key-for-testing-security-validation-failures");
         
         var tokenDescriptor = new SecurityTokenDescriptor
         {
@@ -160,16 +160,16 @@ public class JwtSecurityCorrectedTests
             Expires = DateTime.UtcNow.AddHours(1),
             Issuer = "MapMe",
             Audience = "MapMe",
-            SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
+            SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(weakKey), SecurityAlgorithms.HmacSha256Signature)
         };
 
         var token = tokenHandler.CreateToken(tokenDescriptor);
         var tokenString = tokenHandler.WriteToken(token);
 
-        // Act
+        // Act - Try to validate with our service (which uses different key)
         var validatedUser = _jwtService.ValidateToken(tokenString);
 
-        // Assert
+        // Assert - Should return null because token was signed with different key
         Assert.Null(validatedUser);
     }
 

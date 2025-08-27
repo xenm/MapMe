@@ -37,6 +37,11 @@ public class JwtService : IJwtService
 
     public (string token, DateTimeOffset expiresAt) GenerateToken(User user, bool rememberMe = false)
     {
+        if (user == null)
+        {
+            throw new ArgumentNullException(nameof(user), "User cannot be null");
+        }
+
         using var activity = Activity.Current?.Source.StartActivity("JwtService.GenerateToken");
         activity?.SetTag("user.id", user.Id);
         activity?.SetTag("user.username", user.Username);
@@ -106,6 +111,11 @@ public class JwtService : IJwtService
 
     public UserSession? ValidateToken(string token)
     {
+        if (string.IsNullOrEmpty(token))
+        {
+            return null;
+        }
+
         using var activity = Activity.Current?.Source.StartActivity("JwtService.ValidateToken");
         var startTime = DateTimeOffset.UtcNow;
         var tokenPreview = token.Length > 20 ? $"{token[..20]}..." : "[short-token]";

@@ -4,6 +4,7 @@ using System.Security.Claims;
 using System.Text.Encodings.Web;
 using System.Diagnostics;
 using MapMe.Services;
+using MapMe.Models;
 
 namespace MapMe.Authentication;
 
@@ -52,7 +53,16 @@ public class JwtAuthenticationHandler : AuthenticationHandler<AuthenticationSche
                 return Task.FromResult(AuthenticateResult.NoResult());
             }
 
-            var authHeader = Request.Headers["Authorization"].ToString();
+            // Handle multiple Authorization headers by using the first one
+            var authHeaders = Request.Headers["Authorization"];
+            if (authHeaders.Count > 1)
+            {
+                _logger.LogWarning(
+                    "Multiple Authorization headers detected. Using first header. Count: {Count}, Path: {Path}, Method: {Method}, ClientIP: {ClientIP}",
+                    authHeaders.Count, requestPath, requestMethod, clientIp);
+            }
+            
+            var authHeader = authHeaders.FirstOrDefault() ?? "";
             if (!authHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
             {
                 activity?.SetTag("auth.result", "invalid_scheme");
@@ -69,21 +79,35 @@ public class JwtAuthenticationHandler : AuthenticationHandler<AuthenticationSche
                 _logger.LogWarning(
                     "Empty Bearer token provided. Path: {Path}, Method: {Method}, ClientIP: {ClientIP}",
                     requestPath, requestMethod, clientIp);
-                return Task.FromResult(AuthenticateResult.NoResult());
+                return Task.FromResult(AuthenticateResult.Fail("Invalid Authorization header format"));
             }
 
             var tokenPreview = token.Length > 20 ? $"{token[..20]}..." : "[short-token]";
             activity?.SetTag("token.preview", tokenPreview);
 
             // Validate the JWT token
-            var userSession = _jwtService.ValidateToken(token);
+            UserSession? userSession;
+            try
+            {
+                userSession = _jwtService.ValidateToken(token);
+            }
+            catch (Exception jwtEx)
+            {
+                activity?.SetTag("auth.result", "jwt_validation_error");
+                activity?.SetTag("jwt.error.type", jwtEx.GetType().Name);
+                _logger.LogInformation(jwtEx,
+                    "JWT token validation threw exception. TokenPreview: {TokenPreview}, Path: {Path}, Method: {Method}, ClientIP: {ClientIP}, UserAgent: {UserAgent}",
+                    tokenPreview, requestPath, requestMethod, clientIp, userAgent);
+                return Task.FromResult(AuthenticateResult.Fail("Token validation failed"));
+            }
+            
             if (userSession == null)
             {
                 activity?.SetTag("auth.result", "invalid_token");
                 _logger.LogInformation(
                     "JWT token validation failed. TokenPreview: {TokenPreview}, Path: {Path}, Method: {Method}, ClientIP: {ClientIP}, UserAgent: {UserAgent}",
                     tokenPreview, requestPath, requestMethod, clientIp, userAgent);
-                return Task.FromResult(AuthenticateResult.Fail("Invalid token"));
+                return Task.FromResult(AuthenticateResult.Fail("Invalid or expired token"));
             }
 
             // Create claims identity
