@@ -102,8 +102,8 @@ public class JwtApiIntegrationCorrectedTests : IClassFixture<WebApplicationFacto
         var request = new RegisterRequest(
             Username: "testuser_" + Guid.NewGuid().ToString("N")[..8],
             Email: $"test_{Guid.NewGuid().ToString("N")[..8]}@example.com",
-            Password: "weak",
-            ConfirmPassword: "weak",
+            Password: "short",
+            ConfirmPassword: "short",
             DisplayName: "Test User"
         );
 

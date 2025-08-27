@@ -96,6 +96,13 @@ public class AuthenticationService : IAuthenticationService
                 return new AuthenticationResponse(false, "Passwords do not match");
             }
 
+            // Validate password strength
+            var passwordValidationResult = ValidatePasswordStrength(request.Password);
+            if (!passwordValidationResult.IsValid)
+            {
+                return new AuthenticationResponse(false, passwordValidationResult.ErrorMessage);
+            }
+
             // Check username availability
             if (!await _userRepository.IsUsernameAvailableAsync(request.Username))
             {
@@ -505,5 +512,29 @@ public class AuthenticationService : IAuthenticationService
         }
     }
 
+    /// <summary>
+    /// Validates password strength according to security requirements
+    /// </summary>
+    private static PasswordValidationResult ValidatePasswordStrength(string password)
+    {
+        if (string.IsNullOrWhiteSpace(password))
+        {
+            return new PasswordValidationResult(false, "Password is required");
+        }
+
+        if (password.Length < 8)
+        {
+            return new PasswordValidationResult(false, "Password must be at least 8 characters long");
+        }
+
+        // Password is valid
+        return new PasswordValidationResult(true, string.Empty);
+    }
+
     #endregion
 }
+
+/// <summary>
+/// Result of password validation
+/// </summary>
+internal record PasswordValidationResult(bool IsValid, string ErrorMessage);
