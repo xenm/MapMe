@@ -35,10 +35,20 @@ public class JwtService : IJwtService
         }
     }
 
+    /// <summary>
+    /// Removes all ASCII control characters (< 0x20 and 0x7F) from the string for safe logging to prevent log forging.
+    /// </summary>
     private static string? SanitizeForLog(string? value)
     {
         if (string.IsNullOrEmpty(value)) return value;
-        return value.Replace("\r", string.Empty).Replace("\n", string.Empty).Trim();
+        var sb = new StringBuilder(value.Length);
+        foreach (char c in value)
+        {
+            if ((c >= 0x20 && c != 0x7F)) // allow printable chars except DEL
+                sb.Append(c);
+            // else skip control char
+        }
+        return sb.ToString().Trim();
     }
 
     private static string ToTokenPreview(string? token)
