@@ -323,6 +323,15 @@ app.MapPost("/api/auth/register", async (RegisterRequest request, MapMeAuth auth
 
 app.MapPost("/api/auth/google-login", async (GoogleLoginRequest request, MapMeAuth authService) =>
 {
+    // Validate that the request is not completely empty
+    if (string.IsNullOrWhiteSpace(request.GoogleToken) &&
+        string.IsNullOrWhiteSpace(request.Email) &&
+        string.IsNullOrWhiteSpace(request.DisplayName) &&
+        string.IsNullOrWhiteSpace(request.GoogleId))
+    {
+        return Results.BadRequest(new AuthenticationResponse(false, "Google login request cannot be empty"));
+    }
+
     var response = await authService.GoogleLoginAsync(request);
     return response.Success ? Results.Ok(response) : Results.BadRequest(response);
 }).AllowAnonymous();
