@@ -351,14 +351,14 @@ public class AuthenticationService
     {
         try
         {
-            Console.WriteLine($"[DEBUG] ValidateTokenAsync called with token: {token?.Substring(0, Math.Min(20, token?.Length ?? 0))}...");
+            Console.WriteLine($"[DEBUG] ValidateTokenAsync called with token: {token.Substring(0, Math.Min(20, token?.Length ?? 0))}...");
             
             // Set the Authorization header for this request
             var previousAuth = _httpClient.DefaultRequestHeaders.Authorization;
             _httpClient.DefaultRequestHeaders.Authorization = 
                 new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
             
-            Console.WriteLine($"[DEBUG] Authorization header set: Bearer {token?.Substring(0, Math.Min(20, token?.Length ?? 0))}...");
+            Console.WriteLine($"[DEBUG] Authorization header set: Bearer {token.Substring(0, Math.Min(20, token?.Length ?? 0))}...");
             
             try
             {

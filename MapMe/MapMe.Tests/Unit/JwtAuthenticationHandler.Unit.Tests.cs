@@ -176,8 +176,8 @@ public class JwtAuthenticationHandlerCorrectedTests
     [Fact]
     public async Task HandleAuthenticateAsync_InvalidToken_ReturnsFailure()
     {
-        // Arrange - Use a more realistic but invalid JWT token format
-        var invalidToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.invalid_signature_here";
+        // Arrange - Use a clearly fake test token that won't trigger security scanners
+        var invalidToken = "fake.test.token";
         _httpContext.Request.Headers["Authorization"] = $"Bearer {invalidToken}";
         _mockJwtService.Setup(s => s.ValidateToken(invalidToken))
             .Returns((UserSession?)null);
@@ -296,7 +296,7 @@ public class JwtAuthenticationHandlerCorrectedTests
     public async Task HandleAuthenticateAsync_TokenWithSpecialCharacters_HandlesCorrectly()
     {
         // Arrange
-        var token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWV9.TJVA95OrM7E2cBab30RMHrHDcEfxjoYZgeFONFh7HgQ";
+        var token = "test-jwt-token-with-special-chars-123!@#$%";
         var userSession = CreateTestUserSession();
         
         _httpContext.Request.Headers["Authorization"] = $"Bearer {token}";
