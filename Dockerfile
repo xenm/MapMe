@@ -17,7 +17,9 @@ WORKDIR /src
 COPY ["MapMe/MapMe/MapMe.csproj", "MapMe/MapMe/"]
 COPY ["MapMe/MapMe.Client/MapMe.Client.csproj", "MapMe/MapMe.Client/"]
 RUN dotnet restore "MapMe/MapMe/MapMe.csproj"
-COPY . .
+# Copy only necessary source files to avoid sensitive data
+COPY ["MapMe/", "MapMe/"]
+COPY ["global.json", "./"]
 WORKDIR "/src/MapMe/MapMe"
 RUN dotnet build "./MapMe.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
