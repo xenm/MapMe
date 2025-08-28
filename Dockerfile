@@ -33,8 +33,8 @@ ARG APP_GID=64198
 ARG APP_USER=appuser
 ARG APP_GROUP=appgroup
 WORKDIR /app
-# Copy published files and ensure proper ownership with read-only permissions
-COPY --from=publish --chown=${APP_UID}:${APP_GID} --chmod=444 /app/publish .
+# Copy published files with root ownership and read-only permissions for security
+COPY --from=publish --chown=root:root --chmod=755 /app/publish .
 # Explicitly switch to non-root user for security
 USER ${APP_USER}
 ENTRYPOINT ["dotnet", "MapMe.dll"]
