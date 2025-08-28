@@ -1,7 +1,7 @@
+using System.Net.Http.Headers;
+using System.Net.Http.Json;
 using MapMe.Client.DTOs;
 using Microsoft.JSInterop;
-using System.Net.Http.Json;
-using System.Text.Json;
 
 namespace MapMe.Client.Services;
 
@@ -22,11 +22,6 @@ public class AuthenticationService
     }
 
     /// <summary>
-    /// Event fired when authentication state changes
-    /// </summary>
-    public event Action<AuthenticatedUser?>? AuthenticationStateChanged;
-
-    /// <summary>
     /// Gets the current authenticated user
     /// </summary>
     public AuthenticatedUser? CurrentUser => _currentUser;
@@ -42,6 +37,11 @@ public class AuthenticationService
     public string? Token => _jwtToken;
 
     /// <summary>
+    ///     Event fired when authentication state changes
+    /// </summary>
+    public event Action<AuthenticatedUser?>? AuthenticationStateChanged;
+
+    /// <summary>
     /// Initializes the authentication service by checking for existing JWT token
     /// </summary>
     public async Task InitializeAsync()
@@ -54,7 +54,7 @@ public class AuthenticationService
                 // First, optimistically restore the token
                 _jwtToken = token;
                 SetAuthorizationHeader();
-                
+
                 // Then validate in the background
                 try
                 {
@@ -106,13 +106,15 @@ public class AuthenticationService
             Console.WriteLine($"[DEBUG] LoginAsync called for user: {request.Username}");
             var response = await _httpClient.PostAsJsonAsync("/api/auth/login", request);
             Console.WriteLine($"[DEBUG] Login response status: {response.StatusCode}");
-            
+
             var result = await response.Content.ReadFromJsonAsync<AuthenticationResponse>();
-            Console.WriteLine($"[DEBUG] Login result - Success: {result?.Success}, HasToken: {!string.IsNullOrEmpty(result?.Token)}");
-            
+            Console.WriteLine(
+                $"[DEBUG] Login result - Success: {result?.Success}, HasToken: {!string.IsNullOrEmpty(result?.Token)}");
+
             if (result != null && result.Success && result.User != null && result.Token != null)
             {
-                Console.WriteLine($"[DEBUG] Setting up authentication - Token: {result.Token.Substring(0, Math.Min(20, result.Token.Length))}...");
+                Console.WriteLine(
+                    $"[DEBUG] Setting up authentication - Token: {result.Token.Substring(0, Math.Min(20, result.Token.Length))}...");
                 _currentUser = result.User;
                 _jwtToken = result.Token;
                 await StoreTokenAsync(result.Token);
@@ -144,13 +146,15 @@ public class AuthenticationService
             Console.WriteLine($"[DEBUG] RegisterAsync called for user: {request.Username}");
             var response = await _httpClient.PostAsJsonAsync("/api/auth/register", request);
             Console.WriteLine($"[DEBUG] Registration response status: {response.StatusCode}");
-            
+
             var result = await response.Content.ReadFromJsonAsync<AuthenticationResponse>();
-            Console.WriteLine($"[DEBUG] Registration result - Success: {result?.Success}, HasToken: {!string.IsNullOrEmpty(result?.Token)}");
-            
+            Console.WriteLine(
+                $"[DEBUG] Registration result - Success: {result?.Success}, HasToken: {!string.IsNullOrEmpty(result?.Token)}");
+
             if (result != null && result.Success && result.User != null && result.Token != null)
             {
-                Console.WriteLine($"[DEBUG] Setting up authentication after registration - Token: {result.Token.Substring(0, Math.Min(20, result.Token.Length))}...");
+                Console.WriteLine(
+                    $"[DEBUG] Setting up authentication after registration - Token: {result.Token.Substring(0, Math.Min(20, result.Token.Length))}...");
                 _currentUser = result.User;
                 _jwtToken = result.Token;
                 await StoreTokenAsync(result.Token);
@@ -181,7 +185,7 @@ public class AuthenticationService
         {
             var response = await _httpClient.PostAsJsonAsync("/api/auth/google-login", request);
             var result = await response.Content.ReadFromJsonAsync<AuthenticationResponse>();
-            
+
             if (result != null && result.Success && result.User != null && result.Token != null)
             {
                 _currentUser = result.User;
@@ -277,6 +281,7 @@ public class AuthenticationService
             {
                 return await response.Content.ReadFromJsonAsync<AuthenticatedUser>();
             }
+
             return null;
         }
         catch (Exception ex)
@@ -300,14 +305,14 @@ public class AuthenticationService
 
             var response = await _httpClient.PostAsJsonAsync("/api/auth/refresh-token", new { Token = _jwtToken });
             var result = await response.Content.ReadFromJsonAsync<AuthenticationResponse>();
-            
+
             if (result != null && result.Success && result.Token != null)
             {
                 _jwtToken = result.Token;
                 await StoreTokenAsync(result.Token);
                 return true;
             }
-            
+
             return false;
         }
         catch (Exception ex)
@@ -333,8 +338,8 @@ public class AuthenticationService
         var authHeader = GetAuthorizationHeader();
         if (!string.IsNullOrEmpty(authHeader))
         {
-            _httpClient.DefaultRequestHeaders.Authorization = 
-                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", _jwtToken);
+            _httpClient.DefaultRequestHeaders.Authorization =
+                new AuthenticationHeaderValue("Bearer", _jwtToken);
         }
         else
         {
@@ -351,21 +356,23 @@ public class AuthenticationService
     {
         try
         {
-            Console.WriteLine($"[DEBUG] ValidateTokenAsync called with token: {token.Substring(0, Math.Min(20, token?.Length ?? 0))}...");
-            
+            Console.WriteLine(
+                $"[DEBUG] ValidateTokenAsync called with token: {token.Substring(0, Math.Min(20, token.Length))}...");
+
             // Set the Authorization header for this request
             var previousAuth = _httpClient.DefaultRequestHeaders.Authorization;
-            _httpClient.DefaultRequestHeaders.Authorization = 
-                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
-            
-            Console.WriteLine($"[DEBUG] Authorization header set: Bearer {token.Substring(0, Math.Min(20, token?.Length ?? 0))}...");
-            
+            _httpClient.DefaultRequestHeaders.Authorization =
+                new AuthenticationHeaderValue("Bearer", token);
+
+            Console.WriteLine(
+                $"[DEBUG] Authorization header set: Bearer {token.Substring(0, Math.Min(20, token.Length))}...");
+
             try
             {
                 Console.WriteLine($"[DEBUG] Making GET request to /api/auth/validate-token");
                 var response = await _httpClient.GetAsync("/api/auth/validate-token");
                 Console.WriteLine($"[DEBUG] Response status: {response.StatusCode}");
-                
+
                 if (response.IsSuccessStatusCode)
                 {
                     var result = await response.Content.ReadFromJsonAsync<AuthenticatedUser>();
@@ -377,6 +384,7 @@ public class AuthenticationService
                     var errorContent = await response.Content.ReadAsStringAsync();
                     Console.WriteLine($"[DEBUG] Token validation failed: {response.StatusCode} - {errorContent}");
                 }
+
                 return null;
             }
             finally

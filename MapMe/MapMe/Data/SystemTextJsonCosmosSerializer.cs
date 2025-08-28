@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Microsoft.Azure.Cosmos;
 
 namespace MapMe.Data;
@@ -14,7 +15,7 @@ public class SystemTextJsonCosmosSerializer : CosmosSerializer
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         PropertyNameCaseInsensitive = true,
         WriteIndented = false,
-        DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
     };
 
     private readonly JsonSerializerOptions _options;
@@ -54,7 +55,7 @@ public class SystemTextJsonCosmosSerializer : CosmosSerializer
 
         using var streamReader = new StreamReader(stream);
         var json = streamReader.ReadToEnd();
-        
+
         if (string.IsNullOrEmpty(json))
             return default!;
 
@@ -69,7 +70,7 @@ public class SystemTextJsonCosmosSerializer : CosmosSerializer
     /// <returns>Stream containing serialized JSON data</returns>
     public override Stream ToStream<T>(T input)
     {
-        if (input == null)
+        if (EqualityComparer<T>.Default.Equals(input, default))
             return new MemoryStream();
 
         if (input is Stream inputStream)
