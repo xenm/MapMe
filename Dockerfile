@@ -28,6 +28,13 @@ ARG BUILD_CONFIGURATION=Release
 RUN dotnet publish "./MapMe.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
 
 FROM base AS final
+ARG APP_UID=64198
+ARG APP_GID=64198
+ARG APP_USER=appuser
+ARG APP_GROUP=appgroup
 WORKDIR /app
-COPY --from=publish /app/publish .
+# Copy published files and ensure proper ownership
+COPY --from=publish --chown=${APP_UID}:${APP_GID} /app/publish .
+# Explicitly switch to non-root user for security
+USER ${APP_USER}
 ENTRYPOINT ["dotnet", "MapMe.dll"]
