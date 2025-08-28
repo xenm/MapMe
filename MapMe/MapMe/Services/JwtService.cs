@@ -1,10 +1,10 @@
 using MapMe.Models;
+using MapMe.Services;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using System.Diagnostics;
-using MapMe.Utilities;
 
 namespace MapMe.Services;
 
@@ -15,14 +15,16 @@ public class JwtService : IJwtService
 {
     private readonly IConfiguration _configuration;
     private readonly ILogger<JwtService> _logger;
+    private readonly ISecureLoggingService _secureLoggingService;
     private readonly string _secretKey;
     private readonly string _issuer;
     private readonly string _audience;
 
-    public JwtService(IConfiguration configuration, ILogger<JwtService> logger)
+    public JwtService(IConfiguration configuration, ILogger<JwtService> logger, ISecureLoggingService secureLoggingService)
     {
         _configuration = configuration;
         _logger = logger;
+        _secureLoggingService = secureLoggingService;
         
         // Get JWT configuration from appsettings
         _secretKey = _configuration["Jwt:SecretKey"] ?? throw new InvalidOperationException("JWT SecretKey is not configured");
@@ -92,9 +94,16 @@ public class JwtService : IJwtService
             activity?.SetTag("token.expires_at", expiresAt.ToString("O"));
             activity?.SetTag("operation.duration_ms", duration.TotalMilliseconds.ToString("F2"));
 
-            _logger.LogInformation(
-                "JWT token generated successfully. UserId: {UserId}, Username: {Username}, TokenId: {TokenId}, ExpiresAt: {ExpiresAt}, RememberMe: {RememberMe}, Duration: {Duration}ms",
-                SecureLogging.SanitizeUserIdForLog(user.Id), SecureLogging.SanitizeForLog(user.Username), tokenId, expiresAt, rememberMe, duration.TotalMilliseconds);
+            // Log using secure UserContext approach - only GUIDs and safe values
+            _secureLoggingService.LogSecurityEvent(_logger, LogLevel.Information, SecurityEventType.TokenGeneration,
+                "JWT token generated successfully", new
+                {
+                    TokenId = tokenId,
+                    ExpiresAt = expiresAt,
+                    RememberMe = rememberMe,
+                    DurationMs = duration.TotalMilliseconds,
+                    TokenType = "JWT"
+                });
                 
             return (tokenString, expiresAt);
         }
@@ -105,9 +114,15 @@ public class JwtService : IJwtService
             activity?.SetTag("error.type", ex.GetType().Name);
             activity?.SetTag("operation.duration_ms", duration.TotalMilliseconds.ToString("F2"));
             
-            _logger.LogError(ex, 
-                "Failed to generate JWT token. UserId: {UserId}, Username: {Username}, RememberMe: {RememberMe}, Duration: {Duration}ms, Error: {ErrorType}",
-                SecureLogging.SanitizeUserIdForLog(user.Id), SecureLogging.SanitizeForLog(user.Username), rememberMe, duration.TotalMilliseconds, ex.GetType().Name);
+            // Log error using secure UserContext approach - only safe values
+            _secureLoggingService.LogSecurityEvent(_logger, LogLevel.Error, SecurityEventType.TokenGeneration,
+                "Failed to generate JWT token", new
+                {
+                    RememberMe = rememberMe,
+                    DurationMs = duration.TotalMilliseconds,
+                    ErrorType = ex.GetType().Name,
+                    TokenType = "JWT"
+                });
             throw;
         }
     }
@@ -121,9 +136,9 @@ public class JwtService : IJwtService
 
         using var activity = Activity.Current?.Source.StartActivity("JwtService.ValidateToken");
         var startTime = DateTimeOffset.UtcNow;
-        var tokenPreview = SecureLogging.ToTokenPreview(token);
         
-        activity?.SetTag("token.preview", tokenPreview);
+        // No longer log token previews - use only safe correlation IDs
+        activity?.SetTag("operation.type", "token_validation");
         
         try
         {
@@ -156,13 +171,15 @@ public class JwtService : IJwtService
             if (string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(username) || string.IsNullOrEmpty(email))
             {
                 activity?.SetTag("validation.result", "missing_claims");
-                _logger.LogWarning(
-                    "JWT token validation failed due to missing required claims. TokenId: {TokenId}, UserId: {UserId}, Username: {Username}, HasEmail: {HasEmail}, EmailLength: {EmailLength}",
-                    tokenId,
-                    SecureLogging.SanitizeUserIdForLog(userId),
-                    SecureLogging.SanitizeForLog(username),
-                    !string.IsNullOrEmpty(email),
-                    email?.Length ?? 0);
+                // Log validation failure using secure UserContext approach - only safe values
+                _secureLoggingService.LogSecurityEvent(_logger, LogLevel.Warning, SecurityEventType.TokenValidation,
+                    "JWT token validation failed due to missing required claims", new
+                    {
+                        TokenId = tokenId,
+                        HasEmail = !string.IsNullOrEmpty(email),
+                        EmailLength = email?.Length ?? 0,
+                        ValidationFailureReason = "MissingRequiredClaims"
+                    });
                 return null;
             }
 
@@ -174,9 +191,15 @@ public class JwtService : IJwtService
             activity?.SetTag("validation.result", "success");
             activity?.SetTag("operation.duration_ms", duration.TotalMilliseconds.ToString("F2"));
 
-            _logger.LogDebug(
-                "JWT token validated successfully. UserId: {UserId}, Username: {Username}, TokenId: {TokenId}, ExpiresAt: {ExpiresAt}, Duration: {Duration}ms",
-                SecureLogging.SanitizeUserIdForLog(userId), SecureLogging.SanitizeForLog(username), tokenId, expiresAt, duration.TotalMilliseconds);
+            // Log validation success using secure UserContext approach - only safe values
+            _secureLoggingService.LogSecurityEvent(_logger, LogLevel.Debug, SecurityEventType.TokenValidation,
+                "JWT token validated successfully", new
+                {
+                    TokenId = tokenId,
+                    ExpiresAt = expiresAt,
+                    DurationMs = duration.TotalMilliseconds,
+                    ValidationResult = "Success"
+                });
 
             // Create UserSession equivalent for JWT
             return new UserSession(
@@ -195,9 +218,14 @@ public class JwtService : IJwtService
             activity?.SetTag("error.type", "TokenExpired");
             activity?.SetTag("operation.duration_ms", duration.TotalMilliseconds.ToString("F2"));
             
-            _logger.LogInformation(
-                "JWT token validation failed - token expired. TokenPreview: {TokenPreview}, Duration: {Duration}ms",
-                tokenPreview, duration.TotalMilliseconds);
+            // Log token expiration using secure UserContext approach - only safe values
+            _secureLoggingService.LogSecurityEvent(_logger, LogLevel.Information, SecurityEventType.TokenValidation,
+                "JWT token validation failed - token expired", new
+                {
+                    ValidationResult = "Expired",
+                    DurationMs = duration.TotalMilliseconds,
+                    FailureReason = "TokenExpired"
+                });
             return null;
         }
         catch (SecurityTokenException ex)
@@ -207,9 +235,15 @@ public class JwtService : IJwtService
             activity?.SetTag("error.type", ex.GetType().Name);
             activity?.SetTag("operation.duration_ms", duration.TotalMilliseconds.ToString("F2"));
             
-            _logger.LogWarning(ex, 
-                "JWT token validation failed - invalid token. TokenPreview: {TokenPreview}, Duration: {Duration}ms, Error: {ErrorType}, Message: {ErrorMessage}",
-                tokenPreview, duration.TotalMilliseconds, ex.GetType().Name, ex.Message);
+            // Log token validation failure using secure UserContext approach - only safe values
+            _secureLoggingService.LogSecurityEvent(_logger, LogLevel.Warning, SecurityEventType.TokenValidation,
+                "JWT token validation failed - invalid token", new
+                {
+                    ValidationResult = "Invalid",
+                    DurationMs = duration.TotalMilliseconds,
+                    ErrorType = ex.GetType().Name,
+                    FailureReason = "InvalidToken"
+                });
             return null;
         }
         catch (Exception ex)
@@ -219,9 +253,15 @@ public class JwtService : IJwtService
             activity?.SetTag("error.type", ex.GetType().Name);
             activity?.SetTag("operation.duration_ms", duration.TotalMilliseconds.ToString("F2"));
             
-            _logger.LogError(ex, 
-                "Unexpected error during JWT token validation. TokenPreview: {TokenPreview}, Duration: {Duration}ms, Error: {ErrorType}",
-                tokenPreview, duration.TotalMilliseconds, ex.GetType().Name);
+            // Log unexpected validation error using secure UserContext approach - only safe values
+            _secureLoggingService.LogSecurityEvent(_logger, LogLevel.Error, SecurityEventType.TokenValidation,
+                "Unexpected error during JWT token validation", new
+                {
+                    ValidationResult = "Error",
+                    DurationMs = duration.TotalMilliseconds,
+                    ErrorType = ex.GetType().Name,
+                    FailureReason = "UnexpectedError"
+                });
             return null;
         }
     }
@@ -229,8 +269,7 @@ public class JwtService : IJwtService
     public string? ExtractUserIdFromToken(string token)
     {
         using var activity = Activity.Current?.Source.StartActivity("JwtService.ExtractUserIdFromToken");
-        var tokenPreview = SecureLogging.ToTokenPreview(token);
-        activity?.SetTag("token.preview", tokenPreview);
+        activity?.SetTag("operation.type", "extract_user_id");
         
         try
         {
@@ -245,11 +284,23 @@ public class JwtService : IJwtService
             
             if (userId != null)
             {
-                _logger.LogDebug("Successfully extracted UserId from JWT token. UserId: {UserId}", SecureLogging.SanitizeUserIdForLog(userId));
+                // Log success using secure UserContext approach - only safe values
+                _secureLoggingService.LogSecurityEvent(_logger, LogLevel.Debug, SecurityEventType.TokenValidation,
+                    "Successfully extracted UserId from JWT token", new
+                    {
+                        ExtractionResult = "Success",
+                        HasUserId = true
+                    });
             }
             else
             {
-                _logger.LogDebug("UserId claim not found in JWT token. TokenPreview: {TokenPreview}", tokenPreview);
+                // Log failure using secure UserContext approach - only safe values
+                _secureLoggingService.LogSecurityEvent(_logger, LogLevel.Debug, SecurityEventType.TokenValidation,
+                    "UserId claim not found in JWT token", new
+                    {
+                        ExtractionResult = "NotFound",
+                        FailureReason = "UserIdClaimNotFound"
+                    });
             }
             
             return userId;
@@ -259,9 +310,13 @@ public class JwtService : IJwtService
             activity?.SetTag("extraction.result", "error");
             activity?.SetTag("error.type", ex.GetType().Name);
             
-            _logger.LogDebug(ex, 
-                "Error extracting user ID from JWT token. TokenPreview: {TokenPreview}, Error: {ErrorType}",
-                tokenPreview, ex.GetType().Name);
+            // Log error using secure UserContext approach - only safe values
+            _secureLoggingService.LogSecurityEvent(_logger, LogLevel.Debug, SecurityEventType.TokenValidation,
+                "Error extracting user ID from JWT token", new
+                {
+                    ExtractionResult = "Error",
+                    ErrorType = ex.GetType().Name
+                });
             return null;
         }
     }
@@ -270,11 +325,10 @@ public class JwtService : IJwtService
     {
         using var activity = Activity.Current?.Source.StartActivity("JwtService.RefreshToken");
         var startTime = DateTimeOffset.UtcNow;
-        var tokenPreview = SecureLogging.ToTokenPreview(token);
         
         activity?.SetTag("user.id", user.Id);
         activity?.SetTag("user.username", user.Username);
-        activity?.SetTag("token.preview", tokenPreview);
+        activity?.SetTag("operation.type", "token_refresh");
         
         try
         {
@@ -282,9 +336,13 @@ public class JwtService : IJwtService
             if (userSession == null)
             {
                 activity?.SetTag("refresh.result", "invalid_token");
-                _logger.LogInformation(
-                    "Token refresh failed - invalid or expired token. UserId: {UserId}, TokenPreview: {TokenPreview}",
-                    SecureLogging.SanitizeUserIdForLog(user.Id), tokenPreview);
+                // Log refresh failure using secure UserContext approach - only safe values
+                _secureLoggingService.LogSecurityEvent(_logger, LogLevel.Information, SecurityEventType.TokenRefresh,
+                    "Token refresh failed - invalid or expired token", new
+                    {
+                        RefreshResult = "InvalidToken",
+                        FailureReason = "TokenInvalidOrExpired"
+                    });
                 return null;
             }
 
@@ -297,9 +355,14 @@ public class JwtService : IJwtService
                 activity?.SetTag("refresh.result", "not_needed");
                 activity?.SetTag("time_until_expiry_minutes", timeUntilExpiry.TotalMinutes.ToString("F2"));
                 
-                _logger.LogDebug(
-                    "Token refresh not needed - token still valid for {TimeUntilExpiry} minutes. UserId: {UserId}, TokenId: {TokenId}",
-                    timeUntilExpiry.TotalMinutes, SecureLogging.SanitizeUserIdForLog(user.Id), userSession.SessionId);
+                // Log refresh not needed using secure UserContext approach - only safe values
+                _secureLoggingService.LogSecurityEvent(_logger, LogLevel.Debug, SecurityEventType.TokenRefresh,
+                    "Token refresh not needed - token still valid", new
+                    {
+                        RefreshResult = "NotNeeded",
+                        TimeUntilExpiryMinutes = timeUntilExpiry.TotalMinutes,
+                        TokenId = userSession.SessionId
+                    });
                 return null;
             }
 
@@ -315,9 +378,15 @@ public class JwtService : IJwtService
             activity?.SetTag("original_token_id", userSession.SessionId);
             activity?.SetTag("operation.duration_ms", duration.TotalMilliseconds.ToString("F2"));
             
-            _logger.LogInformation(
-                "JWT token refreshed successfully. UserId: {UserId}, Username: {Username}, OriginalTokenId: {OriginalTokenId}, RememberMe: {RememberMe}, Duration: {Duration}ms",
-                SecureLogging.SanitizeUserIdForLog(user.Id), SecureLogging.SanitizeForLog(user.Username), userSession.SessionId, rememberMe, duration.TotalMilliseconds);
+            // Log refresh success using secure UserContext approach - only safe values
+            _secureLoggingService.LogSecurityEvent(_logger, LogLevel.Information, SecurityEventType.TokenRefresh,
+                "JWT token refreshed successfully", new
+                {
+                    RefreshResult = "Success",
+                    OriginalTokenId = userSession.SessionId,
+                    RememberMe = rememberMe,
+                    DurationMs = duration.TotalMilliseconds
+                });
 
             return refreshResult;
         }
@@ -328,9 +397,14 @@ public class JwtService : IJwtService
             activity?.SetTag("error.type", ex.GetType().Name);
             activity?.SetTag("operation.duration_ms", duration.TotalMilliseconds.ToString("F2"));
             
-            _logger.LogError(ex, 
-                "Error refreshing JWT token. UserId: {UserId}, Username: {Username}, TokenPreview: {TokenPreview}, Duration: {Duration}ms, Error: {ErrorType}",
-                SecureLogging.SanitizeUserIdForLog(user.Id), SecureLogging.SanitizeForLog(user.Username), tokenPreview, duration.TotalMilliseconds, ex.GetType().Name);
+            // Log refresh error using secure UserContext approach - only safe values
+            _secureLoggingService.LogSecurityEvent(_logger, LogLevel.Error, SecurityEventType.TokenRefresh,
+                "Error refreshing JWT token", new
+                {
+                    RefreshResult = "Error",
+                    DurationMs = duration.TotalMilliseconds,
+                    ErrorType = ex.GetType().Name
+                });
             return null;
         }
     }

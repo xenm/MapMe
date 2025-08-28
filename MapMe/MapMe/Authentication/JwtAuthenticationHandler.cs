@@ -5,7 +5,6 @@ using System.Text.Encodings.Web;
 using System.Diagnostics;
 using MapMe.Services;
 using MapMe.Models;
-using MapMe.Utilities;
 
 namespace MapMe.Authentication;
 
@@ -15,16 +14,19 @@ namespace MapMe.Authentication;
 public class JwtAuthenticationHandler : AuthenticationHandler<AuthenticationSchemeOptions>
 {
     private readonly IJwtService _jwtService;
+    private readonly ISecureLoggingService _secureLoggingService;
     private readonly ILogger<JwtAuthenticationHandler> _logger;
 
     public JwtAuthenticationHandler(
         IOptionsMonitor<AuthenticationSchemeOptions> options,
         ILoggerFactory logger,
         UrlEncoder encoder,
-        IJwtService jwtService)
+        IJwtService jwtService,
+        ISecureLoggingService secureLoggingService)
         : base(options, logger, encoder)
     {
         _jwtService = jwtService;
+        _secureLoggingService = secureLoggingService;
         _logger = logger.CreateLogger<JwtAuthenticationHandler>();
     }
 
@@ -32,15 +34,10 @@ public class JwtAuthenticationHandler : AuthenticationHandler<AuthenticationSche
     {
         using var activity = Activity.Current?.Source.StartActivity("JwtAuthenticationHandler.HandleAuthenticate");
         var startTime = DateTimeOffset.UtcNow;
-        var requestPath = SecureLogging.SanitizePathForLog(Request.Path.Value);
-        var requestMethod = SecureLogging.SanitizeForLog(Request.Method, maxLength: 10);
-        var userAgent = SecureLogging.SanitizeHeaderForLog(Request.Headers["User-Agent"].ToString(), "User-Agent");
-        var clientIp = SecureLogging.SanitizeForLog(Request.HttpContext.Connection.RemoteIpAddress?.ToString(), maxLength: 45, placeholder: "[unknown-ip]");
         
-        activity?.SetTag("http.method", requestMethod);
-        activity?.SetTag("http.path", requestPath);
-        activity?.SetTag("client.ip", clientIp);
-        activity?.SetTag("user_agent", userAgent);
+        activity?.SetTag("http.method", Request.Method);
+        activity?.SetTag("http.path", Request.Path.Value ?? "/");
+        activity?.SetTag("operation.type", "jwt_authentication");
         
         try
         {
@@ -48,9 +45,14 @@ public class JwtAuthenticationHandler : AuthenticationHandler<AuthenticationSche
             if (!Request.Headers.ContainsKey("Authorization"))
             {
                 activity?.SetTag("auth.result", "no_header");
-                _logger.LogDebug(
-                    "No Authorization header found. Path: {Path}, Method: {Method}, ClientIP: {ClientIP}",
-                    requestPath, requestMethod, clientIp);
+                // Log missing authorization header using secure UserContext approach - only safe values
+                _secureLoggingService.LogSecurityEvent(_logger, LogLevel.Debug, SecurityEventType.Authentication,
+                    "No Authorization header found", new
+                    {
+                        AuthResult = "NoHeader",
+                        HttpMethod = Request.Method,
+                        HasPath = !string.IsNullOrEmpty(Request.Path.Value)
+                    });
                 return Task.FromResult(AuthenticateResult.NoResult());
             }
 
@@ -59,9 +61,15 @@ public class JwtAuthenticationHandler : AuthenticationHandler<AuthenticationSche
             if (authHeaders.Count > 1)
             {
                 activity?.SetTag("auth.result", "multiple_headers");
-                _logger.LogWarning(
-                    "Multiple Authorization headers detected - rejecting for security. Count: {Count}, Path: {Path}, Method: {Method}, ClientIP: {ClientIP}",
-                    authHeaders.Count, requestPath, requestMethod, clientIp);
+                // Log multiple authorization headers using secure UserContext approach - only safe values
+                _secureLoggingService.LogSecurityEvent(_logger, LogLevel.Warning, SecurityEventType.Authentication,
+                    "Multiple Authorization headers detected - rejecting for security", new
+                    {
+                        AuthResult = "MultipleHeaders",
+                        HeaderCount = authHeaders.Count,
+                        HttpMethod = Request.Method,
+                        SecurityThreat = "MultipleAuthHeaders"
+                    });
                 return Task.FromResult(AuthenticateResult.Fail("Multiple Authorization headers not allowed"));
             }
             
@@ -69,9 +77,15 @@ public class JwtAuthenticationHandler : AuthenticationHandler<AuthenticationSche
             if (!authHeader.StartsWith("Bearer", StringComparison.OrdinalIgnoreCase))
             {
                 activity?.SetTag("auth.result", "invalid_scheme");
-                _logger.LogDebug(
-                    "Invalid authorization scheme. Expected Bearer, got: {Scheme}. Path: {Path}, Method: {Method}, ClientIP: {ClientIP}",
-                    SecureLogging.SanitizeForLog(authHeader.Split(' ').FirstOrDefault() ?? "[empty]", maxLength: 20), requestPath, requestMethod, clientIp);
+                // Log invalid authorization scheme using secure UserContext approach - only safe values
+                _secureLoggingService.LogSecurityEvent(_logger, LogLevel.Debug, SecurityEventType.Authentication,
+                    "Invalid authorization scheme - expected Bearer", new
+                    {
+                        AuthResult = "InvalidScheme",
+                        ExpectedScheme = "Bearer",
+                        HttpMethod = Request.Method,
+                        HasAuthHeader = !string.IsNullOrEmpty(authHeader)
+                    });
                 return Task.FromResult(AuthenticateResult.NoResult());
             }
 
@@ -79,9 +93,14 @@ public class JwtAuthenticationHandler : AuthenticationHandler<AuthenticationSche
             if (authHeader.Equals("Bearer", StringComparison.OrdinalIgnoreCase))
             {
                 activity?.SetTag("auth.result", "bearer_without_token");
-                _logger.LogWarning(
-                    "Bearer authorization header without token. Path: {Path}, Method: {Method}, ClientIP: {ClientIP}",
-                    requestPath, requestMethod, clientIp);
+                // Log Bearer header without token using secure UserContext approach - only safe values
+                _secureLoggingService.LogSecurityEvent(_logger, LogLevel.Warning, SecurityEventType.Authentication,
+                    "Bearer authorization header without token", new
+                    {
+                        AuthResult = "BearerWithoutToken",
+                        HttpMethod = Request.Method,
+                        SecurityIssue = "MissingToken"
+                    });
                 return Task.FromResult(AuthenticateResult.Fail("Invalid Authorization header format"));
             }
 
@@ -89,34 +108,57 @@ public class JwtAuthenticationHandler : AuthenticationHandler<AuthenticationSche
             string token;
             var bearerIndex = authHeader.IndexOf(' ');
             
-            _logger.LogDebug(
-                "Parsing Authorization header. Scheme: '{Scheme}', SpaceIndex: {SpaceIndex}, Path: {Path}",
-                SecureLogging.SanitizeForLog(authHeader.Split(' ').FirstOrDefault() ?? "[empty]", maxLength: 20), bearerIndex, requestPath);
+            // Log authorization header parsing using secure UserContext approach - only safe values
+            _secureLoggingService.LogSecurityEvent(_logger, LogLevel.Debug, SecurityEventType.Authentication,
+                "Parsing Authorization header", new
+                {
+                    AuthResult = "ParsingHeader",
+                    HasSpaceInHeader = bearerIndex > 0,
+                    HttpMethod = Request.Method
+                });
             
             if (bearerIndex == -1 || bearerIndex != 6) // "Bearer" is 6 characters, space should be at index 6
             {
                 activity?.SetTag("auth.result", "invalid_bearer_format");
-                _logger.LogWarning(
-                    "Invalid Bearer format. Expected 'Bearer <token>'. SpaceIndex: {SpaceIndex}, Path: {Path}, Method: {Method}, ClientIP: {ClientIP}",
-                    bearerIndex, requestPath, requestMethod, clientIp);
+                // Log invalid Bearer format using secure UserContext approach - only safe values
+                _secureLoggingService.LogSecurityEvent(_logger, LogLevel.Warning, SecurityEventType.Authentication,
+                    "Invalid Bearer format - expected 'Bearer <token>'", new
+                    {
+                        AuthResult = "InvalidBearerFormat",
+                        SpaceIndex = bearerIndex,
+                        HttpMethod = Request.Method,
+                        SecurityIssue = "MalformedAuthHeader"
+                    });
                 return Task.FromResult(AuthenticateResult.Fail("Invalid Authorization header format"));
             }
 
             token = authHeader.Substring(bearerIndex + 1).Trim();
-            _logger.LogDebug(
-                "Extracted token from header. TokenLength: {TokenLength}, Path: {Path}",
-                token?.Length ?? 0, requestPath);
+            // Log token extraction using secure UserContext approach - only safe values
+            _secureLoggingService.LogSecurityEvent(_logger, LogLevel.Debug, SecurityEventType.Authentication,
+                "Extracted token from header", new
+                {
+                    AuthResult = "TokenExtracted",
+                    TokenLength = token?.Length ?? 0,
+                    HasToken = !string.IsNullOrEmpty(token),
+                    HttpMethod = Request.Method
+                });
+            
             if (string.IsNullOrEmpty(token))
             {
                 activity?.SetTag("auth.result", "empty_token");
-                _logger.LogWarning(
-                    "Empty Bearer token provided. Path: {Path}, Method: {Method}, ClientIP: {ClientIP}",
-                    requestPath, requestMethod, clientIp);
+                // Log empty Bearer token using secure UserContext approach - only safe values
+                _secureLoggingService.LogSecurityEvent(_logger, LogLevel.Warning, SecurityEventType.Authentication,
+                    "Empty Bearer token provided", new
+                    {
+                        AuthResult = "EmptyToken",
+                        HttpMethod = Request.Method,
+                        SecurityIssue = "EmptyToken"
+                    });
                 return Task.FromResult(AuthenticateResult.Fail("Invalid Authorization header format"));
             }
 
-            var tokenPreview = SecureLogging.ToTokenPreview(token);
-            activity?.SetTag("token.preview", tokenPreview);
+            // No longer log token previews - use only safe correlation IDs
+            activity?.SetTag("operation.type", "jwt_validation");
 
             // Validate the JWT token
             UserSession? userSession;
@@ -128,18 +170,28 @@ public class JwtAuthenticationHandler : AuthenticationHandler<AuthenticationSche
             {
                 activity?.SetTag("auth.result", "jwt_validation_error");
                 activity?.SetTag("jwt.error.type", jwtEx.GetType().Name);
-                _logger.LogInformation(jwtEx,
-                    "JWT token validation threw exception. TokenPreview: {TokenPreview}, Path: {Path}, Method: {Method}, ClientIP: {ClientIP}, UserAgent: {UserAgent}",
-                    tokenPreview, requestPath, requestMethod, clientIp, userAgent);
+                // Log JWT validation exception using secure UserContext approach - only safe values
+                _secureLoggingService.LogSecurityEvent(_logger, LogLevel.Information, SecurityEventType.Authentication,
+                    "JWT token validation threw exception", new
+                    {
+                        AuthResult = "ValidationException",
+                        ErrorType = jwtEx.GetType().Name,
+                        HttpMethod = Request.Method
+                    });
                 return Task.FromResult(AuthenticateResult.Fail("Token validation failed"));
             }
             
             if (userSession == null)
             {
                 activity?.SetTag("auth.result", "invalid_token");
-                _logger.LogInformation(
-                    "JWT token validation failed. TokenPreview: {TokenPreview}, Path: {Path}, Method: {Method}, ClientIP: {ClientIP}, UserAgent: {UserAgent}",
-                    tokenPreview, requestPath, requestMethod, clientIp, userAgent);
+                // Log JWT validation failure using secure UserContext approach - only safe values
+                _secureLoggingService.LogSecurityEvent(_logger, LogLevel.Information, SecurityEventType.Authentication,
+                    "JWT token validation failed", new
+                    {
+                        AuthResult = "InvalidToken",
+                        HttpMethod = Request.Method,
+                        ValidationResult = "Failed"
+                    });
                 return Task.FromResult(AuthenticateResult.Fail("Invalid or expired token"));
             }
 
@@ -168,9 +220,15 @@ public class JwtAuthenticationHandler : AuthenticationHandler<AuthenticationSche
             activity?.SetTag("token.expires_at", userSession.ExpiresAt.ToString("O"));
             activity?.SetTag("operation.duration_ms", duration.TotalMilliseconds.ToString("F2"));
 
-            _logger.LogDebug(
-                "JWT authentication successful. UserId: {UserId}, Username: {Username}, TokenId: {TokenId}, Path: {Path}, Method: {Method}, ClientIP: {ClientIP}, Duration: {Duration}ms",
-                userSession.UserId, userSession.Username, userSession.SessionId, requestPath, requestMethod, clientIp, duration.TotalMilliseconds);
+            // Log JWT authentication success using secure UserContext approach - only safe values
+            _secureLoggingService.LogSecurityEvent(_logger, LogLevel.Debug, SecurityEventType.Authentication,
+                "JWT authentication successful", new
+                {
+                    AuthResult = "Success",
+                    TokenId = userSession.SessionId,
+                    HttpMethod = Request.Method,
+                    DurationMs = duration.TotalMilliseconds
+                });
                 
             return Task.FromResult(AuthenticateResult.Success(ticket));
         }
@@ -181,9 +239,15 @@ public class JwtAuthenticationHandler : AuthenticationHandler<AuthenticationSche
             activity?.SetTag("error.type", ex.GetType().Name);
             activity?.SetTag("operation.duration_ms", duration.TotalMilliseconds.ToString("F2"));
             
-            _logger.LogError(ex,
-                "Unexpected error during JWT authentication. Path: {Path}, Method: {Method}, ClientIP: {ClientIP}, Duration: {Duration}ms, Error: {ErrorType}",
-                requestPath, requestMethod, clientIp, duration.TotalMilliseconds, ex.GetType().Name);
+            // Log unexpected authentication error using secure UserContext approach - only safe values
+            _secureLoggingService.LogSecurityEvent(_logger, LogLevel.Error, SecurityEventType.Authentication,
+                "Unexpected error during JWT authentication", new
+                {
+                    AuthResult = "UnexpectedError",
+                    DurationMs = duration.TotalMilliseconds,
+                    ErrorType = ex.GetType().Name,
+                    HttpMethod = Request.Method
+                });
                 
             return Task.FromResult(AuthenticateResult.Fail("Authentication error"));
         }

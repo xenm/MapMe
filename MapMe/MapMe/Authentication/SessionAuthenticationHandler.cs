@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Options;
 using System.Security.Claims;
 using System.Text.Encodings.Web;
-using MapMe.Utilities;
+using MapMe.Services;
 
 namespace MapMe.Authentication;
 
@@ -13,15 +13,18 @@ namespace MapMe.Authentication;
 public class SessionAuthenticationHandler : AuthenticationHandler<AuthenticationSchemeOptions>
 {
     private readonly MapMe.Services.IAuthenticationService _authService;
+    private readonly ISecureLoggingService _secureLoggingService;
 
     public SessionAuthenticationHandler(
         IOptionsMonitor<AuthenticationSchemeOptions> options,
         ILoggerFactory logger,
         UrlEncoder encoder,
-        MapMe.Services.IAuthenticationService authService)
+        MapMe.Services.IAuthenticationService authService,
+        ISecureLoggingService secureLoggingService)
         : base(options, logger, encoder)
     {
         _authService = authService;
+        _secureLoggingService = secureLoggingService;
     }
 
     protected override async Task<AuthenticateResult> HandleAuthenticateAsync()
@@ -59,8 +62,16 @@ public class SessionAuthenticationHandler : AuthenticationHandler<Authentication
         }
         catch (Exception ex)
         {
-            var httpContext = SecureLogging.CreateSafeHttpContext(Context);
-            Logger.LogError(ex, "Error during authentication. Context: {@HttpContext}", httpContext);
+            // Log authentication error using secure UserContext approach - only safe values
+            var loggerFactory = Context.RequestServices.GetRequiredService<ILoggerFactory>();
+            var typedLogger = loggerFactory.CreateLogger<SessionAuthenticationHandler>();
+            _secureLoggingService.LogSecurityEvent(typedLogger, LogLevel.Error, SecurityEventType.Authentication,
+                "Error during authentication", new
+                {
+                    AuthResult = "Error",
+                    ErrorType = ex.GetType().Name,
+                    HttpMethod = Request.Method
+                });
             return AuthenticateResult.Fail("Authentication error");
         }
     }

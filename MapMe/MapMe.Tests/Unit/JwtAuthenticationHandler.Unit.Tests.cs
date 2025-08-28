@@ -9,6 +9,7 @@ using Xunit;
 using MapMe.Authentication;
 using MapMe.Services;
 using MapMe.Models;
+using MapMe.Logging;
 
 namespace MapMe.Tests.Unit;
 
@@ -23,6 +24,7 @@ public class JwtAuthenticationHandlerCorrectedTests
     private readonly Mock<ILoggerFactory> _mockLoggerFactory;
     private readonly Mock<ILogger<JwtAuthenticationHandler>> _mockLogger;
     private readonly Mock<UrlEncoder> _mockUrlEncoder;
+    private readonly Mock<ISecureLoggingService> _mockSecureLoggingService;
     private readonly JwtAuthenticationHandler _handler;
     private readonly DefaultHttpContext _httpContext;
 
@@ -33,6 +35,7 @@ public class JwtAuthenticationHandlerCorrectedTests
         _mockLoggerFactory = new Mock<ILoggerFactory>();
         _mockLogger = new Mock<ILogger<JwtAuthenticationHandler>>();
         _mockUrlEncoder = new Mock<UrlEncoder>();
+        _mockSecureLoggingService = new Mock<ISecureLoggingService>();
         
         _httpContext = new DefaultHttpContext();
         
@@ -46,7 +49,8 @@ public class JwtAuthenticationHandlerCorrectedTests
             _mockOptions.Object,
             _mockLoggerFactory.Object,
             _mockUrlEncoder.Object,
-            _mockJwtService.Object);
+            _mockJwtService.Object,
+            _mockSecureLoggingService.Object);
 
         // Initialize handler with context
         _handler.InitializeAsync(
@@ -333,7 +337,8 @@ public class JwtAuthenticationHandlerCorrectedTests
                 _mockOptions.Object,
                 _mockLoggerFactory.Object,
                 _mockUrlEncoder.Object,
-                _mockJwtService.Object);
+                _mockJwtService.Object,
+                _mockSecureLoggingService.Object);
 
             await handler.InitializeAsync(
                 new AuthenticationScheme("JWT", null, typeof(JwtAuthenticationHandler)),

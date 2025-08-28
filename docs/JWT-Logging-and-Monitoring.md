@@ -306,70 +306,230 @@ public class JwtMetrics
 
 ## Log Analysis and Troubleshooting
 
-### Secure Logging Policy (Mandatory)
+### Strongly-Typed Secure Logging Policy (Mandatory)
 
-To prevent sensitive data exposure and log injection, MapMe enforces the following secure logging rules across authentication and token handling:
+MapMe implements a **strongly-typed UserContext approach** to completely eliminate log forging vulnerabilities (CWE-117). This architecture replaces all string sanitization with type-safe logging that uses only GUIDs, enums, and hashed values.
 
-- **Never log full JWT tokens**. Only log a sanitized preview using `ToTokenPreview(token)` (first 20 chars + ellipsis) and remove newlines.
-- **Never log raw email addresses**. Instead, log metadata: `HasEmail` (true/false) and `EmailLength` (number), or use non-sensitive user identifiers.
-- **Sanitize all user-controlled inputs** before logging with `SanitizeForLog(value)` to strip `\r` and `\n` and trim whitespace.
-- **Do not log Authorization headers** or any secrets.
-- **Structured properties only**. Avoid concatenating untrusted input into message strings.
+#### Core Security Principles
 
-Implementation references:
-- Server helpers are implemented in `JwtService` and `JwtAuthenticationHandler` as `SanitizeForLog(string?)` and `ToTokenPreview(string?)`.
-- Request metadata (path, method, user agent, client IP) are sanitized before logging in `Program.cs` and the authentication handler.
+- **Zero User-Provided Strings**: No raw user input is ever logged directly
+- **Strongly-Typed Context**: All logging uses `UserContext` with GUIDs, enums, and safe values only
+- **Structured Security Events**: `ISecureLoggingService.LogSecurityEvent()` with predefined event types
+- **Safe Log Enrichment**: `UserContext.ToLogContext()` returns anonymous objects with hashed/safe fields only
+- **Correlation IDs**: JWT tokens referenced by safe correlation IDs, never full token content
 
-#### Implementation Example (JwtService)
+#### UserContext Architecture
 
 ```csharp
-// Token preview is already sanitized and truncated
-var tokenPreview = ToTokenPreview(token);
-
-// Claims/user-controlled values are sanitized before logging
-_logger.LogDebug(
-    "JWT token validated successfully. UserId: {UserId}, Username: {Username}, TokenId: {TokenId}, ExpiresAt: {ExpiresAt}, Duration: {Duration}ms",
-    SanitizeForLog(userId) ?? "[null]",
-    SanitizeForLog(username) ?? "[null]",
-    tokenId,
-    expiresAt,
-    duration.TotalMilliseconds);
-
-_logger.LogError(ex,
-    "Unexpected error during JWT token validation. TokenPreview: {TokenPreview}, Duration: {Duration}ms, Error: {ErrorType}",
-    tokenPreview,
-    duration.TotalMilliseconds,
-    ex.GetType().Name);
+public record UserContext
+{
+    public Guid UserId { get; init; }
+    public string UserIdHash { get; init; } // SHA256 hash for correlation
+    public string UsernameHash { get; init; } // SHA256 hash, never raw username
+    public string EmailHash { get; init; } // SHA256 hash, never raw email
+    public bool IsEmailVerified { get; init; }
+    public bool IsActive { get; init; }
+    public DateTimeOffset CreatedAt { get; init; }
+    public DateTimeOffset? LastLoginAt { get; init; }
+    
+    // Factory methods for safe context creation
+    public static UserContext FromClaims(ClaimsPrincipal principal);
+    public static UserContext CreateAnonymous();
+    
+    // Safe logging context - only hashes, GUIDs, and enums
+    public object ToLogContext();
+}
 ```
 
-References: OWASP Log Injection, CWE-117 (Log Injection).
+#### Secure Logging Service Implementation
 
-### Common Log Patterns
+```csharp
+public interface ISecureLoggingService
+{
+    void LogSecurityEvent(SecurityEventType eventType, UserContext? userContext = null, object? additionalContext = null);
+    object CreateSecureLogContext(object contextData);
+}
+
+public enum SecurityEventType
+{
+    UserLogin,
+    UserLogout,
+    TokenGenerated,
+    TokenValidated,
+    TokenExpired,
+    TokenInvalid,
+    AuthenticationFailed,
+    AuthorizationDenied
+}
+```
+
+#### Implementation Example (JwtService with UserContext)
+
+```csharp
+// Create strongly-typed user context from JWT claims
+var userContext = UserContext.FromClaims(principal);
+
+// Log security events with type-safe context - no user strings
+_secureLoggingService.LogSecurityEvent(
+    SecurityEventType.TokenValidated, 
+    userContext,
+    new { 
+        TokenId = tokenId, // Safe GUID
+        ExpiresAt = expiresAt, // Safe timestamp
+        Duration = duration.TotalMilliseconds // Safe numeric value
+    });
+
+// Error logging with safe correlation ID only
+_secureLoggingService.LogSecurityEvent(
+    SecurityEventType.TokenInvalid,
+    userContext,
+    new {
+        CorrelationId = Guid.NewGuid(), // Safe correlation ID
+        ErrorType = ex.GetType().Name, // Safe exception type
+        Duration = duration.TotalMilliseconds
+    });
+```
+
+#### Benefits of UserContext Approach
+
+- **Complete Log Injection Prevention**: No user input can manipulate log structure
+- **GDPR Compliance**: Only hashed values logged, no PII exposure
+- **Audit Trail Integrity**: Structured events prevent log tampering
+- **Performance Optimized**: Efficient context creation and serialization
+- **CodeQL Compliant**: Eliminates all detected log forging vulnerabilities
+
+References: OWASP Log Injection Prevention, CWE-117 (Log Injection), NIST Cybersecurity Framework.
+
+### Common Log Patterns with UserContext
 
 #### Successful Authentication Flow
-```
-[INF] JWT token generated successfully. UserId: user-123, Username: john_doe, TokenId: abc-def-123, ExpiresAt: 2025-08-27T20:57:34Z, RememberMe: false, Duration: 45.23ms
-[DBG] JWT authentication successful. UserId: user-123, Username: john_doe, TokenId: abc-def-123, Path: /api/profile, Method: GET, ClientIP: 192.168.1.100, Duration: 12.45ms
+```json
+[INF] Security event logged
+{
+  "EventType": "TokenGenerated",
+  "UserContext": {
+    "UserId": "550e8400-e29b-41d4-a716-446655440000",
+    "UserIdHash": "a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3",
+    "UsernameHash": "b109f3bbbc244eb82441917ed06d618b9008dd09b3befd1b5e07394c706a8bb9",
+    "IsActive": true,
+    "LastLoginAt": "2025-01-27T20:57:34Z"
+  },
+  "AdditionalContext": {
+    "TokenId": "abc-def-123",
+    "ExpiresAt": "2025-08-27T20:57:34Z",
+    "RememberMe": false,
+    "Duration": 45.23
+  }
+}
+
+[INF] Security event logged
+{
+  "EventType": "TokenValidated",
+  "UserContext": {
+    "UserId": "550e8400-e29b-41d4-a716-446655440000",
+    "UserIdHash": "a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3"
+  },
+  "AdditionalContext": {
+    "TokenId": "abc-def-123",
+    "RequestPath": "/api/profile",
+    "RequestMethod": "GET",
+    "Duration": 12.45
+  }
+}
 ```
 
 #### Failed Authentication Flow
-```
-[INF] JWT token validation failed - token expired. TokenPreview: eyJhbGciOiJIUzI1NiIs..., Duration: 8.12ms
-[INF] JWT token validation failed. TokenPreview: eyJhbGciOiJIUzI1NiIs..., Path: /api/profile, Method: GET, ClientIP: 192.168.1.100, UserAgent: Mozilla/5.0...
+```json
+[WRN] Security event logged
+{
+  "EventType": "TokenExpired",
+  "UserContext": null,
+  "AdditionalContext": {
+    "CorrelationId": "123e4567-e89b-12d3-a456-426614174000",
+    "Duration": 8.12
+  }
+}
+
+[WRN] Security event logged
+{
+  "EventType": "TokenInvalid",
+  "UserContext": null,
+  "AdditionalContext": {
+    "CorrelationId": "456e7890-e12b-34c5-d678-901234567890",
+    "RequestPath": "/api/profile",
+    "RequestMethod": "GET",
+    "Duration": 5.67
+  }
+}
 ```
 
 #### Security Incident Pattern
-```
-[WRN] JWT token validation failed - invalid token. TokenPreview: invalid-token-here..., Duration: 5.67ms, Error: SecurityTokenMalformedException, Message: IDX10223: Unable to decode the payload
-[WRN] Empty Bearer token provided. Path: /api/sensitive, Method: POST, ClientIP: 192.168.1.200
-[ERR] Unexpected error during JWT authentication. Path: /api/admin, Method: DELETE, ClientIP: 192.168.1.200, Duration: 15.34ms, Error: ArgumentException
+```json
+[WRN] Security event logged
+{
+  "EventType": "AuthenticationFailed",
+  "UserContext": null,
+  "AdditionalContext": {
+    "CorrelationId": "789e0123-e45f-67g8-h901-234567890123",
+    "ErrorType": "SecurityTokenMalformedException",
+    "ErrorMessage": "IDX10223: Unable to decode the payload",
+    "Duration": 5.67
+  }
+}
+
+[WRN] Security event logged
+{
+  "EventType": "AuthenticationFailed",
+  "UserContext": null,
+  "AdditionalContext": {
+    "CorrelationId": "012e3456-e78f-90g1-h234-567890123456",
+    "RequestPath": "/api/sensitive",
+    "RequestMethod": "POST",
+    "FailureReason": "EmptyBearerToken"
+  }
+}
+
+[ERR] Security event logged
+{
+  "EventType": "AuthenticationFailed",
+  "UserContext": null,
+  "AdditionalContext": {
+    "CorrelationId": "345e6789-e01f-23g4-h567-890123456789",
+    "RequestPath": "/api/admin",
+    "RequestMethod": "DELETE",
+    "ErrorType": "ArgumentException",
+    "Duration": 15.34
+  }
+}
 ```
 
-### Do/Don't Quick Reference
+### Do/Don't Quick Reference for UserContext Logging
 
-- **Do** log `TokenPreview`, `UserId`, sanitized `Username` (only if not an email), and metadata like `ExpiresAt`, durations.
-- **Don't** log raw emails, full tokens, or Authorization headers.
-- **Do** sanitize `path`, `method`, `user-agent`, and `client IP` before logging.
+#### ✅ DO - Use Strongly-Typed UserContext
+- **Do** use `UserContext.FromClaims()` to create safe logging context
+- **Do** log `UserContext.UserId` (GUID), `UserIdHash`, `UsernameHash`, `EmailHash`
+- **Do** use `ISecureLoggingService.LogSecurityEvent()` with predefined event types
+- **Do** log safe metadata: `TokenId` (GUID), `ExpiresAt`, durations, boolean flags
+- **Do** use correlation IDs for tracking without exposing sensitive data
+- **Do** log structured events with `SecurityEventType` enums
+
+#### ❌ DON'T - Log Raw User Data
+- **Don't** log raw usernames, emails, or any user-provided strings
+- **Don't** log full JWT tokens or Authorization headers
+- **Don't** use string concatenation with user input in log messages
+- **Don't** log raw request paths, user agents, or client IPs without sanitization
+- **Don't** bypass `ISecureLoggingService` for security-related logging
+
+#### 🔒 Security Event Types to Use
+```csharp
+SecurityEventType.UserLogin          // User authentication success
+SecurityEventType.TokenGenerated     // JWT token creation
+SecurityEventType.TokenValidated     // JWT token validation success
+SecurityEventType.TokenExpired       // JWT token expiration
+SecurityEventType.TokenInvalid       // JWT token validation failure
+SecurityEventType.AuthenticationFailed // Authentication errors
+SecurityEventType.AuthorizationDenied  // Authorization failures
+```
 
 ### Troubleshooting Guide
 

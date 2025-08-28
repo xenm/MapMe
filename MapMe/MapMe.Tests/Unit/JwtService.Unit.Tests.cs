@@ -19,6 +19,7 @@ public class JwtServiceCorrectedTests
 {
     private readonly Mock<ILogger<JwtService>> _mockLogger;
     private readonly Mock<IConfiguration> _mockConfiguration;
+    private readonly Mock<ISecureLoggingService> _mockSecureLoggingService;
     private readonly JwtService _jwtService;
     private readonly string _testSecretKey = "test-secret-key-that-is-long-enough-for-hmac-sha256-algorithm-requirements-and-security";
 
@@ -26,13 +27,14 @@ public class JwtServiceCorrectedTests
     {
         _mockLogger = new Mock<ILogger<JwtService>>();
         _mockConfiguration = new Mock<IConfiguration>();
+        _mockSecureLoggingService = new Mock<ISecureLoggingService>();
 
         // Setup configuration
         _mockConfiguration.Setup(c => c["Jwt:SecretKey"]).Returns(_testSecretKey);
         _mockConfiguration.Setup(c => c["Jwt:Issuer"]).Returns("MapMe");
         _mockConfiguration.Setup(c => c["Jwt:Audience"]).Returns("MapMe");
 
-        _jwtService = new JwtService(_mockConfiguration.Object, _mockLogger.Object);
+        _jwtService = new JwtService(_mockConfiguration.Object, _mockLogger.Object, _mockSecureLoggingService.Object);
     }
 
     #region Token Generation Tests
@@ -215,7 +217,7 @@ public class JwtServiceCorrectedTests
         
         // Create a custom JwtService that considers tokens near expiry if they expire within 25 hours
         // This way, a 24-hour token will be eligible for refresh
-        var customJwtService = new TestableJwtService(_mockConfiguration.Object, _mockLogger.Object);
+        var customJwtService = new TestableJwtService(_mockConfiguration.Object, _mockLogger.Object, _mockSecureLoggingService.Object);
         
         // Generate a regular token (24 hours)
         var tokenResult = customJwtService.GenerateToken(user);
@@ -289,7 +291,7 @@ public class JwtServiceCorrectedTests
         // Create service with different key
         var differentKey = "completely-different-secret-key-for-testing-key-validation-security";
         _mockConfiguration.Setup(c => c["Jwt:SecretKey"]).Returns(differentKey);
-        var differentJwtService = new JwtService(_mockConfiguration.Object, _mockLogger.Object);
+        var differentJwtService = new JwtService(_mockConfiguration.Object, _mockLogger.Object, _mockSecureLoggingService.Object);
 
         // Act
         var validatedSession = differentJwtService.ValidateToken(tokenResult.token);
@@ -458,7 +460,7 @@ public class JwtServiceCorrectedTests
 
         // Act & Assert
         Assert.Throws<InvalidOperationException>(() => 
-            new JwtService(_mockConfiguration.Object, _mockLogger.Object));
+            new JwtService(_mockConfiguration.Object, _mockLogger.Object, _mockSecureLoggingService.Object));
     }
 
     [Fact]
@@ -469,7 +471,7 @@ public class JwtServiceCorrectedTests
 
         // Act & Assert
         Assert.Throws<InvalidOperationException>(() => 
-            new JwtService(_mockConfiguration.Object, _mockLogger.Object));
+            new JwtService(_mockConfiguration.Object, _mockLogger.Object, _mockSecureLoggingService.Object));
     }
 
     [Fact]
@@ -480,7 +482,7 @@ public class JwtServiceCorrectedTests
 
         // Act & Assert
         Assert.Throws<InvalidOperationException>(() => 
-            new JwtService(_mockConfiguration.Object, _mockLogger.Object));
+            new JwtService(_mockConfiguration.Object, _mockLogger.Object, _mockSecureLoggingService.Object));
     }
 
     #endregion
@@ -512,8 +514,8 @@ public class JwtServiceCorrectedTests
 /// </summary>
 public class TestableJwtService : JwtService
 {
-    public TestableJwtService(IConfiguration configuration, ILogger<JwtService> logger) 
-        : base(configuration, logger)
+    public TestableJwtService(IConfiguration configuration, ILogger<JwtService> logger, ISecureLoggingService secureLoggingService) 
+        : base(configuration, logger, secureLoggingService)
     {
     }
 

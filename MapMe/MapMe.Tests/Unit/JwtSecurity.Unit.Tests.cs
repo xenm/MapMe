@@ -8,6 +8,7 @@ using Moq;
 using Xunit;
 using MapMe.Services;
 using MapMe.Models;
+using MapMe.Logging;
 
 namespace MapMe.Tests.Unit;
 
@@ -19,6 +20,7 @@ public class JwtSecurityCorrectedTests
 {
     private readonly Mock<ILogger<JwtService>> _mockLogger;
     private readonly Mock<IConfiguration> _mockConfiguration;
+    private readonly Mock<ISecureLoggingService> _mockSecureLoggingService;
     private readonly JwtService _jwtService;
     private readonly string _testSecretKey = "test-secret-key-that-is-long-enough-for-hmac-sha256-algorithm-requirements-and-security";
 
@@ -26,13 +28,14 @@ public class JwtSecurityCorrectedTests
     {
         _mockLogger = new Mock<ILogger<JwtService>>();
         _mockConfiguration = new Mock<IConfiguration>();
+        _mockSecureLoggingService = new Mock<ISecureLoggingService>();
 
         // Setup configuration
         _mockConfiguration.Setup(c => c["Jwt:SecretKey"]).Returns(_testSecretKey);
         _mockConfiguration.Setup(c => c["Jwt:Issuer"]).Returns("MapMe");
         _mockConfiguration.Setup(c => c["Jwt:Audience"]).Returns("MapMe");
 
-        _jwtService = new JwtService(_mockConfiguration.Object, _mockLogger.Object);
+        _jwtService = new JwtService(_mockConfiguration.Object, _mockLogger.Object, _mockSecureLoggingService.Object);
     }
 
     #region Token Tampering Tests
@@ -183,7 +186,7 @@ public class JwtSecurityCorrectedTests
         // Arrange - Test with minimum length key
         var weakKey = new string('a', 32); // 32 characters = 256 bits minimum for HMAC-SHA256
         _mockConfiguration.Setup(c => c["Jwt:SecretKey"]).Returns(weakKey);
-        var weakJwtService = new JwtService(_mockConfiguration.Object, _mockLogger.Object);
+        var weakJwtService = new JwtService(_mockConfiguration.Object, _mockLogger.Object, _mockSecureLoggingService.Object);
         
         var user = CreateTestUser();
         var tokenResult = weakJwtService.GenerateToken(user);
@@ -206,7 +209,7 @@ public class JwtSecurityCorrectedTests
         // Create service with different key
         var differentKey = "completely-different-secret-key-for-testing-key-validation-security";
         _mockConfiguration.Setup(c => c["Jwt:SecretKey"]).Returns(differentKey);
-        var differentJwtService = new JwtService(_mockConfiguration.Object, _mockLogger.Object);
+        var differentJwtService = new JwtService(_mockConfiguration.Object, _mockLogger.Object, _mockSecureLoggingService.Object);
 
         // Act
         var validatedUser = differentJwtService.ValidateToken(tokenResult.token);
@@ -489,7 +492,7 @@ public class JwtSecurityCorrectedTests
 
         // Act & Assert
         Assert.Throws<InvalidOperationException>(() => 
-            new JwtService(_mockConfiguration.Object, _mockLogger.Object));
+            new JwtService(_mockConfiguration.Object, _mockLogger.Object, _mockSecureLoggingService.Object));
     }
 
     [Fact]
@@ -500,7 +503,7 @@ public class JwtSecurityCorrectedTests
 
         // Act & Assert
         Assert.Throws<InvalidOperationException>(() => 
-            new JwtService(_mockConfiguration.Object, _mockLogger.Object));
+            new JwtService(_mockConfiguration.Object, _mockLogger.Object, _mockSecureLoggingService.Object));
     }
 
     [Fact]
@@ -511,7 +514,7 @@ public class JwtSecurityCorrectedTests
 
         // Act & Assert
         Assert.Throws<InvalidOperationException>(() => 
-            new JwtService(_mockConfiguration.Object, _mockLogger.Object));
+            new JwtService(_mockConfiguration.Object, _mockLogger.Object, _mockSecureLoggingService.Object));
     }
 
     #endregion

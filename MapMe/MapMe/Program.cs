@@ -219,8 +219,9 @@ builder.Services.AddScoped<UserProfileService>();
 builder.Services.AddScoped<ChatService>();
 builder.Services.AddScoped<MapMe.Client.Services.AuthenticationService>();
 
-// Add secure logging support
+// Add secure logging support with UserContext approach
 builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<ISecureLoggingService, SecureLoggingService>();
 
     var app = builder.Build();
     
@@ -239,15 +240,19 @@ builder.Services.AddHttpContextAccessor();
                         : LogEventLevel.Information;
             options.EnrichDiagnosticContext = (diagnosticContext, httpContext) =>
             {
-                diagnosticContext.Set("RequestHost", SecureLogging.SanitizeForLog(httpContext.Request.Host.Value));
-                diagnosticContext.Set("RequestScheme", SecureLogging.SanitizeForLog(httpContext.Request.Scheme));
-                diagnosticContext.Set("UserAgent", SecureLogging.SanitizeHeaderForLog(httpContext.Request.Headers["User-Agent"].FirstOrDefault(), "User-Agent"));
-                diagnosticContext.Set("ClientIP", SecureLogging.SanitizeForLog(httpContext.Connection.RemoteIpAddress?.ToString(), maxLength: 45, placeholder: "[unknown-ip]"));
-                
-                if (httpContext.User.Identity?.IsAuthenticated == true)
+                // Use UserContext approach for secure diagnostic context - only safe values
+                if (httpContext.User?.Identity?.IsAuthenticated == true)
                 {
-                    diagnosticContext.Set("UserId", SecureLogging.SanitizeUserIdForLog(httpContext.User.FindFirst("userId")?.Value));
-                    diagnosticContext.Set("Username", SecureLogging.SanitizeForLog(httpContext.User.FindFirst("username")?.Value));
+                    var userContext = UserContext.FromClaims(httpContext.User, httpContext);
+                    var safeContext = userContext.ToLogContext();
+                    diagnosticContext.Set("UserContext", safeContext);
+                }
+                else
+                {
+                    // For unauthenticated requests, log only basic safe info
+                    var anonymousContext = UserContext.CreateAnonymous(httpContext);
+                    var safeContext = anonymousContext.ToLogContext();
+                    diagnosticContext.Set("UserContext", safeContext);
                 }
             };
         });
@@ -301,27 +306,55 @@ app.MapGet("/config/google-client-id", (HttpContext http) =>
 });
 
 // Authentication API Endpoints
-app.MapPost("/api/auth/login", async (LoginRequest request, MapMeAuth authService, ILogger<Program> logger) =>
+app.MapPost("/api/auth/login", async (LoginRequest request, MapMeAuth authService, ILogger<Program> logger, ISecureLoggingService secureLoggingService) =>
 {
-    logger.LogInformation("[DEBUG] /api/auth/login endpoint called for user: {Username}", SecureLogging.SanitizeForLog(request.Username));
+    // Log login attempt using secure UserContext approach - only safe values
+    secureLoggingService.LogSecurityEvent(logger, LogLevel.Information, SecurityEventType.Authentication,
+        "Login endpoint called", new
+        {
+            AuthAction = "Login",
+            HasUsername = !string.IsNullOrEmpty(request.Username),
+            UsernameLength = request.Username?.Length ?? 0
+        });
+    
     var response = await authService.LoginAsync(request);
-    logger.LogInformation("[DEBUG] Login response - Success: {Success}, Token: {HasToken}", response.Success, !string.IsNullOrEmpty(response.Token));
-    if (response.Success && !string.IsNullOrEmpty(response.Token))
-    {
-        logger.LogInformation("[DEBUG] Generated token preview: {TokenPreview}", SecureLogging.ToTokenPreview(response.Token));
-    }
+    
+    // Log login response using secure UserContext approach - only safe values
+    secureLoggingService.LogSecurityEvent(logger, LogLevel.Information, SecurityEventType.Authentication,
+        "Login response generated", new
+        {
+            AuthAction = "Login",
+            Success = response.Success,
+            HasToken = !string.IsNullOrEmpty(response.Token)
+        });
+    
     return response.Success ? Results.Ok(response) : Results.BadRequest(response);
 }).AllowAnonymous();
 
-app.MapPost("/api/auth/register", async (RegisterRequest request, MapMeAuth authService, ILogger<Program> logger) =>
+app.MapPost("/api/auth/register", async (RegisterRequest request, MapMeAuth authService, ILogger<Program> logger, ISecureLoggingService secureLoggingService) =>
 {
-    logger.LogInformation("[DEBUG] /api/auth/register endpoint called for user: {Username}", SecureLogging.SanitizeForLog(request.Username));
+    // Log registration attempt using secure UserContext approach - only safe values
+    secureLoggingService.LogSecurityEvent(logger, LogLevel.Information, SecurityEventType.Authentication,
+        "Registration endpoint called", new
+        {
+            AuthAction = "Register",
+            HasUsername = !string.IsNullOrEmpty(request.Username),
+            UsernameLength = request.Username?.Length ?? 0,
+            HasEmail = !string.IsNullOrEmpty(request.Email),
+            EmailLength = request.Email?.Length ?? 0
+        });
+    
     var response = await authService.RegisterAsync(request);
-    logger.LogInformation("[DEBUG] Registration response - Success: {Success}, Token: {HasToken}", response.Success, !string.IsNullOrEmpty(response.Token));
-    if (response.Success && !string.IsNullOrEmpty(response.Token))
-    {
-        logger.LogInformation("[DEBUG] Generated token preview: {TokenPreview}", SecureLogging.ToTokenPreview(response.Token));
-    }
+    
+    // Log registration response using secure UserContext approach - only safe values
+    secureLoggingService.LogSecurityEvent(logger, LogLevel.Information, SecurityEventType.Authentication,
+        "Registration response generated", new
+        {
+            AuthAction = "Register",
+            Success = response.Success,
+            HasToken = !string.IsNullOrEmpty(response.Token)
+        });
+    
     return response.Success ? Results.Ok(response) : Results.BadRequest(response);
 }).AllowAnonymous();
 
