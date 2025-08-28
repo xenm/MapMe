@@ -1,6 +1,6 @@
 # MapMe
 
-![.NET](https://img.shields.io/badge/.NET-10-blue) ![Blazor](https://img.shields.io/badge/Blazor-WASM%20%2B%20Interactive%20SSR-purple) ![Tests](https://img.shields.io/badge/Tests-Unit%20%2F%20Integration-green) [![License](https://img.shields.io/badge/License-Open%20Source-lightgrey)](./LICENSE)
+![.NET](https://img.shields.io/badge/.NET-10-blue) ![Blazor](https://img.shields.io/badge/Blazor-WASM%20%2B%20Interactive%20SSR-purple) ![Tests](https://img.shields.io/badge/Tests-Unit%20%2F%20Integration-green) ![License](https://img.shields.io/badge/License-Proprietary-lightgrey)
 
 A modern Blazor dating app with Google Maps integration, featuring comprehensive user profiles, location-based date marking, and social discovery features.
 
@@ -285,9 +285,17 @@ export ASPNETCORE_ENVIRONMENT=Development
 - Implement proper error handling and logging
 - Write unit tests for new features
 
-## License
+## License & Ownership
 
-This project is for educational and demonstration purposes. Please ensure you comply with Google Maps API terms of service when using this application.
+This project and its innovative concepts are the intellectual property of Adam Zaplatilek. While the source code is publicly available for educational and demonstration purposes, the core ideas, architecture, and unique features remain under proprietary ownership.
+
+**Usage Guidelines:**
+- Educational and demonstration use is encouraged
+- Commercial use requires explicit permission
+- Please ensure you comply with Google Maps API terms of service when using this application
+- Attribution is appreciated when referencing this work
+
+For licensing inquiries or commercial use permissions, please contact the project owner.
 
 ---
 
