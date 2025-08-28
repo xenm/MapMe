@@ -51,7 +51,7 @@ h1:focus {
 }
 
 .form-floating > .form-control-plaintext::placeholder, .form-floating > .form-control::placeholder {
-    color: var(--bs-secondary-color);
+    color: #6c757d; /* Bootstrap secondary color fallback */
     text-align: end;
 }
 
