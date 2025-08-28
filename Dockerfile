@@ -17,7 +17,9 @@ WORKDIR /src
 COPY ["MapMe/MapMe/MapMe.csproj", "MapMe/MapMe/"]
 COPY ["MapMe/MapMe.Client/MapMe.Client.csproj", "MapMe/MapMe.Client/"]
 RUN dotnet restore "MapMe/MapMe/MapMe.csproj"
-COPY . .
+# Copy only necessary source files to avoid sensitive data
+COPY ["MapMe/", "MapMe/"]
+COPY ["global.json", "./"]
 WORKDIR "/src/MapMe/MapMe"
 RUN dotnet build "./MapMe.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
@@ -26,6 +28,13 @@ ARG BUILD_CONFIGURATION=Release
 RUN dotnet publish "./MapMe.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
 
 FROM base AS final
+ARG APP_UID=64198
+ARG APP_GID=64198
+ARG APP_USER=appuser
+ARG APP_GROUP=appgroup
 WORKDIR /app
-COPY --from=publish /app/publish .
+# Copy published files with root ownership and read-only permissions for security
+COPY --from=publish --chown=root:root --chmod=755 /app/publish .
+# Explicitly switch to non-root user for security
+USER ${APP_USER}
 ENTRYPOINT ["dotnet", "MapMe.dll"]

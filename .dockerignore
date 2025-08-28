@@ -1,4 +1,4 @@
-﻿**/.dockerignore
+**/.dockerignore
 **/.env
 **/.git
 **/.gitignore
@@ -23,3 +23,31 @@
 **/values.dev.yaml
 LICENSE
 README.md
+
+# Additional sensitive configuration and secrets
+**/.env.*
+**/appsettings.Development.json
+**/appsettings.*.json
+**/*.pfx
+**/*.p12
+**/*.key
+**/*.pem
+**/*.crt
+**/*.cer
+
+# Documentation and non-essential files
+**/docs/
+**/Scripts/
+**/*.md
+TODO.md
+WIKI.md
+
+# Test results and logs
+**/TestResults/
+**/logs/
+**/*.log
+**/*.trx
+
+# User secrets and local configuration
+**/.microsoft/
+**/Properties/launchSettings.json

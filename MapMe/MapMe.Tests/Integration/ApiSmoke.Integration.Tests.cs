@@ -5,9 +5,10 @@ using Microsoft.Extensions.DependencyInjection;
 using MapMe.DTOs;
 using MapMe.Models;
 using MapMe.Repositories;
+using MapMe.Services;
 using Xunit;
 
-namespace MapMe.Tests;
+namespace MapMe.Tests.Integration;
 
 [Trait("Category", "Service")]
 public class ApiSmokeTests : IClassFixture<WebApplicationFactory<Program>>
@@ -34,6 +35,14 @@ public class ApiSmokeTests : IClassFixture<WebApplicationFactory<Program>>
                 // Register in-memory implementations for testing
                 services.AddSingleton<IUserProfileRepository, InMemoryUserProfileRepository>();
                 services.AddSingleton<IDateMarkByUserRepository, InMemoryDateMarkByUserRepository>();
+                
+                // Override authentication service for testing
+                var authDescriptors = services.Where(d => d.ServiceType == typeof(IAuthenticationService)).ToList();
+                foreach (var descriptor in authDescriptors)
+                {
+                    services.Remove(descriptor);
+                }
+                services.AddScoped<IAuthenticationService, TestAuthenticationService>();
             });
         });
     }
@@ -42,9 +51,12 @@ public class ApiSmokeTests : IClassFixture<WebApplicationFactory<Program>>
     public async Task Profiles_Create_And_Get()
     {
         var client = _factory.CreateClient();
+        
+        // Use test session token for authentication
+        client.DefaultRequestHeaders.Add("Authorization", "Bearer test-session-token");
         var req = new CreateProfileRequest(
             Id: "p_test",
-            UserId: "u_test",
+            UserId: "test_user_id", // Match TestAuthenticationService
             DisplayName: "Tester",
             Bio: null,
             Photos: System.Array.Empty<UserPhoto>(),
@@ -63,9 +75,12 @@ public class ApiSmokeTests : IClassFixture<WebApplicationFactory<Program>>
     public async Task DateMarks_Create_And_List_By_User()
     {
         var client = _factory.CreateClient();
+        
+        // Use test session token for authentication
+        client.DefaultRequestHeaders.Add("Authorization", "Bearer test-session-token");
         var dmReq = new UpsertDateMarkRequest(
             Id: "dm_test",
-            UserId: "u_test",
+            UserId: "test_user_id", // Match TestAuthenticationService
             Latitude: 37.0,
             Longitude: -122.0,
             PlaceId: null,
@@ -84,7 +99,7 @@ public class ApiSmokeTests : IClassFixture<WebApplicationFactory<Program>>
             Visibility: "public");
         var post = await client.PostAsJsonAsync("/api/datemarks", dmReq);
         post.EnsureSuccessStatusCode();
-        var list = await client.GetFromJsonAsync<System.Collections.Generic.List<DateMark>>("/api/users/u_test/datemarks");
+        var list = await client.GetFromJsonAsync<System.Collections.Generic.List<DateMark>>("/api/users/test_user_id/datemarks");
         list.Should().NotBeNull();
         list!.Should().ContainSingle(x => x.Id == "dm_test");
     }

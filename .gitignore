@@ -117,6 +117,12 @@ BenchmarkDotNet.Artifacts/
 # Editor histories
 .history/
 
+# Azurite (Azure Storage Emulator) files
+__azurite_db_*.json
+__blobstorage__/
+__queuestorage__/
+AzuriteConfig
+
 # wwwroot ignores
 wwwroot/lib/
 wwwroot/dist/

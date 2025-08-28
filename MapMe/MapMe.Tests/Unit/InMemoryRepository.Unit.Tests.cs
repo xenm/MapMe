@@ -7,7 +7,7 @@ using MapMe.Repositories;
 using MapMe.Utils;
 using Xunit;
 
-namespace MapMe.Tests;
+namespace MapMe.Tests.Unit;
 
 public class InMemoryRepositoryTests
 {

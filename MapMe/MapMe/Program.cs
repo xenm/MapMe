@@ -9,15 +9,124 @@ using MapMe.Repositories;
 using MapMe.DTOs;
 using MapMe.Models;
 using MapMe.Utils;
+using MapMe.Data;
 using Microsoft.Azure.Cosmos;
 using System.Net.Http;
 using MapMe.Client.Services;
+using MapMe.Services;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authorization;
+using MapMeAuth = MapMe.Services.IAuthenticationService;
+
+// Logging and Observability
+using Serilog;
+using Serilog.Events;
+using OpenTelemetry.Trace;
+using OpenTelemetry.Metrics;
+using System.Diagnostics;
+using System.Diagnostics.Metrics;
+using MapMe.Logging;
+using MapMe.Observability;
+using MapMe.Utilities;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-// Add services to the container.
-builder.Services.AddBlazorBootstrap();
+// Configure Serilog only when explicitly enabled via configuration
+var enableSerilog = builder.Configuration.GetValue<bool>("Logging:EnableSerilog", false) || 
+                   builder.Environment.IsProduction();
+
+if (enableSerilog)
+{
+    // Configure Serilog early in the startup process
+    Log.Logger = new LoggerConfiguration()
+        .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
+        .Enrich.FromLogContext()
+        .Enrich.WithMachineName()
+        .Enrich.WithEnvironmentName()
+        .WriteTo.Console()
+        .CreateBootstrapLogger();
+        
+    Log.Information("Starting MapMe application with JWT authentication");
+    
+    // Configure Serilog from configuration
+    builder.Host.UseSerilog((context, services, configuration) => configuration
+        .ReadFrom.Configuration(context.Configuration)
+        .ReadFrom.Services(services)
+        .Enrich.FromLogContext()
+        .Enrich.WithMachineName()
+        .Enrich.WithEnvironmentName()
+        .Enrich.With<CorrelationIdEnricher>()
+        .Enrich.With<UserContextEnricher>());
+}
+
+try
+{
+
+    // Configure OpenTelemetry (only when explicitly enabled)
+    var activitySource = new ActivitySource("MapMe.Authentication");
+    var enableTelemetry = builder.Configuration.GetValue<bool>("OpenTelemetry:Enabled", false) || 
+                         builder.Environment.IsProduction();
+    
+    if (enableTelemetry)
+    {
+        builder.Services.AddOpenTelemetry()
+            .WithTracing(tracerProviderBuilder =>
+            {
+                tracerProviderBuilder
+                    .AddSource("MapMe.Authentication")
+                    .SetSampler(new AlwaysOnSampler())
+                    .AddAspNetCoreInstrumentation(options =>
+                    {
+                        options.RecordException = true;
+                        options.Filter = (httpContext) => 
+                        {
+                            // Don't trace static files and health checks
+                            var path = httpContext.Request.Path.Value;
+                            return !path?.StartsWith("/css") == true && 
+                                   !path?.StartsWith("/js") == true &&
+                                   !path?.StartsWith("/images") == true &&
+                                   !path?.StartsWith("/favicon") == true;
+                        };
+                    })
+                    .AddHttpClientInstrumentation()
+                    .AddConsoleExporter();
+                    
+                // Add Jaeger exporter if configured
+                var jaegerEndpoint = builder.Configuration["OpenTelemetry:Jaeger:Endpoint"];
+                if (!string.IsNullOrEmpty(jaegerEndpoint))
+                {
+                    tracerProviderBuilder.AddJaegerExporter();
+                }
+            })
+            .WithMetrics(meterProviderBuilder =>
+            {
+                meterProviderBuilder
+                    .AddMeter("MapMe.Authentication")
+                    .AddAspNetCoreInstrumentation()
+                    .AddHttpClientInstrumentation()
+                    .AddConsoleExporter();
+                    
+                // Add Prometheus exporter if in production
+                if (builder.Environment.IsProduction())
+                {
+                    meterProviderBuilder.AddPrometheusExporter();
+                }
+            });
+    }
+    
+    // Register observability services (always register for compatibility)
+    builder.Services.AddSingleton(activitySource);
+    builder.Services.AddSingleton<JwtMetrics>();
+    
+    // Register log enrichers (only when Serilog is enabled)
+    if (enableSerilog)
+    {
+        builder.Services.AddSingleton<CorrelationIdEnricher>();
+        builder.Services.AddSingleton<UserContextEnricher>();
+    }
+    
+    // Add services to the container.
+    builder.Services.AddBlazorBootstrap();
 
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents(options =>
@@ -57,7 +166,8 @@ if (useCosmos)
                     || cosmosEndpoint.Contains("127.0.0.1");
         var options = new CosmosClientOptions
         {
-            ConnectionMode = ConnectionMode.Gateway
+            ConnectionMode = ConnectionMode.Gateway,
+            Serializer = new SystemTextJsonCosmosSerializer()
         };
         if (isLocal)
         {
@@ -84,11 +194,69 @@ else
     builder.Services.AddSingleton<IConversationRepository, InMemoryConversationRepository>();
 }
 
+// Register authentication services
+builder.Services.AddSingleton<IUserRepository, InMemoryUserRepository>();
+// Note: Session repository no longer needed for JWT authentication
+builder.Services.AddScoped<IJwtService, JwtService>();
+builder.Services.AddScoped<MapMeAuth, MapMe.Services.AuthenticationService>();
+
+// Add ASP.NET Core Authentication and Authorization services with JWT
+builder.Services.AddAuthentication("JWT")
+    .AddScheme<AuthenticationSchemeOptions, MapMe.Authentication.JwtAuthenticationHandler>(
+        "JWT", options => { });
+
+builder.Services.AddAuthorization(options =>
+{
+    // Ensure no global authorization policy that would override AllowAnonymous
+    options.FallbackPolicy = null;
+    options.DefaultPolicy = new AuthorizationPolicyBuilder()
+        .RequireAuthenticatedUser()
+        .Build();
+});
+
 // Register client-side services
 builder.Services.AddScoped<UserProfileService>();
 builder.Services.AddScoped<ChatService>();
+builder.Services.AddScoped<MapMe.Client.Services.AuthenticationService>();
 
-var app = builder.Build();
+// Add secure logging support with UserContext approach
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<ISecureLoggingService, SecureLoggingService>();
+
+    var app = builder.Build();
+    
+    // Configure Serilog request logging (only when Serilog is enabled)
+    if (enableSerilog)
+    {
+        app.UseSerilogRequestLogging(options =>
+        {
+            options.MessageTemplate = "HTTP {RequestMethod} {RequestPath} responded {StatusCode} in {Elapsed:0.0000} ms";
+            options.GetLevel = (httpContext, elapsed, ex) => ex != null
+                ? LogEventLevel.Error
+                : httpContext.Response.StatusCode > 499
+                    ? LogEventLevel.Error
+                    : httpContext.Response.StatusCode > 399
+                        ? LogEventLevel.Warning
+                        : LogEventLevel.Information;
+            options.EnrichDiagnosticContext = (diagnosticContext, httpContext) =>
+            {
+                // Use UserContext approach for secure diagnostic context - only safe values
+                if (httpContext.User?.Identity?.IsAuthenticated == true)
+                {
+                    var userContext = UserContext.FromClaims(httpContext.User, httpContext);
+                    var safeContext = userContext.ToLogContext();
+                    diagnosticContext.Set("UserContext", safeContext);
+                }
+                else
+                {
+                    // For unauthenticated requests, log only basic safe info
+                    var anonymousContext = UserContext.CreateAnonymous(httpContext);
+                    var safeContext = anonymousContext.ToLogContext();
+                    diagnosticContext.Set("UserContext", safeContext);
+                }
+            };
+        });
+    }
 
 // Ensure default user profile exists for development
 await EnsureDefaultUserProfileAsync(app.Services);
@@ -109,14 +277,13 @@ app.UseStatusCodePagesWithReExecute("/not-found", createScopeForErrors: true);
 
 app.UseHttpsRedirection();
 
-app.UseAntiforgery();
+app.UseAuthentication();
+app.UseAuthorization();
 
-app.MapStaticAssets();
-app.MapRazorComponents<App>()
-    .AddInteractiveServerRenderMode()
-    .AddInteractiveWebAssemblyRenderMode()
-    .AddAdditionalAssemblies(typeof(MapMe.Client._Imports).Assembly);
+// Ensure API endpoints are mapped before Blazor components to take precedence
+app.UseRouting();
 
+// Map API endpoints IMMEDIATELY after UseRouting() to ensure they take precedence over Blazor routing
 // Minimal API to provide client with Google Maps API key (prefer config/user-secrets over env var)
 app.MapGet("/config/maps", (HttpContext http) =>
 {
@@ -131,43 +298,198 @@ app.MapGet("/config/maps", (HttpContext http) =>
     return Results.Ok(new { ApiKey = apiKey });
 });
 
-// Profiles API
-app.MapPost("/api/profiles", async (CreateProfileRequest req, IUserProfileRepository repo) =>
+// Google Client ID configuration endpoint
+app.MapGet("/config/google-client-id", (HttpContext http) =>
 {
+    var clientId = app.Configuration["Google:ClientId"] ?? Environment.GetEnvironmentVariable("GOOGLE_CLIENT_ID");
+    return Results.Ok(new { ClientId = clientId });
+});
+
+// Authentication API Endpoints
+app.MapPost("/api/auth/login", async (LoginRequest request, MapMeAuth authService, ILogger<Program> logger, ISecureLoggingService secureLoggingService) =>
+{
+    // Log login attempt using secure UserContext approach - only safe values
+    secureLoggingService.LogSecurityEvent(logger, LogLevel.Information, SecurityEventType.Authentication,
+        "Login endpoint called", new
+        {
+            AuthAction = "Login",
+            HasUsername = !string.IsNullOrEmpty(request.Username),
+            UsernameLength = request.Username?.Length ?? 0
+        });
+    
+    var response = await authService.LoginAsync(request);
+    
+    // Log login response using secure UserContext approach - only safe values
+    secureLoggingService.LogSecurityEvent(logger, LogLevel.Information, SecurityEventType.Authentication,
+        "Login response generated", new
+        {
+            AuthAction = "Login",
+            Success = response.Success,
+            HasToken = !string.IsNullOrEmpty(response.Token)
+        });
+    
+    return response.Success ? Results.Ok(response) : Results.BadRequest(response);
+}).AllowAnonymous();
+
+app.MapPost("/api/auth/register", async (RegisterRequest request, MapMeAuth authService, ILogger<Program> logger, ISecureLoggingService secureLoggingService) =>
+{
+    // Log registration attempt using secure UserContext approach - only safe values
+    secureLoggingService.LogSecurityEvent(logger, LogLevel.Information, SecurityEventType.Authentication,
+        "Registration endpoint called", new
+        {
+            AuthAction = "Register",
+            HasUsername = !string.IsNullOrEmpty(request.Username),
+            UsernameLength = request.Username?.Length ?? 0,
+            HasEmail = !string.IsNullOrEmpty(request.Email),
+            EmailLength = request.Email?.Length ?? 0
+        });
+    
+    var response = await authService.RegisterAsync(request);
+    
+    // Log registration response using secure UserContext approach - only safe values
+    secureLoggingService.LogSecurityEvent(logger, LogLevel.Information, SecurityEventType.Authentication,
+        "Registration response generated", new
+        {
+            AuthAction = "Register",
+            Success = response.Success,
+            HasToken = !string.IsNullOrEmpty(response.Token)
+        });
+    
+    return response.Success ? Results.Ok(response) : Results.BadRequest(response);
+}).AllowAnonymous();
+
+app.MapPost("/api/auth/google-login", async (GoogleLoginRequest request, MapMeAuth authService) =>
+{
+    // Validate that the request is not completely empty
+    if (string.IsNullOrWhiteSpace(request.GoogleToken) &&
+        string.IsNullOrWhiteSpace(request.Email) &&
+        string.IsNullOrWhiteSpace(request.DisplayName) &&
+        string.IsNullOrWhiteSpace(request.GoogleId))
+    {
+        return Results.BadRequest(new AuthenticationResponse(false, "Google login request cannot be empty"));
+    }
+
+    var response = await authService.GoogleLoginAsync(request);
+    return response.Success ? Results.Ok(response) : Results.BadRequest(response);
+}).AllowAnonymous();
+
+app.MapPost("/api/auth/logout", async (LogoutRequest request, MapMeAuth authService) =>
+{
+    var success = await authService.LogoutAsync(request.Token ?? "");
+    return success ? Results.Ok() : Results.BadRequest();
+});
+
+app.MapGet("/api/auth/validate-token", async (HttpContext context, MapMeAuth authService, ILogger<Program> logger) =>
+{
+    logger.LogInformation("[DEBUG] /api/auth/validate-token endpoint called");
+    
+    var token = GetJwtTokenFromRequest(context);
+    logger.LogInformation("[DEBUG] Extracted token: {TokenPreview}", SecureLogging.ToTokenPreview(token));
+    
+    if (string.IsNullOrEmpty(token)) 
+    {
+        logger.LogWarning("[DEBUG] No token found in request headers");
+        return Results.Unauthorized();
+    }
+    
+    var user = await authService.GetCurrentUserAsync(token);
+    logger.LogInformation("[DEBUG] User validation result: {UserFound}", user != null ? $"Found user {SecureLogging.SanitizeForLog(user.Username)}" : "No user found");
+    
+    return user != null ? Results.Ok(user) : Results.Unauthorized();
+}).AllowAnonymous();
+
+app.MapPost("/api/auth/refresh-token", async (HttpContext context, MapMeAuth authService) =>
+{
+    var token = GetJwtTokenFromRequest(context);
+    if (string.IsNullOrEmpty(token)) return Results.Unauthorized();
+    
+    var response = await authService.RefreshTokenAsync(token);
+    return response.Success ? Results.Ok(response) : Results.BadRequest(response);
+});
+
+app.MapPost("/api/auth/change-password", async (ChangePasswordRequest request, HttpContext context, MapMeAuth authService) =>
+{
+    var token = GetJwtTokenFromRequest(context);
+    if (string.IsNullOrEmpty(token)) return Results.Unauthorized();
+    
+    var currentUser = await authService.GetCurrentUserAsync(token);
+    if (currentUser == null) return Results.Unauthorized();
+    
+    var success = await authService.ChangePasswordAsync(currentUser.UserId, request);
+    return success ? Results.Ok() : Results.BadRequest();
+});
+
+app.MapPost("/api/auth/password-reset", async (PasswordResetRequest request, MapMeAuth authService) =>
+{
+    var success = await authService.RequestPasswordResetAsync(request);
+    return success ? Results.Ok() : Results.BadRequest();
+});
+
+// Profiles API
+app.MapPost("/api/profiles", async (CreateProfileRequest req, IUserProfileRepository repo, HttpContext context, MapMeAuth authService) =>
+{
+    var currentUserId = await GetCurrentUserIdAsync(context, authService);
+    if (currentUserId == null)
+        return Results.Unauthorized();
+        
     if (string.IsNullOrWhiteSpace(req.Id) || string.IsNullOrWhiteSpace(req.UserId) || string.IsNullOrWhiteSpace(req.DisplayName))
         return Results.BadRequest("Id, UserId and DisplayName are required");
+        
+    // Ensure user can only create/update their own profile
+    if (req.UserId != currentUserId)
+        return Results.Forbid();
+        
     var now = DateTimeOffset.UtcNow;
     var profile = req.ToProfile(now);
     await repo.UpsertAsync(profile);
     return Results.Created($"/api/profiles/{profile.Id}", profile);
 });
 
-app.MapGet("/api/profiles/{id}", async (string id, IUserProfileRepository repo) =>
+app.MapGet("/api/profiles/{id}", async (string id, IUserProfileRepository repo, HttpContext context, MapMeAuth authService) =>
 {
+    var currentUserId = await GetCurrentUserIdAsync(context, authService);
+    if (currentUserId == null)
+        return Results.Unauthorized();
+        
     var profile = await repo.GetByIdAsync(id);
     return profile is null ? Results.NotFound() : Results.Ok(profile);
 });
 
 // Add endpoint for current user (for JavaScript compatibility)
-app.MapGet("/api/users/current_user", async (HttpContext context, IUserProfileRepository repo) =>
+app.MapGet("/api/users/current_user", async (HttpContext context, IUserProfileRepository repo, MapMeAuth authService) =>
 {
-    // Get user ID from header (simulated authentication)
-    var userId = context.Request.Headers["X-User-Id"].FirstOrDefault() ?? "current_user";
-    var profile = await repo.GetByUserIdAsync(userId);
+    var currentUserId = await GetCurrentUserIdAsync(context, authService);
+    if (currentUserId == null)
+        return Results.Unauthorized();
+        
+    var profile = await repo.GetByUserIdAsync(currentUserId);
     return profile is null ? Results.NotFound() : Results.Ok(profile);
 });
 
-app.MapGet("/api/users/{userId}", async (string userId, IUserProfileRepository repo) =>
+app.MapGet("/api/users/{userId}", async (string userId, IUserProfileRepository repo, HttpContext context, MapMeAuth authService) =>
 {
+    var currentUserId = await GetCurrentUserIdAsync(context, authService);
+    if (currentUserId == null)
+        return Results.Unauthorized();
+        
     var profile = await repo.GetByUserIdAsync(userId);
     return profile is null ? Results.NotFound() : Results.Ok(profile);
 });
 
 // DateMarks API
-app.MapPost("/api/datemarks", async (UpsertDateMarkRequest req, IDateMarkByUserRepository repo) =>
+app.MapPost("/api/datemarks", async (UpsertDateMarkRequest req, IDateMarkByUserRepository repo, HttpContext context, MapMeAuth authService) =>
 {
+    var currentUserId = await GetCurrentUserIdAsync(context, authService);
+    if (currentUserId == null)
+        return Results.Unauthorized();
+        
     if (string.IsNullOrWhiteSpace(req.Id) || string.IsNullOrWhiteSpace(req.UserId))
         return Results.BadRequest("Id and UserId are required");
+        
+    // Ensure user can only create/update their own DateMarks
+    if (req.UserId != currentUserId)
+        return Results.Forbid();
+        
     var now = DateTimeOffset.UtcNow;
     var mark = req.ToDateMark(now);
     await repo.UpsertAsync(mark);
@@ -182,8 +504,14 @@ app.MapGet("/api/users/{userId}/datemarks", async (
     string[]? tags,
     string[]? qualities,
     IDateMarkByUserRepository repo,
+    HttpContext context,
+    MapMeAuth authService,
     CancellationToken ct) =>
 {
+    var currentUserId = await GetCurrentUserIdAsync(context, authService);
+    if (currentUserId == null)
+        return Results.Unauthorized();
+        
     var cats = categories is { Length: > 0 } ? Normalization.ToNorm(categories!) : Array.Empty<string>();
     var tgs = tags is { Length: > 0 } ? Normalization.ToNorm(tags!) : Array.Empty<string>();
     var qls = qualities is { Length: > 0 } ? Normalization.ToNorm(qualities!) : Array.Empty<string>();
@@ -204,8 +532,14 @@ app.MapGet("/api/map/datemarks", async (
     string[]? tags,
     string[]? qualities,
     IDateMarkByUserRepository repo,
+    HttpContext context,
+    MapMeAuth authService,
     CancellationToken ct) =>
 {
+    var currentUserId = await GetCurrentUserIdAsync(context, authService);
+    if (currentUserId == null)
+        return Results.Unauthorized();
+        
     // For prototype, scan all in-memory marks; will be replaced by DateMarksGeo + prefixes
     var cats = categories is { Length: > 0 } ? Normalization.ToNorm(categories!) : Array.Empty<string>();
     var tgs = tags is { Length: > 0 } ? Normalization.ToNorm(tags!) : Array.Empty<string>();
@@ -219,10 +553,11 @@ app.MapGet("/api/map/datemarks", async (
 });
 
 // Chat API Endpoints
-app.MapPost("/api/chat/messages", async (SendMessageRequest req, IChatMessageRepository messageRepo, IConversationRepository conversationRepo, IUserProfileRepository userRepo, HttpContext context) =>
+app.MapPost("/api/chat/messages", async (SendMessageRequest req, IChatMessageRepository messageRepo, IConversationRepository conversationRepo, IUserProfileRepository userRepo, HttpContext context, MapMeAuth authService) =>
 {
-    // For now, use a default current user ID - in production this would come from authentication
-    var senderId = context.Request.Headers["X-User-Id"].FirstOrDefault() ?? "current_user";
+    var senderId = await GetCurrentUserIdAsync(context, authService);
+    if (senderId == null)
+        return Results.Unauthorized();
     
     if (string.IsNullOrWhiteSpace(req.ReceiverId) || string.IsNullOrWhiteSpace(req.Content))
         return Results.BadRequest("ReceiverId and Content are required");
@@ -267,10 +602,11 @@ app.MapPost("/api/chat/messages", async (SendMessageRequest req, IChatMessageRep
     return Results.Created($"/api/chat/messages/{message.Id}", message);
 });
 
-app.MapGet("/api/chat/conversations", async (IConversationRepository conversationRepo, IUserProfileRepository userRepo, HttpContext context) =>
+app.MapGet("/api/chat/conversations", async (IConversationRepository conversationRepo, IUserProfileRepository userRepo, HttpContext context, MapMeAuth authService) =>
 {
-    // For now, use a default current user ID - in production this would come from authentication
-    var userId = context.Request.Headers["X-User-Id"].FirstOrDefault() ?? "current_user";
+    var userId = await GetCurrentUserIdAsync(context, authService);
+    if (userId == null)
+        return Results.Unauthorized();
     
     var conversations = new List<ConversationResponse>();
     
@@ -313,11 +649,13 @@ app.MapGet("/api/chat/conversations/{conversationId}/messages", async (
     IChatMessageRepository messageRepo,
     IConversationRepository conversationRepo,
     HttpContext context,
+    MapMeAuth authService,
     int skip = 0,
     int take = 50) =>
 {
-    // For now, use a default current user ID - in production this would come from authentication
-    var userId = context.Request.Headers["X-User-Id"].FirstOrDefault() ?? "current_user";
+    var userId = await GetCurrentUserIdAsync(context, authService);
+    if (userId == null)
+        return Results.Unauthorized();
     
     // Verify user is participant in conversation
     var conversation = await conversationRepo.GetByIdAsync(conversationId);
@@ -333,10 +671,11 @@ app.MapGet("/api/chat/conversations/{conversationId}/messages", async (
     return Results.Ok(messages);
 });
 
-app.MapPost("/api/chat/messages/read", async (MarkAsReadRequest req, IChatMessageRepository messageRepo, IConversationRepository conversationRepo, HttpContext context) =>
+app.MapPost("/api/chat/messages/read", async (MarkAsReadRequest req, IChatMessageRepository messageRepo, IConversationRepository conversationRepo, HttpContext context, MapMeAuth authService) =>
 {
-    // For now, use a default current user ID - in production this would come from authentication
-    var userId = context.Request.Headers["X-User-Id"].FirstOrDefault() ?? "current_user";
+    var userId = await GetCurrentUserIdAsync(context, authService);
+    if (userId == null)
+        return Results.Unauthorized();
     
     // Verify user is participant in conversation
     var conversation = await conversationRepo.GetByIdAsync(req.ConversationId);
@@ -352,10 +691,11 @@ app.MapPost("/api/chat/messages/read", async (MarkAsReadRequest req, IChatMessag
     return Results.Ok();
 });
 
-app.MapPost("/api/chat/conversations/archive", async (ArchiveConversationRequest req, IConversationRepository conversationRepo, HttpContext context) =>
+app.MapPost("/api/chat/conversations/archive", async (ArchiveConversationRequest req, IConversationRepository conversationRepo, HttpContext context, MapMeAuth authService) =>
 {
-    // For now, use a default current user ID - in production this would come from authentication
-    var userId = context.Request.Headers["X-User-Id"].FirstOrDefault() ?? "current_user";
+    var userId = await GetCurrentUserIdAsync(context, authService);
+    if (userId == null)
+        return Results.Unauthorized();
     
     // Verify user is participant in conversation
     var conversation = await conversationRepo.GetByIdAsync(req.ConversationId);
@@ -367,10 +707,11 @@ app.MapPost("/api/chat/conversations/archive", async (ArchiveConversationRequest
     return Results.Ok();
 });
 
-app.MapDelete("/api/chat/messages/{messageId}", async (string messageId, IChatMessageRepository messageRepo, HttpContext context) =>
+app.MapDelete("/api/chat/messages/{messageId}", async (string messageId, IChatMessageRepository messageRepo, HttpContext context, MapMeAuth authService) =>
 {
-    // For now, use a default current user ID - in production this would come from authentication
-    var userId = context.Request.Headers["X-User-Id"].FirstOrDefault() ?? "current_user";
+    var userId = await GetCurrentUserIdAsync(context, authService);
+    if (userId == null)
+        return Results.Unauthorized();
     
     var message = await messageRepo.GetByIdAsync(messageId);
     if (message == null || message.SenderId != userId)
@@ -381,10 +722,11 @@ app.MapDelete("/api/chat/messages/{messageId}", async (string messageId, IChatMe
     return Results.Ok();
 });
 
-app.MapGet("/api/chat/messages/new", async (IChatMessageRepository messageRepo, IConversationRepository conversationRepo, HttpContext context) =>
+app.MapGet("/api/chat/messages/new", async (IChatMessageRepository messageRepo, IConversationRepository conversationRepo, HttpContext context, MapMeAuth authService) =>
 {
-    // For now, use a default current user ID - in production this would come from authentication
-    var userId = context.Request.Headers["X-User-Id"].FirstOrDefault() ?? "current_user";
+    var userId = await GetCurrentUserIdAsync(context, authService);
+    if (userId == null)
+        return Results.Unauthorized();
     
     // Get all conversations for the user and return recent messages
     var conversations = new List<Conversation>();
@@ -405,14 +747,72 @@ app.MapGet("/api/chat/messages/new", async (IChatMessageRepository messageRepo, 
     return Results.Ok(recentMessages.OrderByDescending(m => m.CreatedAt).Take(20));
 });
 
-app.MapGet("/messages/new", async (HttpContext context) =>
+app.MapGet("/messages/new", (HttpContext context) =>
 {
     var to = context.Request.Query["to"].FirstOrDefault() ?? "current_user";
     // Redirect to chat page with the target user
     return Results.Redirect($"/chat?to={Uri.EscapeDataString(to)}");
 });
 
-app.Run();
+// Add middleware after API endpoints
+app.UseAntiforgery();
+app.UseStaticFiles();
+app.MapStaticAssets();
+
+// Map Blazor components AFTER all API endpoints to ensure API routes take precedence
+app.MapRazorComponents<App>()
+    .AddInteractiveServerRenderMode()
+    .AddInteractiveWebAssemblyRenderMode()
+    .AddAdditionalAssemblies(typeof(MapMe.Client._Imports).Assembly);
+
+// Add fallback routing for Blazor WebAssembly client-side routes
+app.MapFallbackToFile("index.html");
+
+    Log.Information("MapMe application started successfully");
+    app.Run();
+}
+catch (Exception ex)
+{
+    Log.Fatal(ex, "MapMe application terminated unexpectedly");
+    throw;
+}
+finally
+{
+    Log.Information("MapMe application shutting down");
+    Log.CloseAndFlush();
+}
+
+/// <summary>
+/// Gets the JWT token from the request (Authorization header)
+/// </summary>
+static string? GetJwtTokenFromRequest(HttpContext context)
+{
+    // Try Authorization header first (Bearer token) - case insensitive
+    var authHeader = context.Request.Headers.Authorization.FirstOrDefault();
+    if (!string.IsNullOrEmpty(authHeader) && authHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+    {
+        var spaceIndex = authHeader.IndexOf(' ');
+        if (spaceIndex > 0 && spaceIndex < authHeader.Length - 1)
+        {
+            return authHeader.Substring(spaceIndex + 1).Trim();
+        }
+    }
+    
+    return null;
+}
+
+
+/// <summary>
+/// Gets the current user ID from the request using JWT token validation
+/// </summary>
+static async Task<string?> GetCurrentUserIdAsync(HttpContext context, MapMeAuth authService)
+{
+    var token = GetJwtTokenFromRequest(context);
+    if (string.IsNullOrEmpty(token)) return null;
+    
+    var user = await authService.GetCurrentUserAsync(token);
+    return user?.UserId;
+}
 
 /// <summary>
 /// Ensures a default user profile exists for development purposes

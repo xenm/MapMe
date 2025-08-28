@@ -2,53 +2,72 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using MapMe.Models;
+using MapMe.Data;
 using Microsoft.Azure.Cosmos;
 
 namespace MapMe.Repositories;
 
-public sealed class CosmosUserProfileRepository : IUserProfileRepository
+/// <summary>
+/// CosmosDB implementation of user profile repository
+/// </summary>
+public sealed class CosmosUserProfileRepository : CosmosRepositoryBase<UserProfile>, IUserProfileRepository
 {
-    private readonly CosmosClient _client;
-    private readonly CosmosContextOptions _options;
-    private Container _container => _client.GetContainer(_options.DatabaseName, "Users");
+    private const string ContainerName = "UserProfiles";
+    private const string PartitionKeyPath = "/id";
 
-    public CosmosUserProfileRepository(CosmosClient client, CosmosContextOptions options)
+    public CosmosUserProfileRepository(CosmosClient cosmosClient, CosmosContextOptions options)
+        : base(cosmosClient, options, ContainerName)
     {
-        _client = client;
-        _options = options;
+        // Ensure container exists on startup
+        _ = Task.Run(async () => await EnsureContainerExistsAsync(PartitionKeyPath, 400));
     }
 
+    /// <summary>
+    /// Gets a user profile by its unique ID
+    /// </summary>
     public async Task<UserProfile?> GetByIdAsync(string id, CancellationToken ct = default)
     {
-        try
-        {
-            var resp = await _container.ReadItemAsync<UserProfile>(id, new PartitionKey(id), cancellationToken: ct);
-            return resp.Resource;
-        }
-        catch (CosmosException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
-        {
+        if (string.IsNullOrWhiteSpace(id))
             return null;
-        }
+
+        return await GetItemAsync(id, id, ct);
     }
 
+    /// <summary>
+    /// Gets a user profile by user ID (may be different from document ID)
+    /// </summary>
     public async Task<UserProfile?> GetByUserIdAsync(string userId, CancellationToken ct = default)
     {
-        var q = new QueryDefinition("SELECT * FROM c WHERE c.userId = @userId").WithParameter("@userId", userId);
-        using var feed = _container.GetItemQueryIterator<UserProfile>(q, requestOptions: new QueryRequestOptions
-        {
-            PartitionKey = null,
-            MaxItemCount = 1
-        });
-        if (feed.HasMoreResults)
-        {
-            var page = await feed.ReadNextAsync(ct);
-            foreach (var item in page) return item;
-        }
-        return null;
+        if (string.IsNullOrWhiteSpace(userId))
+            return null;
+
+        var queryDefinition = new QueryDefinition(
+            "SELECT * FROM c WHERE c.userId = @userId")
+            .WithParameter("@userId", userId);
+
+        var results = await QueryItemsAsync(queryDefinition, ct);
+        return results.Count > 0 ? results[0] : null;
     }
 
+    /// <summary>
+    /// Creates or updates a user profile
+    /// </summary>
     public async Task UpsertAsync(UserProfile profile, CancellationToken ct = default)
     {
-        await _container.UpsertItemAsync(profile, new PartitionKey(profile.Id), cancellationToken: ct);
+        if (profile == null)
+            throw new ArgumentNullException(nameof(profile));
+
+        await UpsertItemAsync(profile, profile.Id, ct);
+    }
+
+    /// <summary>
+    /// Deletes a user profile by ID
+    /// </summary>
+    public async Task DeleteAsync(string id, CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(id))
+            return;
+
+        await DeleteItemAsync(id, id, ct);
     }
 }

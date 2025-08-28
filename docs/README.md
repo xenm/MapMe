@@ -1,5 +1,7 @@
 # MapMe Documentation
 
+![.NET](https://img.shields.io/badge/.NET-10-blue) ![Blazor](https://img.shields.io/badge/Blazor-WASM%20%2B%20Interactive%20SSR-purple) ![Tests](https://img.shields.io/badge/Tests-Unit%20%2F%20Integration-green)
+
 This folder contains comprehensive documentation for the MapMe project.
 
 ## 📚 Documentation Index
@@ -12,6 +14,8 @@ This folder contains comprehensive documentation for the MapMe project.
 ### 🏛 Architecture
 - Architecture & Tech Stack: architecture.md
 - API Overview: api.md
+- CosmosDB Integration: CosmosDB-Integration.md
+- System.Text.Json Cosmos Serializer: SystemTextJsonCosmosSerializer.md
 
 ### 🖥 Frontend
 - Map UX (Markers, Popups, Flows): frontend-map.md

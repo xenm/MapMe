@@ -456,7 +456,10 @@ else
 
         try
         {
-            _userProfile = await ProfileService.GetUserProfileAsync(username);
+            if (!string.IsNullOrEmpty(username))
+            {
+                _userProfile = await ProfileService.GetUserProfileAsync(username) ?? new UserProfile();
+            }
             if (_userProfile != null)
             {
                 _avatarUrl = _userProfile.Photos?.FirstOrDefault()?.Url ?? "/images/user-avatar.svg";

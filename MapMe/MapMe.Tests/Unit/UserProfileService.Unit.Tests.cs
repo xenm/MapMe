@@ -10,7 +10,7 @@ using MapMe.Client.Services;
 using MapMe.Client.Models;
 using System.Text.Json;
 
-namespace MapMe.Tests;
+namespace MapMe.Tests.Unit;
 
 // Create IJSVoidResult interface for .NET 10 preview compatibility
 public interface IJSVoidResult : IAsyncDisposable

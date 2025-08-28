@@ -5,22 +5,72 @@
 
 version: 2
 updates:
-  - package-ecosystem: "npm" # Look for `package.json` and `lock` files in the `root` directory
-    directory: "/"
-    schedule:
-      interval: "daily"
-  - package-ecosystem: "docker" # Look for a `Dockerfile` in the `root` directory
-    directory: "/"
-    schedule:
-      interval: "daily"
+  # === ACTIVE ECOSYSTEMS (ordered by importance) ===
+  
+  # 1. NuGet dependencies - Core .NET packages (HIGHEST PRIORITY)
   - package-ecosystem: "nuget"
-    directory: "/nuget/helpers/lib/NuGetUpdater"
+    directory: "/"  # Root directory contains .sln and project files
     schedule:
       interval: "daily"
-  #
-  # Ignored while .NET 10 is in Prerelease
-  #
-  # - package-ecosystem: "dotnet-sdk"
-  #   directory: "/nuget/helpers/lib/NuGetUpdater"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "dotnet"
+
+  # 2. Docker dependencies - Infrastructure and deployment (HIGH PRIORITY)
+  - package-ecosystem: "docker"
+    directory: "/"  # Root contains Dockerfile and docker-compose.yml
+    schedule:
+      interval: "daily"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "docker"
+
+  # 3. GitHub Actions dependencies - CI/CD workflows (MEDIUM PRIORITY)
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "daily"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "github-actions"
+
+  # === FUTURE ECOSYSTEMS (commented out, ready for activation) ===
+  
+  # npm ecosystem - For React/Vue/Angular/Next.js frontend
+  # Uncomment when adding JavaScript-based frontend:
+  # - package-ecosystem: "npm"
+  #   directory: "/frontend"  # or wherever package.json will be located
   #   schedule:
   #     interval: "daily"
+  #   open-pull-requests-limit: 10
+  #   labels:
+  #     - "dependencies"
+  #     - "javascript"
+  #     - "frontend"
+
+  # Flutter/Dart ecosystem - For mobile app development
+  # Uncomment when adding Flutter mobile app:
+  # - package-ecosystem: "pub"
+  #   directory: "/mobile"  # or wherever pubspec.yaml will be located
+  #   schedule:
+  #     interval: "daily"
+  #   open-pull-requests-limit: 10
+  #   labels:
+  #     - "dependencies"
+  #     - "dart"
+  #     - "flutter"
+  #     - "mobile"
+
+  # .NET SDK ecosystem - Currently disabled while .NET 10 is in preview
+  # Uncomment when .NET 10 reaches stable release:
+  # - package-ecosystem: "dotnet-sdk"
+  #   directory: "/"
+  #   schedule:
+  #     interval: "daily"
+  #   open-pull-requests-limit: 5
+  #   labels:
+  #     - "dependencies"
+  #     - "dotnet-sdk"

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
 using FluentAssertions;
@@ -10,9 +11,10 @@ using Microsoft.Extensions.DependencyInjection;
 using MapMe.DTOs;
 using MapMe.Models;
 using MapMe.Repositories;
+using MapMe.Services;
 using Xunit;
 
-namespace MapMe.Tests;
+namespace MapMe.Tests.Integration;
 
 [Trait("Category", "Integration")]
 public class ApiIntegrationTests : IClassFixture<WebApplicationFactory<Program>>
@@ -40,19 +42,85 @@ public class ApiIntegrationTests : IClassFixture<WebApplicationFactory<Program>>
                 // Register in-memory implementations for testing
                 services.AddSingleton<IUserProfileRepository, InMemoryUserProfileRepository>();
                 services.AddSingleton<IDateMarkByUserRepository, InMemoryDateMarkByUserRepository>();
+                
+                // Override authentication service for testing
+                var authDescriptors = services.Where(d => d.ServiceType == typeof(IAuthenticationService)).ToList();
+                foreach (var descriptor in authDescriptors)
+                {
+                    services.Remove(descriptor);
+                }
+                services.AddScoped<IAuthenticationService, TestAuthenticationService>();
             });
         });
         
         _client = _factory.CreateClient();
     }
 
+    /// <summary>
+    /// Creates a test user and returns a valid JWT token for authentication
+    /// </summary>
+    private async Task<string> CreateTestUserAndGetTokenAsync(string username = "test_user", string email = "test@example.com", string password = "TestPassword123!")
+    {
+        // Register a test user
+        var registerRequest = new RegisterRequest(
+            Username: username,
+            Email: email,
+            Password: password,
+            ConfirmPassword: password,
+            DisplayName: "Test User"
+        );
+
+        var registerResponse = await _client.PostAsJsonAsync("/api/auth/register", registerRequest);
+        
+        // If user already exists, try to login instead
+        if (!registerResponse.IsSuccessStatusCode)
+        {
+            var loginRequest = new LoginRequest(
+                Username: username,
+                Password: password,
+                RememberMe: false
+            );
+
+            var loginResponse = await _client.PostAsJsonAsync("/api/auth/login", loginRequest);
+            if (loginResponse.IsSuccessStatusCode)
+            {
+                var loginResult = await loginResponse.Content.ReadFromJsonAsync<AuthenticationResponse>();
+                return loginResult!.Token!;
+            }
+        }
+        else
+        {
+            var registerResult = await registerResponse.Content.ReadFromJsonAsync<AuthenticationResponse>();
+            return registerResult!.Token!;
+        }
+
+        throw new InvalidOperationException("Failed to create test user or login");
+    }
+
+    /// <summary>
+    /// Adds JWT authentication header to HTTP client for subsequent requests
+    /// </summary>
+    private void AddAuthenticationHeader(string token)
+    {
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+    }
+
     [Fact]
     public async Task UserProfile_CompleteWorkflow_CreatesAndRetrievesProfile()
     {
-        // Arrange
+        // Arrange - Create authenticated user
+        var username = "user_integration_test";
+        var token = await CreateTestUserAndGetTokenAsync(username, "integration@example.com");
+        AddAuthenticationHeader(token);
+        
+        // Get the actual user ID from the authentication response
+        var validateResponse = await _client.GetAsync("/api/auth/validate-token");
+        var authenticatedUser = await validateResponse.Content.ReadFromJsonAsync<AuthenticatedUser>();
+        var actualUserId = authenticatedUser!.UserId;
+        
         var createRequest = new CreateProfileRequest(
             Id: "profile_integration_test",
-            UserId: "user_integration_test",
+            UserId: actualUserId, // Use the actual user ID from authentication
             DisplayName: "Integration Test User",
             Bio: "This is a test user for integration testing",
             Photos: new[] 
@@ -89,8 +157,11 @@ public class ApiIntegrationTests : IClassFixture<WebApplicationFactory<Program>>
     [Fact]
     public async Task DateMark_CompleteWorkflow_CreatesAndListsDateMarks()
     {
-        // Arrange
-        var userId = "user_datemark_test";
+        // Arrange - Create authenticated user
+        var userId = "test_user_id"; // Match TestAuthenticationService
+        var token = await CreateTestUserAndGetTokenAsync(userId, "datemark@example.com");
+        AddAuthenticationHeader(token);
+        
         var dateMarkRequest = new UpsertDateMarkRequest(
             Id: "datemark_integration_test",
             UserId: userId,
@@ -128,7 +199,7 @@ public class ApiIntegrationTests : IClassFixture<WebApplicationFactory<Program>>
         dateMarks.Should().NotBeNull();
         dateMarks!.Should().HaveCount(1);
         
-        var dateMark = dateMarks.First();
+        var dateMark = dateMarks!.First();
         dateMark.Id.Should().Be("datemark_integration_test");
         dateMark.UserId.Should().Be(userId);
         dateMark.Geo.Coordinates[1].Should().Be(37.7749); // Latitude at index 1
@@ -144,8 +215,10 @@ public class ApiIntegrationTests : IClassFixture<WebApplicationFactory<Program>>
     [Fact]
     public async Task DateMark_FilteringByCategories_ReturnsCorrectResults()
     {
-        // Arrange
-        var userId = "user_filter_test";
+        // Arrange - Create authenticated user
+        var userId = "test_user_id"; // Match TestAuthenticationService
+        var token = await CreateTestUserAndGetTokenAsync(userId, "filter@example.com");
+        AddAuthenticationHeader(token);
         
         // Create multiple DateMarks with different categories
         var restaurantMark = new UpsertDateMarkRequest(
@@ -203,14 +276,17 @@ public class ApiIntegrationTests : IClassFixture<WebApplicationFactory<Program>>
         
         dateMarks.Should().NotBeNull();
         dateMarks!.Should().HaveCount(1);
-        dateMarks.First().Id.Should().Be("restaurant_mark");
+        dateMarks!.First().Id.Should().Be("restaurant_mark");
     }
 
     [Fact]
     public async Task DateMark_FilteringByDateRange_ReturnsCorrectResults()
     {
-        // Arrange
-        var userId = "user_date_filter_test";
+        // Arrange - Add authentication
+        _client.DefaultRequestHeaders.Clear();
+        _client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", "test-session-token");
+        
+        var userId = "test_user_id"; // Match TestAuthenticationService
         
         var oldMark = new UpsertDateMarkRequest(
             Id: "old_mark",
@@ -267,12 +343,16 @@ public class ApiIntegrationTests : IClassFixture<WebApplicationFactory<Program>>
         
         dateMarks.Should().NotBeNull();
         dateMarks!.Should().HaveCount(1);
-        dateMarks.First().Id.Should().Be("new_mark");
+        dateMarks!.First().Id.Should().Be("new_mark");
     }
 
     [Fact]
     public async Task Profile_NotFound_Returns404()
     {
+        // Arrange - Add authentication
+        _client.DefaultRequestHeaders.Clear();
+        _client.DefaultRequestHeaders.Add("Authorization", "Bearer test-session-token");
+        
         // Act
         var response = await _client.GetAsync("/api/profiles/non_existent_profile");
         
@@ -283,6 +363,10 @@ public class ApiIntegrationTests : IClassFixture<WebApplicationFactory<Program>>
     [Fact]
     public async Task DateMarks_EmptyUser_ReturnsEmptyList()
     {
+        // Arrange - Add authentication
+        _client.DefaultRequestHeaders.Clear();
+        _client.DefaultRequestHeaders.Add("Authorization", "Bearer test-session-token");
+        
         // Act
         var response = await _client.GetAsync("/api/users/non_existent_user/datemarks");
         
@@ -297,8 +381,11 @@ public class ApiIntegrationTests : IClassFixture<WebApplicationFactory<Program>>
     [Fact]
     public async Task DateMark_UpdateExisting_ModifiesCorrectly()
     {
-        // Arrange
-        var userId = "user_update_test";
+        // Arrange - Add authentication
+        _client.DefaultRequestHeaders.Clear();
+        _client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", "test-session-token");
+        
+        var userId = "test_user_id"; // Match TestAuthenticationService
         var originalRequest = new UpsertDateMarkRequest(
             Id: "update_test_mark",
             UserId: userId,
@@ -357,8 +444,11 @@ public class ApiIntegrationTests : IClassFixture<WebApplicationFactory<Program>>
     [InlineData("private")]
     public async Task DateMark_VisibilitySettings_AreRespected(string visibility)
     {
-        // Arrange
-        var userId = $"user_visibility_test_{visibility}";
+        // Arrange - Add authentication
+        _client.DefaultRequestHeaders.Clear();
+        _client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", "test-session-token");
+        
+        var userId = "test_user_id"; // Match TestAuthenticationService
         var request = new UpsertDateMarkRequest(
             Id: $"visibility_test_{visibility}",
             UserId: userId,

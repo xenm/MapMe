@@ -41,26 +41,28 @@ Configurable variables (set in the pipeline UI or variable groups):
 Prerequisites:
 - .NET 10 SDK
 
-1) Restore and build
+### Step-by-step process:
 
-```bash
-dotnet restore MapMe.sln
-dotnet build MapMe.sln -c Release --no-restore
-```
+1. **Restore and build**
 
-2) Run unit tests only (in parallel by default)
+   ```bash
+   dotnet restore MapMe.sln
+   dotnet build MapMe.sln -c Release --no-restore
+   ```
 
-```bash
-cd MapMe
-dotnet test MapMe.Tests/MapMe.Tests.csproj -c Release --filter "Category=Unit"
-```
+2. **Run unit tests only (in parallel by default)**
 
-3) Run service tests (integration tests with in-memory repositories)
+   ```bash
+   cd MapMe
+   dotnet test MapMe.Tests/MapMe.Tests.csproj -c Release --filter "Category=Unit"
+   ```
 
-```bash
-cd MapMe
-dotnet test MapMe.Tests/MapMe.Tests.csproj -c Release --filter "Category!=Unit"
-```
+3. **Run service tests (integration tests with in-memory repositories)**
+
+   ```bash
+   cd MapMe
+   dotnet test MapMe.Tests/MapMe.Tests.csproj -c Release --filter "Category!=Unit"
+   ```
 
 ## HTML Test Reports
 

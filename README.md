@@ -1,5 +1,7 @@
 # MapMe
 
+![.NET](https://img.shields.io/badge/.NET-10-blue) ![Blazor](https://img.shields.io/badge/Blazor-WASM%20%2B%20Interactive%20SSR-purple) ![Tests](https://img.shields.io/badge/Tests-Unit%20%2F%20Integration-green) ![License](https://img.shields.io/badge/License-Proprietary-lightgrey)
+
 A modern Blazor dating app with Google Maps integration, featuring comprehensive user profiles, location-based date marking, and social discovery features.
 
 ## Features
@@ -88,9 +90,9 @@ Enable these APIs in Google Cloud Console:
 ### Technology Stack
 - **Frontend**: Blazor WebAssembly + Interactive SSR
 - **Backend**: ASP.NET Core (.NET 10)
-- **Data**: In-memory repositories with localStorage persistence
+- **Data**: In-memory repositories with localStorage persistence, Azure Cosmos DB support
 - **Maps**: Google Maps JavaScript API with Blazor JS Interop
-- **Serialization**: System.Text.Json (following .NET best practices)
+- **Serialization**: System.Text.Json exclusively (including custom Cosmos DB serializer)
 
 ### Project Structure
 ```
@@ -123,6 +125,12 @@ Central service for profile and DateMark management:
 - **IDateMarkByUserRepository**: DateMark data access with filtering
 - **In-Memory Implementation**: Fast development and testing
 - **Cosmos DB Implementation**: Production-ready with geospatial queries
+
+#### Custom Cosmos DB Serialization
+- **SystemTextJsonCosmosSerializer**: Custom serializer eliminating Newtonsoft.Json dependency
+- **Consistent JSON Handling**: Single serialization library across entire application
+- **Performance Optimized**: Uses System.Text.Json for better performance and memory usage
+- **Security Enhanced**: Eliminates vulnerable dependencies while maintaining full functionality
 
 ## Pages & Navigation
 
@@ -199,6 +207,11 @@ Real-time user metrics:
 - **Input Validation**: Comprehensive validation on both client and server
 - **Error Handling**: Graceful degradation and user-friendly error messages
 
+### Secure Logging Policy
+- No raw JWT tokens or Authorization headers are ever logged. Only sanitized previews via `ToTokenPreview()`.
+- Emails are treated as sensitive. Logs include only metadata (e.g., `HasEmail`, `EmailLength`) — never the raw address.
+- All user-controlled values are sanitized with `SanitizeForLog()` to remove newlines and prevent log injection.
+
 ## Development
 
 ### Documentation
@@ -272,9 +285,17 @@ export ASPNETCORE_ENVIRONMENT=Development
 - Implement proper error handling and logging
 - Write unit tests for new features
 
-## License
+## License & Ownership
 
-This project is for educational and demonstration purposes. Please ensure you comply with Google Maps API terms of service when using this application.
+This project and its innovative concepts are the intellectual property of Adam Zaplatilek. While the source code is publicly available for educational and demonstration purposes, the core ideas, architecture, and unique features remain under proprietary ownership.
+
+**Usage Guidelines:**
+- Educational and demonstration use is encouraged
+- Commercial use requires explicit permission
+- Please ensure you comply with Google Maps API terms of service when using this application
+- Attribution is appreciated when referencing this work
+
+For licensing inquiries or commercial use permissions, please contact the project owner.
 
 ---
 
