@@ -30,3 +30,5 @@ jobs:
       run: dotnet test --no-build --verbosity normal
       env:
         JWT__SecretKey: ${{ secrets.JWT_SECRETKEY }}
+        GoogleMaps__ApiKey: ${{ secrets.GOOGLE_MAPS_API_KEY }}
+        Google__ClientId: ${{ secrets.GOOGLE_CLIENT_ID }}
