@@ -64,7 +64,7 @@ build/
 # App specific
 appsettings.*.json
 !appsettings.json
-!appsettings.*.sample.json
+!appsettings.Development.json
 
 # Secrets and sensitive data
 secrets.json
