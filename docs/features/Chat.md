@@ -16,22 +16,23 @@ A full chat system enabling private conversations between users, integrated acro
 - Serialization: `System.Text.Json`
 
 ### Data models (server + client)
-- Conversation: Id, Participants, LastMessageAt, Archived
-- ChatMessage: Id, ConversationId, SenderUserId, Content, SentAt, ReadAt, MessageType
+- **Conversation**: Id, Participants, LastMessageAt, IsArchived, CreatedAt, UpdatedAt
+- **ChatMessage**: Id, ConversationId, SenderId, ReceiverId, Content, MessageType, Metadata, IsRead, IsDelivered, CreatedAt, UpdatedAt, IsDeleted
+- **MessageMetadata**: Optional structured data for special message types (location, DateMark sharing)
 
 ### Repositories
 - `IConversationRepository` with in-memory implementation
 - `IChatMessageRepository` with in-memory implementation
 
 ### API endpoints
-- POST `/api/chat/messages` — send a message
-- GET `/api/chat/conversations` — list conversations (by current user)
-- GET `/api/chat/conversations/{id}/messages` — list messages
-- POST `/api/chat/messages/read` — mark messages read
-- POST `/api/chat/conversations/archive` — archive/unarchive
-- DELETE `/api/chat/messages/{id}` — delete message
+- POST `/api/chat/messages` — send a message (requires `receiverId`, `content`, optional `messageType` and `metadata`)
+- GET `/api/chat/conversations` — list conversations for current user
+- GET `/api/chat/conversations/{conversationId}/messages` — list messages with pagination
+- POST `/api/chat/messages/read` — mark messages as read in conversation
+- POST `/api/chat/conversations/archive` — archive/unarchive conversation
+- DELETE `/api/chat/messages/{messageId}` — delete message (sender only)
 
-Authentication placeholder: current user simulated via `X-User-Id` header for tests/dev.
+**Authentication**: Uses JWT Bearer tokens with `X-User-Id` header fallback for development/testing.
 
 ## Client integration
 - `MapMe.Client/Services/ChatService.cs` handles API calls + local caching
@@ -55,3 +56,4 @@ Authentication placeholder: current user simulated via `X-User-Id` header for te
 - SignalR real-time updates
 - Persistent storage (Cosmos DB)
 - Push notifications
+
