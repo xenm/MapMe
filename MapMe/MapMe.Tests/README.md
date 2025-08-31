@@ -6,8 +6,11 @@ Comprehensive test suite for the MapMe dating application with Google Maps integ
 **Current Status: 285/285 tests passing (100% pass rate)**
 
 ## 📋 **Important Documentation**
-- **[TEST_ARCHITECTURE.md](TEST_ARCHITECTURE.md)** - Complete test architecture documentation including repository approaches, authentication patterns, and bottom-up fixing methodology
-- **[Bottom-Up Test Fixing Guide](TEST_ARCHITECTURE.md#bottom-up-test-fixing-methodology)** - Priority order for fixing failing tests (Unit → Repository → Smoke → Core → Extended → Error → Chat)
+
+- **[Test Architecture](../../docs/testing/test-architecture.md)** - Complete test architecture documentation including
+  repository approaches, authentication patterns, and bottom-up fixing methodology
+- **[Bottom-Up Test Fixing Guide](../../docs/testing/test-architecture.md#bottom-up-test-fixing-methodology)** -
+  Priority order for fixing failing tests (Unit → Repository → Smoke → Core → Extended → Error → Chat)
 
 ## 📁 **Test Structure & Organization**
 
