@@ -6,6 +6,7 @@ This section contains comprehensive development guidelines for MapMe, including 
 
 | Document | Purpose |
 |----------|----------|
+| [AI Coding Assistant Rulebook](./ai-coding-assistant-rulebook.md) | **Versioned development standards for AI-assisted development** |
 | [Coding Standards](./coding-standards.md) | Code style and conventions |
 | [Git Workflow](./git-workflow.md) | Branching strategies and commit guidelines |
 | [Code Review](./code-review.md) | Code review processes and checklists |

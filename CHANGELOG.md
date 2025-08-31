@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **AI Coding Assistant Rulebook**: Versioned development standards for AI-assisted development with Rider + Cascade + Claude Sonnet 4+ recommendations
 - Comprehensive documentation restructure with professional navigation
 - Complete testing strategy with 285/285 tests passing
 - JWT authentication with token refresh capabilities
@@ -18,8 +19,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - User profile management with Tinder-style dating fields
 - Activity statistics dashboard with real-time metrics
 - Docker deployment support with multi-stage builds
+- AI Coding Assistant Rulebook for development standards and best practices
+- JWT configuration rationale and best practices documentation
+- JWT issuer/audience architecture guidelines for monolithic vs microservices
+
+### Fixed
+- **Configuration Key Mismatch**: Fixed Program.cs to use correct `CosmosDb:*` configuration keys instead of `Cosmos:*`
+- **Production Safety**: Added mandatory Cosmos DB validation in production environment - application fails startup if not configured
+- **Placeholder Detection**: Enhanced configuration validation to reject placeholder values and properly fallback to in-memory repositories
+- **Test Environment**: Corrected repository selection logic ensuring tests use in-memory repositories while production requires Cosmos DB
+- **Build Warnings**: Removed BuildServiceProvider warning from startup configuration
 - Cosmos DB integration with geospatial query capabilities
 - Secure logging policy with sanitization helpers
+
+### Changed
+- **JWT Security Enhancement**: Updated JWT issuer/audience configuration for proper client-server architecture separation
+  - Issuer: "MapMe" → "MapMe-Server" (identifies ASP.NET Core server as token issuer)
+  - Audience: "MapMe" → "MapMe-Client" (identifies Blazor WebAssembly client as intended recipient)
+  - Improved security boundaries and token scope validation
+  - Enhanced scalability for future mobile apps and admin interfaces
 
 ### Enhanced
 - Map functionality with clustering and performance optimization

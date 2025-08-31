@@ -16,9 +16,37 @@ MapMe uses JWT (JSON Web Tokens) for stateless authentication across the applica
   "Jwt": {
     "SecretKey": "your-jwt-secret-key-minimum-32-characters",
     "ExpirationHours": 24,
-    "Issuer": "MapMe",
-    "Audience": "MapMe-Users"
+    "Issuer": "MapMe-Server",
+    "Audience": "MapMe-Client"
   }
+}
+```
+
+**JWT Configuration Rationale:**
+MapMe uses a **client-server architecture** with ASP.NET Core Web/API server and Blazor WebAssembly client. The JWT configuration reflects this design:
+
+- **Issuer (`"MapMe-Server"`)**: Identifies the ASP.NET Core server that issues JWT tokens (authentication service)
+- **Audience (`"MapMe-Client"`)**: Identifies the intended recipient - the Blazor WebAssembly client application
+- **Security Separation**: Provides clear distinction between token issuer and consumer for better security
+
+**Architecture Benefits:**
+- **Clear Token Scope**: Tokens are explicitly intended for the Blazor WebAssembly client
+- **Security Boundaries**: Distinct issuer/audience enables proper token validation
+- **Future Scalability**: Easy to add mobile apps, admin panels, or additional API services
+- **Best Practices**: Follows JWT RFC 7519 recommendations for client-server architectures
+
+**Alternative Configurations:**
+```json
+// For multiple client applications
+{
+  "Issuer": "MapMe-Server",
+  "Audience": "MapMe-Mobile-App"
+}
+
+// For admin or management interfaces
+{
+  "Issuer": "MapMe-Server", 
+  "Audience": "MapMe-Admin-Panel"
 }
 ```
 

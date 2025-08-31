@@ -38,9 +38,14 @@ The MapMe backend uses standard ASP.NET Core configuration with the following st
   },
   "Jwt": {
     "SecretKey": "YOUR_JWT_KEY_32+_CHARS",
-    "Issuer": "MapMe",
-    "Audience": "MapMe",
+    "Issuer": "MapMe-Server",
+    "Audience": "MapMe-Client",
     "ExpirationHours": 24
+  },
+  "CosmosDb": {
+    "Endpoint": "https://localhost:8081",
+    "Key": "C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==",
+    "DatabaseName": "mapme"
   }
 }
 ```
@@ -68,6 +73,50 @@ Set `GOOGLE_MAPS_API_KEY` in your shell or container environment:
 export GOOGLE_MAPS_API_KEY="your-google-api-key"
 ```
 
+## Cosmos DB Configuration
+
+### Repository Selection Logic
+
+The application automatically selects the appropriate data repositories based on environment and configuration:
+
+- **Development Environment**: Uses Cosmos DB if configured, otherwise falls back to in-memory repositories
+- **Production Environment**: **Requires** Cosmos DB configuration, fails startup if missing
+- **Test Environment**: Always uses in-memory repositories regardless of configuration
+
+### Local Development (Cosmos DB Emulator)
+
+For local development, use the standard Cosmos DB emulator connection details:
+
+```json
+{
+  "CosmosDb": {
+    "Endpoint": "https://localhost:8081",
+    "Key": "C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==",
+    "DatabaseName": "mapme"
+  }
+}
+```
+
+**Note**: These are the standard Microsoft Cosmos DB emulator keys, identical for all developers.
+
+### Production Environment
+
+Production requires real Azure Cosmos DB connection details. The application will **fail to start** if Cosmos DB is not properly configured in production.
+
+Use User Secrets or environment variables for production:
+```bash
+dotnet user-secrets set "CosmosDb:Endpoint" "https://your-cosmos.documents.azure.com:443/"
+dotnet user-secrets set "CosmosDb:Key" "your-primary-key"
+dotnet user-secrets set "CosmosDb:DatabaseName" "mapme"
+```
+
+### Configuration Validation
+
+The application validates Cosmos DB configuration at startup:
+- Rejects placeholder values (e.g., "YOUR_COSMOS_DB_ENDPOINT_HERE")
+- Logs repository selection for debugging
+- Enforces production safety requirements
+
 ### Server API Endpoint
 
 - **GET /config/maps** → Returns the configured API key to the client at runtime
@@ -82,9 +131,43 @@ export GOOGLE_MAPS_API_KEY="your-google-api-key"
   "Jwt": {
     "SecretKey": "your-jwt-secret-key-minimum-32-characters",
     "ExpirationHours": 24,
-    "Issuer": "MapMe",
-    "Audience": "MapMe"
+    "Issuer": "MapMe-Server",
+    "Audience": "MapMe-Client"
   }
+}
+```
+
+**Configuration Rationale:**
+MapMe uses a **client-server architecture** with ASP.NET Core Web/API server and Blazor WebAssembly client. The JWT configuration provides proper security separation:
+
+- **Issuer (`"MapMe-Server"`)**: Identifies the ASP.NET Core server that issues JWT tokens (authentication service)
+- **Audience (`"MapMe-Client"`)**: Identifies the intended recipient - the Blazor WebAssembly client application
+- **Security Separation**: Clear distinction between token issuer and consumer for enhanced security
+
+**Security Considerations:**
+- **Token Scope Validation**: Tokens are explicitly scoped for the Blazor WebAssembly client
+- **Architecture Boundaries**: Distinct issuer/audience enables proper token validation and security boundaries
+- **Future Scalability**: Easy to add mobile apps, admin panels, or additional API services with different audiences
+- **Best Practices**: Follows JWT RFC 7519 recommendations for client-server architectures
+
+**Alternative Configurations:**
+```json
+// For multiple client applications
+{
+  "Issuer": "MapMe-Server",
+  "Audience": "MapMe-Mobile-App"
+}
+
+// For admin or management interfaces
+{
+  "Issuer": "MapMe-Server", 
+  "Audience": "MapMe-Admin-Panel"
+}
+
+// For external API consumers (future consideration)
+{
+  "Issuer": "MapMe-Server",
+  "Audience": "MapMe-External-API"
 }
 ```
 

@@ -22,6 +22,7 @@ Welcome to the complete documentation for MapMe, a modern Blazor dating applicat
 - [Getting Started](./getting-started/README.md) - Quick setup and first contribution
 - [Architecture Overview](./architecture/README.md) - System design and technology decisions
 - [Development Guidelines](./development/README.md) - Coding standards and workflows
+- [AI Coding Assistant Rulebook](./development/ai-coding-assistant-rulebook.md) - AI-assisted development standards
 
 ### For Developers
 - [Backend Documentation](./backend/README.md) - .NET Core, repositories, services
