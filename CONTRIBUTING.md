@@ -27,6 +27,7 @@ Thank you for your interest in contributing to MapMe! This document provides gui
    cd MapMe/MapMe/MapMe
    dotnet user-secrets init
    dotnet user-secrets set "GoogleMaps:ApiKey" "your-google-api-key"
+   dotnet user-secrets set "GoogleAuth:ClientId" "your-google-oauth-client-id"
    dotnet user-secrets set "Jwt:SecretKey" "your-jwt-secret-key-minimum-32-characters"
    ```
 
@@ -57,7 +58,7 @@ Thank you for your interest in contributing to MapMe! This document provides gui
 ### Testing Requirements
 - **Unit Tests**: Write unit tests for new business logic
 - **Integration Tests**: Add integration tests for new API endpoints
-- **Test Coverage**: Maintain high test coverage (currently 285/285 tests passing)
+- **Test Coverage**: Maintain high test coverage (currently 300/300 tests passing)
 - **Test Naming**: Use descriptive test method names following Given_When_Then pattern
 
 ### Security Guidelines

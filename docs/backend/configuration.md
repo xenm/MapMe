@@ -238,14 +238,10 @@ public class SystemTextJsonCosmosSerializer : CosmosSerializer
 ```json
 {
   "CosmosDb": {
-    "ConnectionString": "AccountEndpoint=https://localhost:8081/;AccountKey=...",
+    "Endpoint": "https://localhost:8081",
+    "Key": "C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==",
     "DatabaseName": "mapme",
-    "ContainerNames": {
-      "UserProfiles": "UserProfiles",
-      "DateMarks": "DateMarks",
-      "ChatMessages": "ChatMessages",
-      "Conversations": "Conversations"
-    }
+    "EnableSSLValidation": false
   }
 }
 ```
@@ -255,8 +251,9 @@ public class SystemTextJsonCosmosSerializer : CosmosSerializer
 # Start Cosmos DB Emulator
 ./Scripts/start-cosmos.ps1
 
-# Configure connection string
-dotnet user-secrets set "CosmosDb:ConnectionString" "AccountEndpoint=https://localhost:8081/;AccountKey=C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw=="
+# Configure connection details
+dotnet user-secrets set "CosmosDb:Endpoint" "https://localhost:8081"
+dotnet user-secrets set "CosmosDb:Key" "C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw=="
 ```
 
 ### Security Best Practices

@@ -10,7 +10,7 @@ x86/
 [Aa][Rr][Mm]64/
 
 # Test Results
-MapMe/TestResults/
+TestResults/
 
 # Visual Studio
 .vs/
@@ -22,8 +22,13 @@ MapMe/TestResults/
 *.rsuser
 *.suo
 *.user
+*.userosscache
 *.userprefs
 *.usertest
+*.sln.docstates
+
+# AI assistants shoud ignore this rulebook copy-paste (already git tracked)
+docs/development/ai-coding-assistant-rulebook.md
 
 # Build results
 [Bb]in/
@@ -41,13 +46,6 @@ tfs/
 # Rider
 .idea/
 *.sln.iml
-
-# User-specific files
-*.rsuser
-*.suo
-*.user
-*.userosscache
-*.sln.docstates
 
 # Build results
 [Dd]ebug/
@@ -92,6 +90,11 @@ _ReSharper*/
 
 # OS-generated files
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
 
 # Test artifacts (generic)
@@ -108,6 +111,7 @@ coverage*.xml
 # Tooling/analysis
 .sonarqube/
 .scannerwork/
+.sonarlint/
 BenchmarkDotNet.Artifacts/
 
 # Environment files

@@ -51,9 +51,9 @@ function Invoke-CosmosDbRequest {
     $date = [DateTime]::UtcNow.ToString("r")
     $authString = [System.Web.HttpUtility]::UrlEncode("type=master&ver=1.0&sig=" + 
         [Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes(
-            [System.Security.Cryptography.HMACSHA256]::new([Convert]::FromBase64String($Key)).ComputeHash(
+                ([System.Security.Cryptography.HMACSHA256]::new([Convert]::FromBase64String($Key)).ComputeHash(
                 [System.Text.Encoding]::UTF8.GetBytes("$($Method.ToLower())`n$($ResourceType.ToLower())`n$ResourceId`n$($date.ToLower())`n`n")
-            ) | ForEach-Object { $_.ToString("x2") }
+                ) | ForEach-Object { $_.ToString("x2") }) -join ""
         )))
     
     $requestHeaders = @{

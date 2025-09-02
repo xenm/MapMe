@@ -1,0 +1,355 @@
+@page "/signup"
+@using MapMe.Client.DTOs
+@using MapMe.Client.Services
+@using Microsoft.AspNetCore.Authorization
+@attribute [AllowAnonymous]
+@inject AuthenticationService AuthService
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+
+<PageTitle>Sign Up - MapMe</PageTitle>
+
+<HeadContent>
+    <!-- Bootstrap CSS for SignUp page only -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"
+          crossorigin="anonymous">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet"
+          crossorigin="anonymous">
+</HeadContent>
+
+<div class="container-fluid vh-100 d-flex align-items-center justify-content-center bg-light">
+    <div class="row w-100">
+        <div class="col-12 col-md-6 col-lg-5 mx-auto">
+            <div class="card shadow-lg border-0">
+                <div class="card-body p-5">
+                    <!-- Header -->
+                    <div class="text-center mb-4">
+                        <h1 class="h3 mb-3 fw-bold text-primary">Join MapMe</h1>
+                        <p class="text-muted">Create your account to start exploring</p>
+                    </div>
+
+                    <!-- Sign Up Form -->
+                    <EditForm Model="@_registerRequest" OnValidSubmit="@HandleRegisterAsync">
+                        <DataAnnotationsValidator/>
+
+                        <!-- Error Message -->
+                        @if (!string.IsNullOrEmpty(_errorMessage))
+                        {
+                            <div class="alert alert-danger" role="alert">
+                                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                                @_errorMessage
+                            </div>
+                        }
+
+                        <!-- Success Message -->
+                        @if (!string.IsNullOrEmpty(_successMessage))
+                        {
+                            <div class="alert alert-success" role="alert">
+                                <i class="bi bi-check-circle-fill me-2"></i>
+                                @_successMessage
+                            </div>
+                        }
+
+                        <!-- Display Name Field -->
+                        <div class="mb-3">
+                            <label for="displayName" class="form-label">Display Name</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-person-badge"></i></span>
+                                <InputText @bind-Value="_registerRequest.DisplayName"
+                                           class="form-control"
+                                           id="displayName"
+                                           placeholder="Enter your display name"
+                                           disabled="@_isLoading"/>
+                            </div>
+                            <ValidationMessage For="@(() => _registerRequest.DisplayName)" class="text-danger small"/>
+                        </div>
+
+                        <!-- Username Field -->
+                        <div class="mb-3">
+                            <label for="username" class="form-label">Username</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-person"></i></span>
+                                <InputText @bind-Value="_registerRequest.Username"
+                                           class="form-control"
+                                           id="username"
+                                           placeholder="Choose a unique username"
+                                           disabled="@_isLoading"/>
+                            </div>
+                            <ValidationMessage For="@(() => _registerRequest.Username)" class="text-danger small"/>
+                            <div class="form-text">Username can only contain letters, numbers, hyphens, and
+                                underscores.
+                            </div>
+                        </div>
+
+                        <!-- Email Field -->
+                        <div class="mb-3">
+                            <label for="email" class="form-label">Email Address</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-envelope"></i></span>
+                                <InputText @bind-Value="_registerRequest.Email"
+                                           type="email"
+                                           class="form-control"
+                                           id="email"
+                                           placeholder="Enter your email address"
+                                           disabled="@_isLoading"/>
+                            </div>
+                            <ValidationMessage For="@(() => _registerRequest.Email)" class="text-danger small"/>
+                        </div>
+
+                        <!-- Password Field -->
+                        <div class="mb-3">
+                            <label for="password" class="form-label">Password</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-lock"></i></span>
+                                <InputText @bind-Value="_registerRequest.Password"
+                                           type="@(_showPassword ? "text" : "password")"
+                                           class="form-control"
+                                           id="password"
+                                           placeholder="Create a strong password"
+                                           disabled="@_isLoading"/>
+                                <button class="btn btn-outline-secondary"
+                                        type="button"
+                                        @onclick="TogglePasswordVisibility"
+                                        disabled="@_isLoading">
+                                    <i class="bi @(_showPassword ? "bi-eye-slash" : "bi-eye")"></i>
+                                </button>
+                            </div>
+                            <ValidationMessage For="@(() => _registerRequest.Password)" class="text-danger small"/>
+                            <div class="form-text">Password must be at least 8 characters long.</div>
+                        </div>
+
+                        <!-- Confirm Password Field -->
+                        <div class="mb-3">
+                            <label for="confirmPassword" class="form-label">Confirm Password</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-lock-fill"></i></span>
+                                <InputText @bind-Value="_registerRequest.ConfirmPassword"
+                                           type="@(_showConfirmPassword ? "text" : "password")"
+                                           class="form-control"
+                                           id="confirmPassword"
+                                           placeholder="Confirm your password"
+                                           disabled="@_isLoading"/>
+                                <button class="btn btn-outline-secondary"
+                                        type="button"
+                                        @onclick="ToggleConfirmPasswordVisibility"
+                                        disabled="@_isLoading">
+                                    <i class="bi @(_showConfirmPassword ? "bi-eye-slash" : "bi-eye")"></i>
+                                </button>
+                            </div>
+                            <ValidationMessage For="@(() => _registerRequest.ConfirmPassword)"
+                                               class="text-danger small"/>
+                            @if (!string.IsNullOrEmpty(_registerRequest.Password) && !string.IsNullOrEmpty(_registerRequest.ConfirmPassword) && _registerRequest.Password != _registerRequest.ConfirmPassword)
+                            {
+                                <div class="text-danger small">Passwords do not match.</div>
+                            }
+                        </div>
+
+                        <!-- Terms and Privacy -->
+                        <div class="mb-3 form-check">
+                            <InputCheckbox @bind-Value="_acceptTerms"
+                                           class="form-check-input"
+                                           id="acceptTerms"
+                                           disabled="@_isLoading"/>
+                            <label class="form-check-label" for="acceptTerms">
+                                I agree to the <a href="/terms" target="_blank" class="text-decoration-none">Terms of
+                                    Service</a>
+                                and <a href="/privacy" target="_blank" class="text-decoration-none">Privacy Policy</a>
+                            </label>
+                            @if (_showTermsError)
+                            {
+                                <div class="text-danger small">You must accept the terms and conditions.</div>
+                            }
+                        </div>
+
+                        <!-- Submit Button -->
+                        <div class="d-grid mb-3">
+                            <button type="submit"
+                                    class="btn btn-primary btn-lg"
+                                    disabled="@(_isLoading || !_acceptTerms)">
+                                @if (_isLoading)
+                                {
+                                    <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                                    <span>Creating account...</span>
+                                }
+                                else
+                                {
+                                    <i class="bi bi-person-plus me-2"></i>
+                                    <span>Create Account</span>
+                                }
+                            </button>
+                        </div>
+                    </EditForm>
+
+                    <!-- Divider -->
+                    <div class="text-center mb-3">
+                        <span class="text-muted">or</span>
+                    </div>
+
+                    <!-- Google Sign Up Button -->
+                    <div class="d-grid mb-4">
+                        <button type="button"
+                                class="btn btn-outline-danger btn-lg"
+                                @onclick="HandleGoogleSignUpAsync"
+                                disabled="@_isLoading">
+                            <i class="bi bi-google me-2"></i>
+                            Sign up with Google
+                        </button>
+                    </div>
+
+                    <!-- Links -->
+                    <div class="text-center">
+                        <p class="mb-0">
+                            Already have an account?
+                            <a href="/login" class="text-decoration-none fw-bold">Sign in</a>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private RegisterRequest _registerRequest = new();
+    private bool _isLoading = false;
+    private bool _showPassword = false;
+    private bool _showConfirmPassword = false;
+    private bool _acceptTerms = false;
+    private bool _showTermsError = false;
+    private string? _errorMessage;
+    private string? _successMessage;
+
+    protected override Task OnInitializedAsync()
+    {
+        // Redirect if already authenticated
+        if (AuthService.IsAuthenticated)
+        {
+            Navigation.NavigateTo("/map");
+        }
+
+        return Task.CompletedTask;
+    }
+
+    private async Task HandleRegisterAsync()
+    {
+        _showTermsError = false;
+        _errorMessage = null;
+        _successMessage = null;
+
+        if (!_acceptTerms)
+        {
+            _showTermsError = true;
+            return;
+        }
+
+        _isLoading = true;
+        StateHasChanged();
+
+        try
+        {
+            var response = await AuthService.RegisterAsync(_registerRequest);
+
+            if (response.Success)
+            {
+                _successMessage = "Account created successfully! Redirecting...";
+                StateHasChanged();
+
+                // Wait a moment to show success message, then redirect
+                await Task.Delay(2000);
+                Navigation.NavigateTo("/map", forceLoad: true);
+            }
+            else
+            {
+                _errorMessage = response.Message;
+            }
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = "An unexpected error occurred. Please try again.";
+            Console.WriteLine($"Registration error: {ex.Message}");
+        }
+        finally
+        {
+            _isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task HandleGoogleSignUpAsync()
+    {
+        _isLoading = true;
+        _errorMessage = null;
+        _successMessage = null;
+        StateHasChanged();
+
+        try
+        {
+            // Initialize Google Sign-In
+            await JSRuntime.InvokeVoidAsync("initializeGoogleSignIn");
+
+            // Trigger Google Sign-In
+            var googleUser = await JSRuntime.InvokeAsync<GoogleUserInfo>("signInWithGoogle");
+
+            if (googleUser != null && !string.IsNullOrEmpty(googleUser.IdToken))
+            {
+                var request = new GoogleLoginRequest
+                {
+                        GoogleToken = googleUser.IdToken,
+                        Email = googleUser.Email,
+                        DisplayName = googleUser.Name,
+                        GoogleId = googleUser.Id
+                };
+
+                var response = await AuthService.GoogleLoginAsync(request);
+
+                if (response.Success)
+                {
+                    _successMessage = "Account created successfully! Redirecting...";
+                    StateHasChanged();
+
+                    await Task.Delay(2000);
+                    Navigation.NavigateTo("/map", forceLoad: true);
+                }
+                else
+                {
+                    _errorMessage = response.Message;
+                }
+            }
+            else
+            {
+                _errorMessage = "Google sign-up was cancelled or failed.";
+            }
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = "Google sign-up failed. Please try again.";
+            Console.WriteLine($"Google sign-up error: {ex.Message}");
+        }
+        finally
+        {
+            _isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private void TogglePasswordVisibility()
+    {
+        _showPassword = !_showPassword;
+    }
+
+    private void ToggleConfirmPasswordVisibility()
+    {
+        _showConfirmPassword = !_showConfirmPassword;
+    }
+
+    // Helper class for Google user info
+    public class GoogleUserInfo
+    {
+        public string Id { get; set; } = "";
+        public string Email { get; set; } = "";
+        public string Name { get; set; } = "";
+        public string IdToken { get; set; } = "";
+    }
+
+}
