@@ -156,7 +156,7 @@ public class ApiIntegrationTests : IClassFixture<WebApplicationFactory<Program>>
     public async Task DateMark_CompleteWorkflow_CreatesAndListsDateMarks()
     {
         // Arrange - Create authenticated user
-        var userId = "test_user_id"; // Match TestAuthenticationService
+        const string userId = "test_user_id"; // Match TestAuthenticationService
         var token = await CreateTestUserAndGetTokenAsync(userId, "datemark@example.com");
         AddAuthenticationHeader(token);
 
@@ -214,7 +214,7 @@ public class ApiIntegrationTests : IClassFixture<WebApplicationFactory<Program>>
     public async Task DateMark_FilteringByCategories_ReturnsCorrectResults()
     {
         // Arrange - Create authenticated user
-        var userId = "test_user_id"; // Match TestAuthenticationService
+        const string userId = "test_user_id"; // Match TestAuthenticationService
         var token = await CreateTestUserAndGetTokenAsync(userId, "filter@example.com");
         AddAuthenticationHeader(token);
 
@@ -284,7 +284,7 @@ public class ApiIntegrationTests : IClassFixture<WebApplicationFactory<Program>>
         _client.DefaultRequestHeaders.Clear();
         _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "test-session-token");
 
-        var userId = "test_user_id"; // Match TestAuthenticationService
+        const string userId = "test_user_id"; // Match TestAuthenticationService
 
         var oldMark = new UpsertDateMarkRequest(
             Id: "old_mark",
@@ -383,7 +383,7 @@ public class ApiIntegrationTests : IClassFixture<WebApplicationFactory<Program>>
         _client.DefaultRequestHeaders.Clear();
         _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "test-session-token");
 
-        var userId = "test_user_id"; // Match TestAuthenticationService
+        const string userId = "test_user_id"; // Match TestAuthenticationService
         var originalRequest = new UpsertDateMarkRequest(
             Id: "update_test_mark",
             UserId: userId,
@@ -446,7 +446,7 @@ public class ApiIntegrationTests : IClassFixture<WebApplicationFactory<Program>>
         _client.DefaultRequestHeaders.Clear();
         _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "test-session-token");
 
-        var userId = "test_user_id"; // Match TestAuthenticationService
+        const string userId = "test_user_id"; // Match TestAuthenticationService
         var request = new UpsertDateMarkRequest(
             Id: $"visibility_test_{visibility}",
             UserId: userId,

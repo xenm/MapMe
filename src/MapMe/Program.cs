@@ -573,33 +573,7 @@ try
         return Results.Created($"/api/datemarks/{mark.Id}", mark);
     });
 
-    app.MapGet("/api/users/{userId}/datemarks", async (
-        string userId,
-        DateOnly? from,
-        DateOnly? to,
-        string[]? categories,
-        string[]? tags,
-        string[]? qualities,
-        IDateMarkByUserRepository repo,
-        HttpContext context,
-        MapMeAuth authService,
-        CancellationToken ct) =>
-    {
-        var currentUserId = await GetCurrentUserIdAsync(context, authService);
-        if (currentUserId == null)
-            return Results.Unauthorized();
-
-        var cats = categories is { Length: > 0 } ? Normalization.ToNorm(categories!) : Array.Empty<string>();
-        var tgs = tags is { Length: > 0 } ? Normalization.ToNorm(tags!) : Array.Empty<string>();
-        var qls = qualities is { Length: > 0 } ? Normalization.ToNorm(qualities!) : Array.Empty<string>();
-        var list = new List<DateMark>();
-        await foreach (var dm in repo.GetByUserAsync(userId, from, to, cats, tgs, qls, ct))
-        {
-            list.Add(dm);
-        }
-
-        return Results.Ok(list);
-    });
+    app.MapGet("/api/users/{userId}/datemarks", GetUserDateMarksAsync);
 
 // Map viewport query (prototype: radius around lat/lng); later switch to bbox & geohash prefixes
     app.MapGet("/api/map/datemarks", async (
@@ -901,6 +875,37 @@ static async Task<string?> GetCurrentUserIdAsync(HttpContext context, MapMeAuth 
     return user?.UserId;
 }
 
+/// <summary>
+/// Handles GET requests for user DateMarks with filtering parameters
+/// </summary>
+static async Task<IResult> GetUserDateMarksAsync(
+    string userId,
+    DateOnly? from,
+    DateOnly? to,
+    string[]? categories,
+    string[]? tags,
+    string[]? qualities,
+    IDateMarkByUserRepository repo,
+    HttpContext context,
+    MapMeAuth authService,
+    CancellationToken ct)
+{
+    var currentUserId = await GetCurrentUserIdAsync(context, authService);
+    if (currentUserId == null)
+        return Results.Unauthorized();
+
+    var cats = categories is { Length: > 0 } ? Normalization.ToNorm(categories!) : Array.Empty<string>();
+    var tgs = tags is { Length: > 0 } ? Normalization.ToNorm(tags!) : Array.Empty<string>();
+    var qls = qualities is { Length: > 0 } ? Normalization.ToNorm(qualities!) : Array.Empty<string>();
+
+    var list = new List<DateMark>();
+    await foreach (var dm in repo.GetByUserAsync(userId, from, to, cats, tgs, qls, ct))
+    {
+        list.Add(dm);
+    }
+
+    return Results.Ok(list);
+}
 
 // Expose Program for WebApplicationFactory in tests
 public partial class Program

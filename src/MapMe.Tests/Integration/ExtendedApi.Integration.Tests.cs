@@ -212,7 +212,7 @@ public class ExtendedApiIntegrationTests : IClassFixture<WebApplicationFactory<P
         _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "test-session-token");
 
         // Arrange - Create DateMarks with various combinations
-        var userId = "test_user_id"; // Match TestAuthenticationService
+        const string userId = "test_user_id"; // Match TestAuthenticationService
         var dateMarks = new[]
         {
             new UpsertDateMarkRequest("combo1", userId, 37.0, -122.0, null, "Restaurant A", null, null, null, null,
@@ -364,7 +364,7 @@ public class ExtendedApiIntegrationTests : IClassFixture<WebApplicationFactory<P
         _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "test-session-token");
 
         // Arrange - Create DateMarks across different time periods
-        var userId = "test_user_id"; // Match TestAuthenticationService
+        const string userId = "test_user_id"; // Match TestAuthenticationService
         var dateMarks = new[]
         {
             new UpsertDateMarkRequest("date1", userId, 37.0, -122.0, null, "Place 1", null, null, null, null, null,

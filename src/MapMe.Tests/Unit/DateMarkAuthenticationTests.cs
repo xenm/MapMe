@@ -186,7 +186,7 @@ public class DateMarkAuthenticationTests : IClassFixture<WebApplicationFactory<P
     public async Task GetUserDateMarks_WithoutAuthentication_ReturnsUnauthorized()
     {
         // Arrange - No authentication
-        var userId = "some_user_id";
+        const string userId = "some_user_id";
 
         // Act
         var response = await _client.GetAsync($"/api/users/{userId}/datemarks");
@@ -388,7 +388,7 @@ public class DateMarkAuthenticationTests : IClassFixture<WebApplicationFactory<P
         _client.DefaultRequestHeaders.Authorization =
             new AuthenticationHeaderValue("Bearer", "invalid_token_12345");
 
-        var userId = "test_user";
+        const string userId = "test_user";
         var dateMarkRequest = new UpsertDateMarkRequest(
             Id: Guid.NewGuid().ToString(),
             UserId: userId,

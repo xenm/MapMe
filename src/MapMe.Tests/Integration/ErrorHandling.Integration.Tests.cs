@@ -284,7 +284,7 @@ public class ErrorHandlingIntegrationTests : IClassFixture<WebApplicationFactory
         _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "test-session-token");
 
         // Create a test user and DateMark first
-        var userId = "test_user_id"; // Match TestAuthenticationService
+        const string userId = "test_user_id"; // Match TestAuthenticationService
         var request = new UpsertDateMarkRequest(
             Id: "query_param_test",
             UserId: userId,
@@ -338,7 +338,7 @@ public class ErrorHandlingIntegrationTests : IClassFixture<WebApplicationFactory
         _client.DefaultRequestHeaders.Clear();
         _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "test-session-token");
 
-        var userId = "test_user_id"; // Match TestAuthenticationService
+        const string userId = "test_user_id"; // Match TestAuthenticationService
 
         // Create a very long query string with many categories
         var categories = string.Join(",", Enumerable.Range(0, 1000).Select(i => $"category_{i}"));
