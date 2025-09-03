@@ -82,6 +82,7 @@ function handleCredentialResponse(response) {
                 id: userInfo.sub,
                 email: userInfo.email,
                 name: userInfo.name,
+                picture: userInfo.picture, // Add profile picture URL from Google
                 idToken: response.credential
             };
 

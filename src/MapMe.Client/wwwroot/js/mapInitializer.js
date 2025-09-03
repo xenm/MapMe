@@ -1136,13 +1136,19 @@ function renderMarks(marks) {
                     // Add edit button for current user's Date Marks
                     let editButtonHtml = '';
                     if (sec.type === 'user' && sec.dateMarks && sec.dateMarks.length > 0) {
-                        // Check if this is the current user (we'll use a simple check for now)
-                        const isCurrentUser = window.MapMe && window.MapMe.currentUser && window.MapMe.currentUser === sec.label;
+                        // Check if this is the current user using UserId for more reliable identification
+                        const currentUserId = window.MapMe && window.MapMe.currentUserId;
+                        const dateMarkUserId = sec.dateMarks[0].userId || sec.dateMarks[0].UserId;
+                        const isCurrentUser = currentUserId && dateMarkUserId && currentUserId === dateMarkUserId;
+                        
                         if (isCurrentUser) {
                             const dateMarkId = sec.dateMarks[0].id || sec.dateMarks[0].Id;
                             if (dateMarkId) {
                                 editButtonHtml = `<div style=\"margin:6px 0;\"><button class=\"mm-edit-btn\" data-datemark-id=\"${dateMarkId}\" style=\"background:#007bff;color:white;border:none;padding:4px 8px;border-radius:4px;font-size:12px;cursor:pointer;\">✏️ Edit Date Mark</button></div>`;
                             }
+                        } else {
+                            // For other users' DateMarks, show "Add DateMark" button instead
+                            editButtonHtml = `<div style=\"margin:6px 0;\"><button class=\"mm-add-btn\" style=\"background:#28a745;color:white;border:none;padding:4px 8px;border-radius:4px;font-size:12px;cursor:pointer;\">➕ Add DateMark Here</button></div>`;
                         }
                     }
                     const strip = `<div class=\"mm-scroll\" data-sec-idx=\"${idx}\" style=\"display:flex; gap:8px; overflow-x:auto; padding-bottom:4px; margin:6px 0;\">${sec.urls.map(thumbHtml).join('')}</div>`;
@@ -1332,6 +1338,39 @@ function renderMarks(marks) {
                                     }
                                 } catch (err) {
                                     console.error('Error editing Date Mark:', err);
+                                }
+                            });
+                        });
+
+                        // Add event handlers for "Add DateMark Here" buttons
+                        container.querySelectorAll('.mm-add-btn').forEach(btn => {
+                            btn.addEventListener('click', (e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                try {
+                                    // Close the info window and trigger the creation flow at this location
+                                    sharedInfoWindow.close();
+
+                                    // Get the position from the marker
+                                    const position = mk.getPosition();
+                                    if (position) {
+                                        // Show the creation prompt at this location
+                                        showDateProposalPrompt({
+                                            position: position,
+                                            title: g.items[0]?.title || 'Add DateMark',
+                                            address: g.items[0]?.address || '',
+                                            photos: g.items[0]?.placePhotos || [],
+                                            url: g.items[0]?.url || null,
+                                            onConfirm: () => {
+                                                // This will trigger the normal DateMark creation flow
+                                                if (window.MapMe && window.MapMe.dotNetHelper) {
+                                                    window.MapMe.dotNetHelper.invokeMethodAsync('OnMapClickAsync', position.lat(), position.lng());
+                                                }
+                                            }
+                                        });
+                                    }
+                                } catch (err) {
+                                    console.error('Error adding Date Mark:', err);
                                 }
                             });
                         });

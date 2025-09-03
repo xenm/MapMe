@@ -297,13 +297,21 @@ try
         });
     }
 
-// Ensure default user profile exists for development
-    await EnsureDefaultUserProfileAsync(app.Services);
+// No fake default data creation - all user profiles are created through real authentication
 
 // Configure the HTTP request pipeline.
     if (app.Environment.IsDevelopment())
     {
         app.UseWebAssemblyDebugging();
+
+        // Disable caching for development
+        app.Use(async (context, next) =>
+        {
+            context.Response.Headers.Add("Cache-Control", "no-cache, no-store, must-revalidate");
+            context.Response.Headers.Add("Pragma", "no-cache");
+            context.Response.Headers.Add("Expires", "0");
+            await next();
+        });
     }
     else
     {
@@ -343,6 +351,25 @@ try
         var clientId = app.Configuration["Google:ClientId"] ?? Environment.GetEnvironmentVariable("GOOGLE_CLIENT_ID");
         return Results.Ok(new { ClientId = clientId });
     });
+
+// User Profile API Endpoints
+    app.MapGet("/api/profile/current",
+        async (HttpContext context, IUserProfileRepository profileRepo, MapMeAuth authService) =>
+        {
+            var userId = await GetCurrentUserIdAsync(context, authService);
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Results.Unauthorized();
+            }
+
+            var profile = await profileRepo.GetByUserIdAsync(userId);
+            if (profile == null)
+            {
+                return Results.NotFound(new { message = "Profile not found" });
+            }
+
+            return Results.Ok(profile);
+        });
 
 // Authentication API Endpoints
     app.MapPost("/api/auth/login", async (LoginRequest request, MapMeAuth authService, ILogger<Program> logger,
@@ -874,50 +901,6 @@ static async Task<string?> GetCurrentUserIdAsync(HttpContext context, MapMeAuth 
     return user?.UserId;
 }
 
-/// <summary>
-/// Ensures a default user profile exists for development purposes
-/// </summary>
-static async Task EnsureDefaultUserProfileAsync(IServiceProvider services)
-{
-    using var scope = services.CreateScope();
-    var userRepo = scope.ServiceProvider.GetRequiredService<IUserProfileRepository>();
-
-    try
-    {
-        // Check if current_user profile exists
-        var existingProfile = await userRepo.GetByUserIdAsync("current_user");
-        if (existingProfile == null)
-        {
-            // Create default user profile using correct model structure
-            var defaultProfile = new UserProfile(
-                Id: Guid.NewGuid().ToString(),
-                UserId: "current_user",
-                DisplayName: "Current User",
-                Bio: "Default user profile for development",
-                Photos: new List<UserPhoto>
-                {
-                    new UserPhoto(
-                        Url: "https://via.placeholder.com/400x400/007bff/ffffff?text=User",
-                        IsPrimary: true
-                    )
-                }.AsReadOnly(),
-                Preferences: new UserPreferences(
-                    Categories: new List<string> { "Technology", "Travel", "Food" }.AsReadOnly()
-                ),
-                Visibility: "public",
-                CreatedAt: DateTimeOffset.UtcNow,
-                UpdatedAt: DateTimeOffset.UtcNow
-            );
-
-            await userRepo.UpsertAsync(defaultProfile);
-        }
-    }
-    catch (Exception ex)
-    {
-        // Log error but don't fail startup
-        Console.WriteLine($"Warning: Could not ensure default user profile: {ex.Message}");
-    }
-}
 
 // Expose Program for WebApplicationFactory in tests
 public partial class Program

@@ -76,6 +76,8 @@ public class GoogleLoginRequest
     [JsonPropertyName("googleId")]
     [Required(ErrorMessage = "Google ID is required")]
     public string GoogleId { get; set; } = "";
+
+    [JsonPropertyName("picture")] public string? Picture { get; set; }
 }
 
 /// <summary>
@@ -92,6 +94,8 @@ public class AuthenticationResponse
     [JsonPropertyName("token")] public string? Token { get; set; }
 
     [JsonPropertyName("expiresAt")] public DateTimeOffset? ExpiresAt { get; set; }
+
+    [JsonPropertyName("isNewUser")] public bool IsNewUser { get; set; }
 }
 
 /// <summary>

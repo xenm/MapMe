@@ -1,3 +1,4 @@
+using System.Net.Http.Json;
 using System.Text.Json;
 using MapMe.Client.Models;
 using Microsoft.JSInterop;
@@ -12,27 +13,67 @@ public class UserProfileService
     private const string ProfileStorageKey = "userProfile";
     private const string DateMarksStorageKey = "dateMarks";
     private const string AllProfilesStorageKey = "allUserProfiles";
+    private readonly HttpClient _httpClient;
     private readonly IJSRuntime _jsRuntime;
 
-    public UserProfileService(IJSRuntime jsRuntime)
+    public UserProfileService(IJSRuntime jsRuntime, HttpClient httpClient)
     {
         _jsRuntime = jsRuntime;
+        _httpClient = httpClient;
     }
 
     /// <summary>
-    /// Get the current user's profile
+    /// Retry mechanism for profile loading with exponential backoff
     /// </summary>
-    public async Task<UserProfile> GetCurrentUserProfileAsync()
+    public async Task<UserProfile?> GetCurrentUserProfileWithRetryAsync(int maxRetries = 3)
+    {
+        for (int attempt = 0; attempt < maxRetries; attempt++)
+        {
+            var profile = await GetCurrentUserProfileAsync();
+            if (profile != null)
+            {
+                return profile;
+            }
+
+            // Exponential backoff: wait 1s, 2s, 4s between retries
+            if (attempt < maxRetries - 1)
+            {
+                await Task.Delay(TimeSpan.FromSeconds(Math.Pow(2, attempt)));
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Get the current user's profile - returns null if not available, never fake data
+    /// </summary>
+    public async Task<UserProfile?> GetCurrentUserProfileAsync()
     {
         try
         {
-            var json = await _jsRuntime.InvokeAsync<string?>("MapMe.storage.load", ProfileStorageKey);
-            if (!string.IsNullOrWhiteSpace(json))
+            // First, try to fetch from server API
+            var response = await _httpClient.GetAsync("/api/profile/current");
+            if (response.IsSuccessStatusCode)
             {
-                var profile = JsonSerializer.Deserialize<UserProfile>(json);
-                if (profile != null)
+                var serverProfile = await response.Content.ReadFromJsonAsync<UserProfile>();
+                if (serverProfile != null)
                 {
-                    return profile;
+                    // Cache in localStorage for offline access
+                    var json = JsonSerializer.Serialize(serverProfile);
+                    await _jsRuntime.InvokeVoidAsync("MapMe.storage.save", ProfileStorageKey, json);
+                    return serverProfile;
+                }
+            }
+
+            // Fallback to localStorage if server request fails
+            var cachedJson = await _jsRuntime.InvokeAsync<string?>("MapMe.storage.load", ProfileStorageKey);
+            if (!string.IsNullOrWhiteSpace(cachedJson))
+            {
+                var cachedProfile = JsonSerializer.Deserialize<UserProfile>(cachedJson);
+                if (cachedProfile != null)
+                {
+                    return cachedProfile;
                 }
             }
         }
@@ -41,15 +82,8 @@ public class UserProfileService
             Console.WriteLine($"Error loading current user profile: {ex.Message}");
         }
 
-        // Return default profile for current user
-        return new UserProfile
-        {
-            Id = Guid.NewGuid().ToString(),
-            UserId = "current_user",
-            DisplayName = "current user",
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
-        };
+        // Return null - UI components must handle this properly with loading states and retry buttons
+        return null;
     }
 
     /// <summary>
@@ -59,9 +93,8 @@ public class UserProfileService
     {
         try
         {
-            // First check if it's the current user
-            if (string.Equals(username, "current user", StringComparison.OrdinalIgnoreCase) ||
-                string.Equals(username, "current_user", StringComparison.OrdinalIgnoreCase))
+            // First check if it's the current user (by display name only, no hardcoded IDs)
+            if (string.Equals(username, "current user", StringComparison.OrdinalIgnoreCase))
             {
                 return await GetCurrentUserProfileAsync();
             }
@@ -140,6 +173,28 @@ public class UserProfileService
         {
             Console.WriteLine($"Error saving to all profiles: {ex.Message}");
         }
+    }
+
+    /// <summary>
+    /// Get all Date Marks from all users
+    /// </summary>
+    public async Task<List<DateMark>> GetAllDateMarksAsync()
+    {
+        try
+        {
+            var json = await _jsRuntime.InvokeAsync<string?>("MapMe.storage.load", DateMarksStorageKey);
+            if (!string.IsNullOrWhiteSpace(json))
+            {
+                var allMarks = JsonSerializer.Deserialize<List<DateMark>>(json) ?? new();
+                return allMarks.OrderByDescending(m => m.SavedAt).ToList();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading all Date Marks: {ex.Message}");
+        }
+
+        return new List<DateMark>();
     }
 
     /// <summary>

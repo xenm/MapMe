@@ -1,199 +1,233 @@
-# AI Coding Assistant Rulebook
+# AI Coding Assistant Rulebook (Always On)
 
-**Version**: 1.0  
-**Last Updated**: August 31, 2025  
-**Applies To**: MapMe .NET 10 Dating Application
+## CRITICAL RULES (Never Break These)
 
-## Recommended Development Environment
+### Technology & Dependencies
 
-### IDE and AI Assistant Setup
-- **Primary IDE**: JetBrains Rider (latest version)
-- **AI Assistant**: Cascade extension with Claude Sonnet 4 or newer
-- **Why This Combination**:
-  - Rider provides excellent .NET 10 support and debugging capabilities
-  - Cascade extension offers superior code analysis and generation
-  - Claude Sonnet 4+ ensures latest AI capabilities for complex architectural decisions
-  - Integrated workflow for AI-assisted development following these rules
+- **USE**: .NET 10, System.Text.Json, established project patterns
+- **NEVER**: Add Newtonsoft.Json or unnecessary dependencies
+- **PLATFORM TARGETING**: Follow platform-specific patterns for Blazor WASM vs MAUI
 
-### Alternative Setups
-- **Windsurf IDE** (VSCode fork) with built-in AI capabilities (excellent alternative)
-- **Visual Studio 2022** with GitHub Copilot (acceptable alternative)
-- **VS Code** with C# Dev Kit + AI extensions (for lighter development)
+### Security & Logging (ZERO TOLERANCE)
 
-## Copyable Rulebook Content
+- **ALWAYS** use `SecureLogging` utilities for ALL log entries:
+    - `SanitizeForLog()` - user input
+    - `SanitizeUserIdForLog()` - user IDs
+    - `ToTokenPreview()` - tokens (never full tokens)
+    - `SanitizeEmailForLog()` - emails
+    - `SanitizeHeaderForLog()` - HTTP headers
+- **NEVER** log sensitive data directly
+- **NEVER** commit real secrets anywhere
+- **ONLY** use clear placeholders in `appsettings.Development.json`
+- **PREVENT** common vulnerabilities:
+    - SQL injection: Use parameterized queries/EF Core only
+    - XSS: Always encode output, validate input
+    - Path traversal: Validate file paths, no direct user input
+    - Deserialization attacks: Avoid untrusted deserialization
+    - CSRF: Use anti-forgery tokens
+    - Weak crypto: Use strong hashing (SHA256+), proper salt
+    - Resource leaks: Always dispose IDisposable (using statements)
+    - Null reference exceptions: Use null-conditional operators
 
-```markdown
-# AI Coding Assistant Rulebook
+### Research Process (Do This First)
 
-## Core Rules (ALWAYS FOLLOW):
+1. **Search existing docs/** folder
+2. **Search codebase** for existing implementations
+3. **Follow established patterns** - don't create new approaches
+4. **Extend existing files** instead of creating new ones
 
-### 1. Technology Stack
-- **Use .NET 10** features and APIs wherever possible
-- **Follow .NET best practices** in all code implementations
-- **Use System.Text.Json** instead of Newtonsoft.Json for all JSON operations
-- **NEVER add Newtonsoft.Json** as a dependency - the project has custom serializers to avoid it
+## CODE STANDARDS
 
-### 2. Code Quality and Security
-- **Hold strong code quality standards** and security practices
-- Write clean, readable, maintainable code following SOLID principles
-- Implement proper error handling and logging
-- Use async/await patterns correctly
-- **Code quality analyzers should not produce false positives**
+### Quality Requirements
 
-### 3. Error Handling and Logging Standards
-- **NEVER log sensitive information** - use SecureLogging utilities (see [MapMe.Utilities.SecureLogging](cci:2://file:///Users/adamzaplatilek/GitHub/MapMe/MapMe/MapMe/Utilities/SecureLogging.cs:10:0-183:1))
-- **Always use sanitization helpers** from [SecureLogging](cci:2://file:///Users/adamzaplatilek/GitHub/MapMe/MapMe/MapMe/Utilities/SecureLogging.cs:10:0-183:1) class:
-    - [SanitizeForLog()](cci:1://file:///Users/adamzaplatilek/GitHub/MapMe/MapMe/MapMe/Utilities/SecureLogging.cs:15:4-48:5) for general user input
-    - [SanitizeUserIdForLog()](cci:1://file:///Users/adamzaplatilek/GitHub/MapMe/MapMe/MapMe/Utilities/SecureLogging.cs:116:4-134:5) for user identifiers
-    - [ToTokenPreview()](cci:1://file:///Users/adamzaplatilek/GitHub/MapMe/MapMe/MapMe/Utilities/SecureLogging.cs:50:4-70:5) for JWT tokens (never log full tokens)
-    - [SanitizeEmailForLog()](cci:1://file:///Users/adamzaplatilek/GitHub/MapMe/MapMe/MapMe/Utilities/SecureLogging.cs:72:4-89:5) for email addresses
-    - [SanitizeHeaderForLog()](cci:1://file:///Users/adamzaplatilek/GitHub/MapMe/MapMe/MapMe/Utilities/SecureLogging.cs:91:4-114:5) for HTTP headers
-- **Follow secure logging policy** documented in [docs/security/secure-logging.md](cci:7://file:///Users/adamzaplatilek/GitHub/MapMe/docs/security/secure-logging.md:0:0-0:0)
-- **Use structured logging** with Serilog and proper log levels
-- **Handle exceptions gracefully** with appropriate error responses
-- **Log authentication events** safely without exposing credentials
+- Follow SOLID principles and .NET best practices
+- **One class per file** (mandatory)
+- **Follow established naming and folder conventions** exactly
+- Use async/await correctly
+- Implement proper error handling
+- Write clean, maintainable code
 
-### 4. Security and Secrets Management
-- **NEVER commit real secrets** to version control in any file
-- **Documentation and appsettings.json** must have nothing that looks like real secrets
-- **appsettings.Development.json** should only contain:
-    - Clear placeholders (e.g., "YOUR_API_KEY_HERE")
-    - Publicly known secrets from official Microsoft guides (e.g., Cosmos DB emulator keys)
-    - No real API keys, connection strings, or sensitive data
-- **appsettings.Development.json will be gitignored** for new developers to prevent security breaches
-- **Use User Secrets or environment variables** for real configuration in development/production
+### Data Handling & UI Integrity
 
-### 5. Documentation Management
-- **Keep documentation up to date** following docs/ folder structure and organization
-- **Always read existing documentation FIRST** before making any changes
-- **Search the codebase** for existing implementations before creating new ones
-- Update relevant documentation after code changes
+- **NEVER display fake or hardcoded data**:
+    - **ALWAYS** implement proper loading states (e.g., skeleton loaders, spinners) while data is being fetched.
+    - If a data fetch returns an empty collection, **ALWAYS** display a clear "empty state" message (e.g., "No items
+      found.").
+    - **NEVER** leave the UI in a broken or perpetual loading state.
+- **Implement robust retry and fallback policies**:
+    - For transient network errors, **ALWAYS** implement a retry policy, preferably with exponential backoff (e.g.,
+      using Polly).
+    - If data fetching fails after all retries, provide a fallback. This can be serving stale data from a cache (if
+      acceptable) or displaying a user-friendly error state.
+- **Provide user-driven recovery actions**:
+    - When a data fetch fails permanently (after retries), the UI **MUST** display a clear error message and a "Retry"
+      or "Refresh" button to allow the user to initiate the action again.
+- **Follow data flow best practices**:
+    - **Separation of Concerns**: Keep data fetching logic in dedicated services, separate from UI components (Blazor)
+      or Views/ViewModels (MAUI).
+    - **Unidirectional Data Flow**: State should flow down from services to UI components. Events and actions should
+      flow up from the UI to the services.
+    - **Immutability**: Use records or immutable DTOs for state and API models to prevent unintended side effects.
 
-### 6. Documentation Location Rules
-- **CHANGELOG.md ONLY** for all change documentation ("what changed")
-- **docs/ folder ONLY** for current implementation and how-to guides ("how it works")
-- **NEVER create new markdown in root folder** except project-level files (README.md, CHANGELOG.md, CONTRIBUTING.md)
-- **ALWAYS extend existing docs files** instead of creating new ones when content fits existing structure
-- **Follow docs/ folder hierarchy**: backend/, frontend/, api/, security/, testing/, deployment/, etc.
+### Platform-Specific Rules
 
-### 7. Research and Analysis Process
-- **Always search documentation and codebase** before implementing solutions
-- **Read existing code patterns** and follow established conventions
-- **Check for custom implementations** before adding dependencies
-- **Verify assumptions** by examining actual code rather than making assumptions
+#### Blazor (Server & WebAssembly)
 
-### 8. Testing Strategy and Test Pyramid Best Practices
-- **Follow test pyramid hierarchy** - write more unit tests than integration tests, more integration tests than end-to-end tests
-- **Build and run all tests after each change** to verify correctness
-- **Add comprehensive tests** for each new feature or bug fix following these guidelines:
+- **Memory Management**: Dispose event handlers, avoid circular references
+- **State Management**: Use proper `StateHasChanged()` calls
+- **JS Interop**: Always check if disposed before JS calls
+- **Performance**: Minimize re-renders, use `@key` for dynamic lists
+- **Security**: Validate all user input, never trust client-side data
 
-#### Unit Tests (Foundation - Most Tests)
-- **Test individual methods and classes** in isolation
-- **Use mocking frameworks** (e.g., Moq, NSubstitute) to isolate dependencies
-- **Focus on business logic** and edge cases
-- **Fast execution** - should run in milliseconds
-- **No external dependencies** (databases, APIs, file system)
-- **High coverage** of business logic and utility functions
-- **Test naming convention**: MethodName_Scenario_ExpectedResult
+#### MAUI (Cross-Platform)
 
-**For Blazor Components:**
-- **Use bUnit** for Blazor component unit testing
-- **Test component rendering** and parameter binding
-- **Mock component dependencies** and services
-- **Test component lifecycle** events and state changes
-- **Verify component markup** and CSS class assignments
+- **Memory Leaks**: Always unsubscribe events, dispose views properly
+- **Navigation**: Use Shell navigation, avoid memory-leaking patterns
+- **Platform APIs**: Use conditional compilation for platform-specific code
+- **Performance**: Optimize CollectionView, use virtualization
+- **Resources**: Dispose graphics resources, use weak references
 
-**For Flutter Widgets:**
-- **Use flutter_test package** for widget unit testing
-- **Test widget properties** and state management
-- **Mock external dependencies** using mockito or similar
-- **Test widget interactions** like taps, scrolling, form input
-- **Verify widget tree structure** and rendered output
+### Testing Strategy (Test Pyramid)
 
-#### Integration Tests (Middle Layer - Moderate Tests)
-- **Test component interactions** within the application
-- **Test API controllers** with real service implementations
-- **Test database operations** with test database or in-memory providers
-- **Verify configuration and dependency injection** setup
-- **Test cross-cutting concerns** like authentication, authorization, logging
-- **Use TestContainers** for external service dependencies when needed
-- **Moderate execution time** - should complete within seconds
+- **Unit Tests** (Most): Fast, isolated, mock dependencies, high coverage
+- **Integration Tests** (Moderate): Component interactions, real services, seconds to run
+- **E2E Tests** (Fewest): Critical user journeys, full stack, minutes to run
+- **ALWAYS** build and run tests after changes
+- **Platform Testing**:
+    - Blazor: Use bUnit for components, TestServer for integration
+    - MAUI: Use device/simulator testing, platform-specific tests
 
-**For Blazor Applications:**
-- **Test Blazor Server** SignalR connections and circuit management
-- **Test Blazor WebAssembly** JavaScript interop and API communication
-- **Test authentication flows** with TestServer and WebApplicationFactory
-- **Verify routing and navigation** between Blazor pages
-- **Test dependency injection** resolution in Blazor components
+## DOCUMENTATION RULES
 
-**For Flutter Applications:**
-- **Use integration_test package** for Flutter integration testing
-- **Test navigation flows** between screens and routes
-- **Test state management** solutions (Provider, Bloc, Riverpod)
-- **Test platform channels** and native plugin interactions
-- **Verify API integration** with real or mock HTTP clients
+### File Location (Strict)
 
-#### End-to-End Tests (Top Layer - Fewest Tests)
-- **Test critical user journeys** and business scenarios
-- **Test full application stack** including UI, API, and database
-- **Focus on high-value workflows** that represent core business functionality
-- **Use browser automation** (e.g., Playwright, Selenium) for frontend testing
-- **Test deployment scenarios** and production-like environments
-- **Slowest execution** - acceptable to run in minutes
-- **Minimal but comprehensive** - cover happy paths and critical error scenarios
+- **Changes/fixes** → `CHANGELOG.md` ONLY
+- **Temporary changes for development that will need undoing** → `docs/TODO.md` ONLY
+- **Implementation docs** → `docs/` folder ONLY
+- **ALWAYS** keep README.md files up to date in all folders
+- **NEVER** create root-level markdown except README.md, CHANGELOG.md, CONTRIBUTING.md, SECURITY.md
+- **ALWAYS** extend existing docs files when content fits
 
-**For Blazor Applications:**
-- **Use Playwright or Selenium** for Blazor Server and WebAssembly E2E testing
-- **Test complete user workflows** across multiple Blazor components and pages
-- **Verify real-time features** like SignalR notifications in Blazor Server
-- **Test progressive web app** features for Blazor WebAssembly
-- **Cross-browser compatibility** testing for Blazor applications
+### Decision Tree
 
-**For Flutter Applications:**
-- **Use flutter_driver or integration_test** for full app testing
-- **Test on real devices** and emulators for platform-specific behavior
-- **Test app lifecycle** events (background, foreground, termination)
-- **Verify platform-specific features** like permissions, notifications, deep linking
-- **Performance testing** for animations, scrolling, and memory usage
-
-#### Test Organization and Maintenance
-- **Organize tests by layer** in separate projects (Unit.Tests, Integration.Tests, E2E.Tests)
-- **Use test data builders** and object mothers for consistent test data creation
-- **Implement test cleanup** to ensure test isolation
-- **Maintain test performance** - regularly review and optimize slow tests
-- **Parallel test execution** where possible to reduce overall test suite time
-- **Test environment parity** - ensure test environments match production as closely as possible
-
-**Cross-Platform Testing Standards:**
-- **Blazor**: Use bUnit for components, WebApplicationFactory for integration, Playwright for E2E
-- **Flutter**: Use flutter_test for widgets, integration_test for flows, flutter_driver for full app testing
-- **Shared .NET Backend**: Apply same unit/integration testing principles regardless of frontend technology
-- **Golden file testing** for UI regression testing (Flutter) and visual component testing (Blazor with bUnit)
-- **Snapshot testing** for component output verification across platforms
-
-## Documentation Decision Tree:
-1. **Is it a change/fix?** → CHANGELOG.md
-2. **Is it current implementation?** → Appropriate docs/ subfolder
-3. **Does existing docs file cover this topic?** → Extend existing file
-4. **Is it new technical area?** → Create in appropriate docs/ subfolder
-5. **Never create root-level markdown** except project files
-
-## Decision Making Process:
-1. **Read documentation** in docs/ folder first
-2. **Search codebase** for existing patterns and implementations
-3. **Follow established conventions** rather than creating new approaches
-4. **Test changes** immediately after implementation
-5. **Update documentation** to reflect changes
-
-## Key Principles:
-- Read first, then implement
-- Follow existing patterns
-- Test immediately
-- Document changes appropriately
-- Never add unnecessary dependencies
-- Extend existing docs instead of creating new files
-- Never commit real secrets
-- Use clear placeholders only
-- Always sanitize logs with SecureLogging utilities
-- Never log sensitive user information
 ```
+Change/fix? → CHANGELOG.md
+Current implementation? → docs/ subfolder
+Topic exists in docs/? → Extend existing file
+New technical area? → Create in docs/ subfolder
+```
+
+## WORKFLOW CHECKLIST
+
+### Before Coding
+
+- [ ] Read relevant docs/ files
+- [ ] Search codebase for existing patterns
+- [ ] Verify no existing implementation exists
+- [ ] **Check platform-specific requirements** (Blazor/MAUI)
+
+### While Coding
+
+- [ ] Follow established conventions and naming patterns exactly
+- [ ] One class per file (no exceptions)
+- [ ] Use SecureLogging for ALL logging
+- [ ] **Data Integrity**: Implement loading, empty, and error states. Never show fake data.
+- [ ] **Resiliency**: Add retry/fallback policies for data fetching.
+- [ ] **Memory Management**: Dispose resources, unsubscribe events
+- [ ] **Performance**: Avoid memory leaks, optimize for target platform
+- [ ] **Security**: Parameterized queries, encode output, validate input, use `using` statements
+- [ ] Never add unnecessary dependencies
+- [ ] Write tests following pyramid strategy
+
+### After Coding
+
+- [ ] Run all tests (unit, integration, platform-specific)
+- [ ] **Memory Testing**: Check for leaks in MAUI/Blazor apps
+- [ ] Update CHANGELOG.md for changes
+- [ ] Update docs/ for new implementations
+- [ ] Verify no secrets committed
+
+## QUICK REFERENCE
+
+**Security Logging Pattern:**
+
+```csharp
+_logger.LogInformation("User action: {UserId}, Input: {Input}", 
+    SecureLogging.SanitizeUserIdForLog(userId),
+    SecureLogging.SanitizeForLog(userInput));
+```
+
+**Data Loading UI State Pattern:**
+
+```csharp
+// Blazor Example
+@if (isLoading)
+{
+    <Spinner />
+}
+else if (loadFailed)
+{
+    <ErrorMessage Message="Failed to load data.">
+        <RetryButton OnClick="LoadDataAsync" />
+    </ErrorMessage>
+}
+else if (!items.Any())
+{
+    <EmptyStateMessage Message="No items found." />
+}
+else
+{
+    // Render items
+}
+```
+
+**Memory Management Patterns:**
+
+```csharp
+// ✅ Blazor: Proper disposal
+public void Dispose()
+{
+    if (_timer != null)
+    {
+        _timer.Dispose();
+        _timer = null;
+    }
+}
+
+// ✅ MAUI: Unsubscribe events
+protected override void OnDisappearing()
+{
+    MyEvent -= OnMyEvent;
+    base.OnDisappearing();
+}
+```
+
+**Security Pattern:**
+
+```csharp
+// ✅ Good: Parameterized query
+var users = await context.Users
+    .Where(u => u.Email == email)
+    .ToListAsync();
+
+// ✅ Good: Proper disposal
+using var httpClient = new HttpClient();
+
+// ✅ Good: Input validation
+if (string.IsNullOrWhiteSpace(userInput) || userInput.Length > 100)
+    throw new ArgumentException("Invalid input");
+```
+
+**Test Naming:** `MethodName_Scenario_ExpectedResult`
+
+**Documentation:** Extend existing \> Create new
+
+**File Organization:** One class per file, follow exact naming/folder conventions
+
+**Dependencies:** System.Text.Json \> Newtonsoft.Json
+
+**Platform Performance:** Dispose resources, optimize re-renders, use weak references
+
+-----
+
+*Key Principle: Read first, follow patterns, test immediately, document appropriately, manage memory carefully*

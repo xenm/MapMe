@@ -69,19 +69,20 @@ cd MapMe/MapMe/MapMe
 dotnet user-secrets init
 dotnet user-secrets set "GoogleMaps:ApiKey" "your-google-api-key"
 dotnet user-secrets set "GoogleAuth:ClientId" "your-google-oauth-client-id"
+dotnet user-secrets set "Jwt:SecretKey" "your-jwt-key-32+_chars"
 ```
 
 **Production/CI (Environment Variable):**
 ```bash
 export GOOGLE_MAPS_API_KEY="your-google-api-key"
 export GOOGLE_AUTH_CLIENT_ID="your-google-oauth-client-id"
+export JWT_SECRET_KEY="your-jwt-key-32+_chars"
 ```
 
 **Key Lookup Order:**
-1. `GoogleMaps:ApiKey` from configuration (includes User Secrets)
-2. `GOOGLE_MAPS_API_KEY` environment variable
-3. `GoogleAuth:ClientId` from configuration (includes User Secrets)
-4. `GOOGLE_AUTH_CLIENT_ID` environment variable
+
+1. From configuration (includes User Secrets)
+2. From environment variables
 
 ### Google APIs Requirements
 Enable these APIs in Google Cloud Console:
@@ -114,7 +115,9 @@ Enable these APIs in Google Cloud Console:
 
 ### Project Structure
 ```
-MapMe/
+├ scripts/                          # Scripts for local development and CI/CD pipelines
+├ docs/                             # Documentation
+├ src/                              # Source code
 ├── MapMe/                          # Server project (ASP.NET Core)
 │   ├── Controllers/                # API controllers for DateMarks
 │   ├── Models/                     # Server-side data models

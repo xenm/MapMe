@@ -2,6 +2,7 @@ using System.Security.Cryptography;
 using MapMe.DTOs;
 using MapMe.Models;
 using MapMe.Repositories;
+using MapMe.Utilities;
 
 namespace MapMe.Services;
 
@@ -76,7 +77,8 @@ public class AuthenticationService : IAuthenticationService
                 "Login successful",
                 authenticatedUser,
                 token,
-                expiresAt
+                expiresAt,
+                false // Existing user login
             );
         }
         catch (Exception ex)
@@ -124,7 +126,7 @@ public class AuthenticationService : IAuthenticationService
             await _userRepository.CreateAsync(user);
 
             // Create user profile
-            await CreateDefaultUserProfileAsync(userId, request.DisplayName);
+            await CreateInitialUserProfileAsync(userId, request.DisplayName, request.Email, null);
 
             // Generate JWT token
             var (token, expiresAt) = _jwtService.GenerateToken(user, false);
@@ -143,7 +145,8 @@ public class AuthenticationService : IAuthenticationService
                 "Registration successful",
                 authenticatedUser,
                 token,
-                expiresAt
+                expiresAt,
+                true // New user registration
             );
         }
         catch (Exception ex)
@@ -164,6 +167,10 @@ public class AuthenticationService : IAuthenticationService
             if (existingUser != null)
             {
                 // Existing Google user login
+                _logger.LogInformation("Found existing Google user: {Username} (ID: {UserId})",
+                    SecureLogging.SanitizeForLog(existingUser.Username),
+                    SecureLogging.SanitizeUserIdForLog(existingUser.Id));
+
                 if (!existingUser.IsActive)
                 {
                     return new AuthenticationResponse(false, "Account is deactivated");
@@ -180,20 +187,30 @@ public class AuthenticationService : IAuthenticationService
                     existingUser.IsEmailVerified
                 );
 
+                _logger.LogInformation("Returning existing Google user response with IsNewUser=false for {Username}",
+                    SecureLogging.SanitizeForLog(existingUser.Username));
                 return new AuthenticationResponse(
                     true,
                     "Login successful",
                     authenticatedUser,
                     token,
-                    expiresAt
+                    expiresAt,
+                    false // Existing Google user login
                 );
             }
             else
             {
                 // New Google user registration
+                _logger.LogInformation(
+                    "No existing Google user found for GoogleId: {GoogleId}, checking email: {Email}",
+                    SecureLogging.SanitizeForLog(request.GoogleId),
+                    SecureLogging.SanitizeEmailForLog(request.Email));
+
                 var emailUser = await _userRepository.GetByEmailAsync(request.Email);
                 if (emailUser != null)
                 {
+                    _logger.LogWarning("Email {Email} already exists for a different user",
+                        SecureLogging.SanitizeEmailForLog(request.Email));
                     return new AuthenticationResponse(false, "An account with this email already exists");
                 }
 
@@ -226,7 +243,7 @@ public class AuthenticationService : IAuthenticationService
                 );
 
                 await _userRepository.CreateAsync(user);
-                await CreateDefaultUserProfileAsync(userId, sanitizedDisplayName);
+                await CreateInitialUserProfileAsync(userId, sanitizedDisplayName, sanitizedEmail, request.Picture);
 
                 var (token, expiresAt) = _jwtService.GenerateToken(user, false);
 
@@ -244,7 +261,8 @@ public class AuthenticationService : IAuthenticationService
                     "Registration successful",
                     authenticatedUser,
                     token,
-                    expiresAt
+                    expiresAt,
+                    true // New Google user registration
                 );
             }
         }
@@ -491,16 +509,38 @@ public class AuthenticationService : IAuthenticationService
         return Guid.NewGuid().ToString("N")[..8];
     }
 
-    private async Task CreateDefaultUserProfileAsync(string userId, string displayName)
+    private async Task CreateInitialUserProfileAsync(string userId, string displayName, string email,
+        string? profilePictureUrl)
     {
         var sanitizedDisplayName = SanitizeUnicodeString(displayName);
+        var sanitizedEmail = SanitizeUnicodeString(email);
+
+        // Create a more personalized bio for Google users
+        var bio = string.IsNullOrEmpty(sanitizedEmail) || sanitizedEmail.Contains("@")
+            ? $"Hello! I'm {sanitizedDisplayName} and I'm new to MapMe. Looking forward to sharing my favorite places!"
+            : "New MapMe user";
+
+        // Create photos list with Google profile picture if available
+        var photos = new List<UserPhoto>();
+        if (!string.IsNullOrWhiteSpace(profilePictureUrl))
+        {
+            var profilePhoto = new UserPhoto(
+                Url: profilePictureUrl,
+                IsPrimary: true
+            );
+            photos.Add(profilePhoto);
+
+            _logger.LogDebug("Added Google profile picture for user {UserId}: {PictureUrl}",
+                SecureLogging.SanitizeUserIdForLog(userId),
+                SecureLogging.SanitizeForLog(profilePictureUrl));
+        }
 
         var defaultProfile = new UserProfile(
             Id: Guid.NewGuid().ToString(),
             UserId: userId,
             DisplayName: sanitizedDisplayName,
-            Bio: "New MapMe user",
-            Photos: new List<UserPhoto>().AsReadOnly(),
+            Bio: bio,
+            Photos: photos.AsReadOnly(),
             Preferences: new UserPreferences(
                 Categories: new List<string>().AsReadOnly()
             ),

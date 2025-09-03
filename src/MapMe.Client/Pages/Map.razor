@@ -775,13 +775,27 @@
         try
         {
             _savedMarks.Clear();
-            var userMarks = await ProfileService.GetUserDateMarksAsync(_currentUserProfile.UserId);
-            _savedMarks.AddRange(userMarks.OrderByDescending(m => m.CreatedAt));
+
+            // Load ALL DateMarks from all users, not just current user's marks
+            // This will show other users' DateMarks with different visual treatment
+            var allMarks = await ProfileService.GetAllDateMarksAsync();
+            _savedMarks.AddRange(allMarks.OrderByDescending(m => m.CreatedAt));
             await SyncMarksToMapAsync();
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Error loading marks: {ex.Message}");
+            // Fallback to current user's marks only if GetAllDateMarksAsync fails
+            try
+            {
+                var userMarks = await ProfileService.GetUserDateMarksAsync(_currentUserProfile.UserId);
+                _savedMarks.AddRange(userMarks.OrderByDescending(m => m.CreatedAt));
+                await SyncMarksToMapAsync();
+            }
+            catch (Exception fallbackEx)
+            {
+                Console.WriteLine($"Error loading user marks fallback: {fallbackEx.Message}");
+            }
         }
     }
 
@@ -957,13 +971,19 @@
         {
             // Get current user profile to identify the user in JavaScript
             var userProfile = await ProfileService.GetCurrentUserProfileAsync();
+
+            // Store dotNetHelper reference for JavaScript access
             await JsRuntime.InvokeVoidAsync("eval", $@"
                 window.MapMe = window.MapMe || {{}};
                 window.MapMe.currentUser = '{userProfile.DisplayName}';
+                window.MapMe.currentUserId = '{userProfile.UserId}';
                 window.MapMe.editDateMark = function(dateMarkId) {{
                     window.location.href = '/map?edit=' + encodeURIComponent(dateMarkId);
                 }};
             ");
+
+            // Set the dotNetHelper reference separately using the actual object
+            await JsRuntime.InvokeVoidAsync("eval", "window.MapMe.dotNetHelper = arguments[0];", _dotNetHelper);
         }
         catch (Exception ex)
         {

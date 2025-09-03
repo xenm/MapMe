@@ -186,6 +186,7 @@
             {
                 // Wait a moment for authentication state to update, then redirect
                 await Task.Delay(100);
+                // Always redirect to map for existing users (login)
                 Navigation.NavigateTo("/map", forceLoad: true);
             }
             else
@@ -226,7 +227,8 @@
                         GoogleToken = googleUser.IdToken,
                         Email = googleUser.Email,
                         DisplayName = googleUser.Name,
-                        GoogleId = googleUser.Id
+                        GoogleId = googleUser.Id,
+                        Picture = googleUser.Picture
                 };
 
                 var response = await AuthService.GoogleLoginAsync(request);
@@ -235,7 +237,18 @@
                 {
                     // Wait a moment for authentication state to update, then redirect
                     await Task.Delay(100);
-                    Navigation.NavigateTo("/map", forceLoad: true);
+
+                    // Check if it's a new user and redirect appropriately
+                    if (response.IsNewUser)
+                    {
+                        // New Google user - redirect to profile to complete setup
+                        Navigation.NavigateTo("/profile", forceLoad: true);
+                    }
+                    else
+                    {
+                        // Existing Google user - redirect to map
+                        Navigation.NavigateTo("/map", forceLoad: true);
+                    }
                 }
                 else
                 {
@@ -271,6 +284,7 @@
         public string Email { get; set; } = "";
         public string Name { get; set; } = "";
         public string IdToken { get; set; } = "";
+        public string? Picture { get; set; }
     }
 
 }

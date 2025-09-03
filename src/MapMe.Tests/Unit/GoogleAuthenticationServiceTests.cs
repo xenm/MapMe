@@ -40,7 +40,8 @@ public class GoogleAuthenticationServiceTests
             GoogleToken: "valid.jwt.token",
             Email: "newuser@gmail.com",
             DisplayName: "New User",
-            GoogleId: "google123"
+            GoogleId: "google123",
+            Picture: null
         );
 
         _mockUserRepository.Setup(r => r.GetByGoogleIdAsync(request.GoogleId))
@@ -78,7 +79,8 @@ public class GoogleAuthenticationServiceTests
             GoogleToken: "valid.jwt.token",
             Email: "existing@gmail.com",
             DisplayName: "Existing User",
-            GoogleId: "google456"
+            GoogleId: "google456",
+            Picture: null
         );
 
         var existingUser = new User(
@@ -123,7 +125,8 @@ public class GoogleAuthenticationServiceTests
             GoogleToken: "valid.jwt.token",
             Email: "",
             DisplayName: "Test User",
-            GoogleId: "google789"
+            GoogleId: "google789",
+            Picture: null
         );
 
         _mockUserRepository.Setup(r => r.GetByGoogleIdAsync(request.GoogleId))
@@ -150,7 +153,8 @@ public class GoogleAuthenticationServiceTests
             GoogleToken: "",
             Email: "test@gmail.com",
             DisplayName: "Test User",
-            GoogleId: "google789"
+            GoogleId: "google789",
+            Picture: null
         );
 
         _mockUserRepository.Setup(r => r.GetByGoogleIdAsync(request.GoogleId))
@@ -177,7 +181,8 @@ public class GoogleAuthenticationServiceTests
             GoogleToken: "valid.jwt.token",
             Email: "test@gmail.com",
             DisplayName: "",
-            GoogleId: "google789"
+            GoogleId: "google789",
+            Picture: null
         );
 
         _mockUserRepository.Setup(r => r.GetByGoogleIdAsync(request.GoogleId))
@@ -208,7 +213,8 @@ public class GoogleAuthenticationServiceTests
             GoogleToken: "valid.jwt.token",
             Email: "invalid-email",
             DisplayName: "Test User",
-            GoogleId: "google789"
+            GoogleId: "google789",
+            Picture: null
         );
 
         _mockUserRepository.Setup(r => r.GetByGoogleIdAsync(request.GoogleId))
@@ -235,7 +241,8 @@ public class GoogleAuthenticationServiceTests
             GoogleToken: "valid.jwt.token",
             Email: "test@gmail.com",
             DisplayName: "Test User",
-            GoogleId: "google789"
+            GoogleId: "google789",
+            Picture: null
         );
 
         _mockUserRepository.Setup(r => r.GetByGoogleIdAsync(request.GoogleId))
@@ -260,7 +267,8 @@ public class GoogleAuthenticationServiceTests
             GoogleToken: "valid.jwt.token",
             Email: email,
             DisplayName: "Test User",
-            GoogleId: "google789"
+            GoogleId: "google789",
+            Picture: null
         );
 
         _mockUserRepository.Setup(r => r.GetByGoogleIdAsync(request.GoogleId))
@@ -291,7 +299,8 @@ public class GoogleAuthenticationServiceTests
             GoogleToken: "valid.jwt.token",
             Email: "test@gmail.com",
             DisplayName: "Test User",
-            GoogleId: "google789"
+            GoogleId: "google789",
+            Picture: null
         );
 
         _mockUserRepository.Setup(r => r.GetByGoogleIdAsync(request.GoogleId))

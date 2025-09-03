@@ -252,12 +252,21 @@
 
             if (response.Success)
             {
-                _successMessage = "Account created successfully! Redirecting...";
-                StateHasChanged();
+                // Check if it's a new user and redirect appropriately
+                if (response.IsNewUser)
+                {
+                    _successMessage = "Account created successfully! Complete your profile...";
+                    StateHasChanged();
 
-                // Wait a moment to show success message, then redirect
-                await Task.Delay(2000);
-                Navigation.NavigateTo("/map", forceLoad: true);
+                    // Wait a moment to show success message, then redirect to profile for first-time users
+                    await Task.Delay(2000);
+                    Navigation.NavigateTo("/profile", forceLoad: true);
+                }
+                else
+                {
+                    // Existing user - redirect to map
+                    Navigation.NavigateTo("/map", forceLoad: true);
+                }
             }
             else
             {
@@ -298,18 +307,29 @@
                         GoogleToken = googleUser.IdToken,
                         Email = googleUser.Email,
                         DisplayName = googleUser.Name,
-                        GoogleId = googleUser.Id
+                        GoogleId = googleUser.Id,
+                        Picture = googleUser.Picture
                 };
 
                 var response = await AuthService.GoogleLoginAsync(request);
 
                 if (response.Success)
                 {
-                    _successMessage = "Account created successfully! Redirecting...";
-                    StateHasChanged();
+                    // Check if it's a new user and redirect appropriately
+                    if (response.IsNewUser)
+                    {
+                        _successMessage = "Account created successfully! Complete your profile...";
+                        StateHasChanged();
 
-                    await Task.Delay(2000);
-                    Navigation.NavigateTo("/map", forceLoad: true);
+                        // Redirect new Google users to profile page to complete their information
+                        await Task.Delay(2000);
+                        Navigation.NavigateTo("/profile", forceLoad: true);
+                    }
+                    else
+                    {
+                        // Existing user trying to sign up - redirect to map
+                        Navigation.NavigateTo("/map", forceLoad: true);
+                    }
                 }
                 else
                 {
@@ -350,6 +370,7 @@
         public string Email { get; set; } = "";
         public string Name { get; set; } = "";
         public string IdToken { get; set; } = "";
+        public string? Picture { get; set; }
     }
 
 }

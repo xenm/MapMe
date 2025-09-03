@@ -66,7 +66,8 @@ public class GoogleAuthIntegrationTests : IClassFixture<WebApplicationFactory<Pr
             GoogleToken: "valid.jwt.token",
             Email: "test@gmail.com",
             DisplayName: "Test User",
-            GoogleId: "google123"
+            GoogleId: "google123",
+            Picture: null
         );
 
         var json = JsonSerializer.Serialize(request);
@@ -90,7 +91,8 @@ public class GoogleAuthIntegrationTests : IClassFixture<WebApplicationFactory<Pr
             GoogleToken: "invalid.token",
             Email: "test@gmail.com",
             DisplayName: "Test User",
-            GoogleId: "google123"
+            GoogleId: "google123",
+            Picture: null
         );
 
         var json = JsonSerializer.Serialize(request);
@@ -112,7 +114,8 @@ public class GoogleAuthIntegrationTests : IClassFixture<WebApplicationFactory<Pr
             GoogleToken: "valid.jwt.token",
             Email: "", // Missing email
             DisplayName: "Test User",
-            GoogleId: "google123"
+            GoogleId: "google123",
+            Picture: null
         );
 
         var json = JsonSerializer.Serialize(request);
@@ -134,7 +137,8 @@ public class GoogleAuthIntegrationTests : IClassFixture<WebApplicationFactory<Pr
             GoogleToken: "", // Missing token
             Email: "test@gmail.com",
             DisplayName: "Test User",
-            GoogleId: "google123"
+            GoogleId: "google123",
+            Picture: null
         );
 
         var json = JsonSerializer.Serialize(request);
@@ -193,7 +197,8 @@ public class GoogleAuthIntegrationTests : IClassFixture<WebApplicationFactory<Pr
             GoogleToken: "valid.jwt.token",
             Email: email ?? "",
             DisplayName: "Test User",
-            GoogleId: "google123"
+            GoogleId: "google123",
+            Picture: null
         );
 
         var json = JsonSerializer.Serialize(request);
@@ -215,7 +220,8 @@ public class GoogleAuthIntegrationTests : IClassFixture<WebApplicationFactory<Pr
             GoogleToken: "valid.jwt.token",
             Email: "test@gmail.com",
             DisplayName: new string('A', 1000), // Very long display name
-            GoogleId: "google123"
+            GoogleId: "google123",
+            Picture: null
         );
 
         var json = JsonSerializer.Serialize(request);
@@ -237,7 +243,8 @@ public class GoogleAuthIntegrationTests : IClassFixture<WebApplicationFactory<Pr
             GoogleToken: "valid.jwt.token",
             Email: "test@gmail.com",
             DisplayName: "Test User 测试 🚀 <script>alert('xss')</script>",
-            GoogleId: "google123"
+            GoogleId: "google123",
+            Picture: null
         );
 
         var json = JsonSerializer.Serialize(request);

@@ -22,17 +22,19 @@ public class TestJSVoidResult : IJSVoidResult
 [Trait("Category", "Unit")]
 public class UserProfileServiceTests
 {
+    private readonly Mock<HttpClient> _mockHttpClient;
     private readonly Mock<IJSRuntime> _mockJsRuntime;
     private readonly UserProfileService _service;
 
     public UserProfileServiceTests()
     {
         _mockJsRuntime = new Mock<IJSRuntime>();
-        _service = new UserProfileService(_mockJsRuntime.Object);
+        _mockHttpClient = new Mock<HttpClient>();
+        _service = new UserProfileService(_mockJsRuntime.Object, _mockHttpClient.Object);
     }
 
     [Fact]
-    public async Task GetCurrentUserProfileAsync_ReturnsDefaultProfile_WhenNoProfileExists()
+    public async Task GetCurrentUserProfileAsync_ReturnsNull_WhenNoProfileExists()
     {
         // Arrange
         _mockJsRuntime.Setup(x => x.InvokeAsync<string?>("MapMe.storage.load", new object[] { "userProfile" }))
@@ -42,9 +44,7 @@ public class UserProfileServiceTests
         var result = await _service.GetCurrentUserProfileAsync();
 
         // Assert
-        result.Should().NotBeNull();
-        result.UserId.Should().Be("current_user");
-        result.DisplayName.Should().Be("current user");
+        result.Should().BeNull(); // Following "no fake data" policy - returns null when no profile exists
     }
 
     [Fact]

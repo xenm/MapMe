@@ -83,7 +83,9 @@ public record GoogleLoginRequest(
     string DisplayName,
     [property: JsonPropertyName("googleId")]
     [Required(ErrorMessage = "Google ID is required")]
-    string GoogleId
+    string GoogleId,
+    [property: JsonPropertyName("picture")]
+    string? Picture
 );
 
 /// <summary>
@@ -97,7 +99,9 @@ public record AuthenticationResponse(
     [property: JsonPropertyName("user")] AuthenticatedUser? User = null,
     [property: JsonPropertyName("token")] string? Token = null,
     [property: JsonPropertyName("expiresAt")]
-    DateTimeOffset? ExpiresAt = null
+    DateTimeOffset? ExpiresAt = null,
+    [property: JsonPropertyName("isNewUser")]
+    bool IsNewUser = false
 );
 
 /// <summary>

@@ -365,7 +365,8 @@ public class JwtApiIntegrationCorrectedTests : IClassFixture<WebApplicationFacto
             GoogleToken: "mock-google-token",
             Email: $"google_{Guid.NewGuid().ToString("N")[..8]}@example.com",
             DisplayName: "Google Test User",
-            GoogleId: "google-id-" + Guid.NewGuid().ToString("N")[..12]
+            GoogleId: "google-id-",
+            Picture: null + Guid.NewGuid().ToString("N")[..12]
         );
 
         var json = JsonSerializer.Serialize(googleRequest);
@@ -397,7 +398,8 @@ public class JwtApiIntegrationCorrectedTests : IClassFixture<WebApplicationFacto
             GoogleToken: "",
             Email: "",
             DisplayName: "",
-            GoogleId: ""
+            GoogleId: "",
+            Picture: null
         );
 
         var json = JsonSerializer.Serialize(googleRequest);
