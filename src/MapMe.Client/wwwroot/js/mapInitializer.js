@@ -374,10 +374,18 @@ export async function initMap(dotNetHelper, elementId, lat, lng, zoom, mapType, 
                                         }
                                     } catch (_) { /* ignore */
                                     }
+                                    // CRITICAL FIX: Validate coordinates before creating DateMark
+                                    if (!loc || typeof loc.lat !== 'number' || typeof loc.lng !== 'number' ||
+                                        isNaN(loc.lat) || isNaN(loc.lng) || loc.lat === 0 && loc.lng === 0) {
+                                        console.error('Invalid coordinates for place:', place.name, loc);
+                                        alert('Unable to get precise location for this place. Please try selecting a different location.');
+                                        return;
+                                    }
+
                                     const details = {
                                         placeId: place.place_id || e.placeId,
                                         name: place.name || null,
-                                        location: loc,
+                                        coordinates: {lat: loc.lat, lng: loc.lng}, // Ensure coordinates are properly set
                                         types: place.types || [],
                                         url: place.url || null,
                                         photoReferences: photoReferences,
@@ -1126,7 +1134,7 @@ function renderMarks(marks) {
 
                 const sectionsHtml = sections.map((sec, idx) => {
                     const heading = sec.type === 'user'
-                        ? `<div style=\"display:flex;align-items:center;gap:6px;margin-top:${idx === 0 ? '0' : '8'}px;\"><span style=\"font-weight:600;\">User:</span> <a href=\"/user/${encodeURIComponent(sec.label)}\" class=\"mm-user-link\" data-username=\"${encodeURIComponent(sec.label)}\" data-avatar=\"${sec.avatar}\" style=\"text-decoration:none;\">${escapeHtml(sec.label)}</a></div>`
+                        ? `<div style=\"display:flex;align-items:center;gap:6px;margin-top:${idx === 0 ? '0' : '8'}px;\"><span style=\"font-weight:600;\">User:</span> <a href=\"/user/${encodeURIComponent(sec.label)}\" class=\"mm-user-link\" data-username=\"${encodeURIComponent(sec.label)}\" data-avatar=\"${sec.avatar}\" data-is-current-user=\"${sec.label === (window.MapMe && window.MapMe.currentUser)}\" style=\"text-decoration:none;\">${escapeHtml(sec.label)}</a></div>`
                         : `<div style=\"font-weight:600;margin-top:${idx === 0 ? '0' : '8'}px;\">${escapeHtml(sec.label)}</div>`;
                     let msgHtml = '';
                     if (sec.type === 'user' && Array.isArray(sec.messages) && sec.messages.length) {
@@ -1224,6 +1232,14 @@ function renderMarks(marks) {
                                 e.preventDefault();
                                 const dest = btn.getAttribute('data-go');
                                 try {
+                                    // FIXED: Check if trying to navigate to current user's profile
+                                    const currentUser = window.MapMe && window.MapMe.currentUser;
+                                    if (dest && dest.includes(`/user/${encodeURIComponent(currentUser)}`)) {
+                                        console.warn('Cannot navigate to your own profile');
+                                        hidePopover();
+                                        return;
+                                    }
+                                    
                                     // Ensure the navigation path is a relative path starting with /user/ and no dangerous characters.
                                     if (
                                         typeof dest === 'string' &&
@@ -1314,6 +1330,16 @@ function renderMarks(marks) {
                         container.querySelectorAll('.mm-user-link').forEach(a => {
                             const username = decodeURIComponent(a.getAttribute('data-username') || '');
                             const avatar = a.getAttribute('data-avatar');
+                            const isCurrentUser = a.getAttribute('data-is-current-user') === 'true';
+
+                            // FIXED: Prevent current user from opening their own profile
+                            if (isCurrentUser) {
+                                a.style.cursor = 'default';
+                                a.style.color = '#6c757d';
+                                a.title = 'This is your profile';
+                                return; // Skip adding event listeners for current user
+                            }
+                            
                             a.addEventListener('mouseenter', () => showPopover(a, username, avatar));
                             a.addEventListener('mouseleave', () => hidePopover(150));
                             a.addEventListener('click', (e) => {

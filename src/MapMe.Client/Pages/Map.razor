@@ -653,18 +653,16 @@
     [JSInvokable]
     public Task OnPlaceDetailsAsync(PlaceDetailsDto details)
     {
-        if (details.Coordinates != null)
+        // CRITICAL FIX: Never save DateMark with wrong coordinates - fail gracefully instead
+        if (details.Coordinates == null)
         {
-            _pendingLat = details.Coordinates.Lat;
-            _pendingLng = details.Coordinates.Lng;
-        }
-        else
-        {
-            // Fallback to 0/0 if missing; user may cancel
-            _pendingLat = 0;
-            _pendingLng = 0;
+            Console.WriteLine("ERROR: Place coordinates are missing. Cannot create DateMark without proper location data.");
+            // Don't show confirmation dialog - this would create a DateMark with wrong coordinates
+            return Task.CompletedTask;
         }
 
+        _pendingLat = details.Coordinates.Lat;
+        _pendingLng = details.Coordinates.Lng;
         _pendingNote = string.Empty;
         _pendingGeo = new ReverseGeocodeResult
         {
@@ -732,11 +730,14 @@
             {
                 Id = Guid.NewGuid().ToString(),
                 UserId = _currentUserProfile.UserId,
+                // FIXED: Use the actual coordinates passed from the Google place
                 Latitude = lat,
                 Longitude = lng,
                 Name = geocoded?.Name ?? string.Empty,
                 Address = geocoded?.Address ?? string.Empty,
                 PlaceId = geocoded?.PlaceId ?? string.Empty,
+                // FIXED: Set CreatedBy to the user's display name instead of GUID
+                CreatedBy = _currentUserProfile.DisplayName,
                 Note = string.IsNullOrWhiteSpace(note) ? null : note,
                 Types = geocoded?.Types ?? [],
                 Url = geocoded?.Url ?? string.Empty,
