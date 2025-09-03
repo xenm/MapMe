@@ -1228,7 +1228,14 @@ function renderMarks(marks) {
                             const msgBtn = pop.querySelector('button.mm-btn[data-msg]');
                             if (msgBtn) msgBtn.addEventListener('click', (e) => {
                                 e.preventDefault();
-                                window.location.href = msgBtn.getAttribute('data-msg');
+                                const dest = msgBtn.getAttribute('data-msg');
+                                // Only allow safe relative URLs (defense-in-depth)
+                                if (typeof dest === 'string' && /^\/messages\/new\?to=/.test(dest)) {
+                                    window.location.href = dest;
+                                } else {
+                                    // optionally log or display error, but do nothing
+                                    console.warn('Unsafe navigation path blocked:', dest);
+                                }
                             });
                             activePopover = pop;
                             try {
