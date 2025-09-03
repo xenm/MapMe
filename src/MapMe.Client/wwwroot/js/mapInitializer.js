@@ -1217,12 +1217,21 @@ function renderMarks(marks) {
                             if (btn) btn.addEventListener('click', (e) => {
                                 e.preventDefault();
                                 const dest = btn.getAttribute('data-go');
-                                // Only allow safe relative URLs (defense-in-depth)
-                                if (typeof dest === 'string' && /^\/user\//.test(dest)) {
-                                    window.location.href = dest;
-                                } else {
-                                    // optionally log or display error, but do nothing
-                                    console.warn('Unsafe navigation path blocked:', dest);
+                                try {
+                                    // Ensure the navigation path is a relative path starting with /user/ and no dangerous characters.
+                                    if (
+                                        typeof dest === 'string' &&
+                                        dest.startsWith('/user/') &&
+                                        !dest.includes('<') && !dest.includes('>') && !dest.includes('javascript:') &&
+                                        (new URL(dest, window.location.origin)).origin === window.location.origin
+                                    ) {
+                                        window.location.href = dest;
+                                    } else {
+                                        // optionally log or display error, but do nothing
+                                        console.warn('Unsafe navigation path blocked:', dest);
+                                    }
+                                } catch (e) {
+                                    console.warn('Navigation path parsing error:', e, dest);
                                 }
                             });
                             const msgBtn = pop.querySelector('button.mm-btn[data-msg]');
