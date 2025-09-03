@@ -1,6 +1,6 @@
 # MapMe
 
-![.NET](https://img.shields.io/badge/.NET-10-blue) ![Blazor](https://img.shields.io/badge/Blazor-WASM%20%2B%20Interactive%20SSR-purple) ![Tests](https://img.shields.io/badge/Tests-285/285%20Passing-green) ![License](https://img.shields.io/badge/License-Proprietary-lightgrey) [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=xenm_MapMe&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=xenm_MapMe)
+![.NET](https://img.shields.io/badge/.NET-10-blue) ![Blazor](https://img.shields.io/badge/Blazor-WASM%20%2B%20Interactive%20SSR-purple) ![Tests](https://img.shields.io/badge/Tests-300/300%20Passing-green) ![License](https://img.shields.io/badge/License-Proprietary-lightgrey) [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=xenm_MapMe&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=xenm_MapMe)
 
 **A modern dating application built with .NET 10 and Blazor WebAssembly, featuring interactive Google Maps integration,
 comprehensive user profiles, and location-based social discovery.**
@@ -68,26 +68,40 @@ The application requires a Google Maps API key for map functionality. Keys are n
 cd MapMe/MapMe/MapMe
 dotnet user-secrets init
 dotnet user-secrets set "GoogleMaps:ApiKey" "your-google-api-key"
+dotnet user-secrets set "GoogleAuth:ClientId" "your-google-oauth-client-id"
 ```
 
 **Production/CI (Environment Variable):**
 ```bash
 export GOOGLE_MAPS_API_KEY="your-google-api-key"
+export GOOGLE_AUTH_CLIENT_ID="your-google-oauth-client-id"
 ```
 
 **Key Lookup Order:**
 1. `GoogleMaps:ApiKey` from configuration (includes User Secrets)
 2. `GOOGLE_MAPS_API_KEY` environment variable
+3. `GoogleAuth:ClientId` from configuration (includes User Secrets)
+4. `GOOGLE_AUTH_CLIENT_ID` environment variable
 
-### Google Maps API Requirements
+### Google APIs Requirements
 Enable these APIs in Google Cloud Console:
 - Maps JavaScript API
 - Places API
 - Geocoding API
 
+**Google OAuth 2.0 Setup (Required):**
+
+1. Create OAuth 2.0 Client ID in Google Cloud Console
+2. Add authorized JavaScript origins:
+    - `http://localhost:5000`
+    - `http://localhost:5001`
+    - `https://localhost:8008`
+3. Configure the Client ID in user secrets or environment variables
+
 **Security Configuration:**
 - Restrict API key to your domain/localhost in Google Cloud Console
 - Set API restrictions to only the required Google Maps APIs
+- Configure OAuth 2.0 authorized origins for your domain
 
 ## Architecture
 
@@ -227,6 +241,8 @@ Real-time user metrics:
 - Testing: [docs/testing/README.md](./docs/testing/README.md)
 
 ### Running Tests
+
+**Standard Tests:**
 ```bash
 # Unit tests (fast)
 dotnet test MapMe/MapMe/MapMe.Tests --filter "Category=Unit"
@@ -236,6 +252,28 @@ dotnet test MapMe/MapMe/MapMe.Tests --filter "Category!=Unit"
 
 # All tests
 dotnet test MapMe/MapMe/MapMe.Tests
+```
+
+**Cosmos DB Service Level Tests:**
+
+```bash
+# Start Cosmos DB emulator (PowerShell)
+./Scripts/start-cosmos.ps1
+
+# Start Cosmos DB emulator (Shell - macOS compatible)
+./Scripts/start-cosmos.sh
+
+# Run health check (PowerShell)
+./Scripts/test-cosmos-health.ps1 -Detailed
+
+# Run health check (Shell - macOS compatible)
+./Scripts/test-cosmos-health.sh --detailed
+
+# Run service level tests (requires PowerShell Core)
+./Scripts/test-service-cosmos.ps1
+
+# Run complete test suite with Cosmos DB
+./Scripts/test-all-cosmos.ps1 -HealthCheck
 ```
 
 ### Building for Production
@@ -304,13 +342,15 @@ export ASPNETCORE_ENVIRONMENT=Development
 
 - **Clean Architecture**: Repository pattern, dependency injection, separation of concerns
 - **.NET 10 Best Practices**: Latest C# features, nullable reference types, System.Text.Json
-- **Comprehensive Testing**: 285/285 tests passing (100% success rate)
+- **Comprehensive Testing**: 300/300 tests passing (100% success rate)
 - **Security First**: JWT authentication, secure logging, input validation
 - **Production Ready**: Docker support, CI/CD pipelines, monitoring integration
 
 ## License & Ownership
 
-This project and its innovative concepts are the intellectual property of Adam Zaplatilek. While the source code is publicly available for educational and demonstration purposes, the core ideas, architecture, and unique features remain under proprietary ownership.
+This project and its innovative concepts are the intellectual property of Adam Zaplatílek. While the source code is
+publicly available for educational and demonstration purposes, the core ideas, architecture, and unique features remain
+under proprietary ownership.
 
 **Usage Guidelines:**
 - Educational and demonstration use is encouraged

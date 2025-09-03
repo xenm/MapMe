@@ -5,12 +5,15 @@
 [Rr]eleases/
 x64/
 x86/
+build/
 [Ww][Ii][Nn]32/
 [Aa][Rr][Mm]/
 [Aa][Rr][Mm]64/
+[Bb]in/
+[Oo]bj/
 
 # Test Results
-MapMe/TestResults/
+TestResults/
 
 # Visual Studio
 .vs/
@@ -21,13 +24,8 @@ MapMe/TestResults/
 # User-specific files
 *.rsuser
 *.suo
-*.user
 *.userprefs
 *.usertest
-
-# Build results
-[Bb]in/
-[Oo]bj/
 
 # .NET Core
 project.lock.json
@@ -42,24 +40,8 @@ tfs/
 .idea/
 *.sln.iml
 
-# User-specific files
-*.rsuser
-*.suo
-*.user
-*.userosscache
-*.sln.docstates
-
-# Build results
-[Dd]ebug/
-[Dd]ebugPublic/
-[Rr]elease/
-[Rr]eleases/
-x64/
-x86/
-build/
-[Ww][Ii][Nn]32/
-[Aa][Rr][Mm]/
-[Aa][Rr][Mm]64/
+# AI assistants should ignore this rulebook copy-paste (already git tracked)
+docs/development/ai-coding-assistant-rulebook.md
 
 # App specific
 appsettings.*.json
@@ -92,6 +74,11 @@ _ReSharper*/
 
 # OS-generated files
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
 
 # Test artifacts (generic)

@@ -1,17 +1,16 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MapMe", "MapMe\MapMe\MapMe.csproj", "{85FC5D87-2001-4D18-8B32-2F11C114BA74}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MapMe", "src\MapMe\MapMe.csproj", "{85FC5D87-2001-4D18-8B32-2F11C114BA74}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MapMe.Client", "MapMe\MapMe.Client\MapMe.Client.csproj", "{4C83579C-F25A-4C3F-BFFB-30A574ED7D51}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MapMe.Client", "src\MapMe.Client\MapMe.Client.csproj", "{4C83579C-F25A-4C3F-BFFB-30A574ED7D51}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{7C5F74E2-85BB-BC0F-841F-76C3C17E4BB1}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MapMe.Tests", "MapMe\MapMe.Tests\MapMe.Tests.csproj", "{583E475A-43EC-4025-9B6F-92D6ED2454A8}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MapMe.Tests", "src\MapMe.Tests\MapMe.Tests.csproj", "{583E475A-43EC-4025-9B6F-92D6ED2454A8}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{C6CF1A6A-9E7B-41C7-9CC7-6D92CF8151F2}"
 				ProjectSection(SolutionItems) = preProject
 								azure-pipelines.yml = azure-pipelines.yml
 								docker-compose.yml = docker-compose.yml
 								README.md = README.md
+					.gitignore = .gitignore
 				EndProjectSection
 EndProject
 Global
@@ -63,8 +62,5 @@ Global
 				EndGlobalSection
 				GlobalSection(SolutionProperties) = preSolution
 								HideSolutionNode = FALSE
-				EndGlobalSection
-				GlobalSection(NestedProjects) = preSolution
-								{583E475A-43EC-4025-9B6F-92D6ED2454A8} = {7C5F74E2-85BB-BC0F-841F-76C3C17E4BB1}
 				EndGlobalSection
 EndGlobal

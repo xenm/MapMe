@@ -1,0 +1,28 @@
+@page "/"
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
+@attribute [AllowAnonymous]
+@inject AuthenticationStateProvider AuthStateProvider
+@inject NavigationManager Navigation
+
+<PageTitle>MapMe</PageTitle>
+
+@code {
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+
+        if (authState.User.Identity?.IsAuthenticated == true)
+        {
+            // User is authenticated, redirect to map
+            Navigation.NavigateTo("/map");
+        }
+        else
+        {
+            // User is not authenticated, redirect to login
+            Navigation.NavigateTo("/login");
+        }
+    }
+
+}

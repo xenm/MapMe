@@ -1,0 +1,999 @@
+@page "/map"
+@inject IJSRuntime JsRuntime
+@inject HttpClient Http
+@inject NavigationManager Navigation
+@inject UserProfileService ProfileService
+@using MapMe.Client.Models
+@using MapMe.Client.Services
+@implements IAsyncDisposable
+
+<PageTitle>MapMe</PageTitle>
+
+<HeadContent>
+    <!-- Bootstrap CSS for navigation and basic styling -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"
+          integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN"
+          crossorigin="anonymous">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet"
+          integrity="sha384-4LISF5TTJX/fLmGSxO53rV4miRxdg84mZsxmO8Rx5jGtp/LbrixFETvWa5a6sESd"
+          crossorigin="anonymous">
+    <!-- Remove broken Blazor Bootstrap dependencies - use pure Bootstrap instead -->
+    <!-- MapMe specific styles for Map page -->
+    <style>
+        /* Map page specific styles */
+        .page {
+            min-height: 100vh;
+        }
+
+        /* Map-specific styles */
+        #map {
+            height: 500px;
+            width: 100%;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</HeadContent>
+
+<div class="page">
+    <h1>Map</h1>
+
+    <div class="mb-3">
+        <span class="badge bg-primary">Interactive Map</span>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <h5 class="card-title mb-0">Map View</h5>
+                <div class="d-flex gap-2">
+                    <div class="search-container">
+                        <div class="input-group">
+                            <input type="text"
+                                   class="form-control"
+                                   placeholder="Search location..."
+                                   @bind="_searchQuery"
+                                   @onkeyup="OnSearchKeyUpAsync"/>
+                            <button class="btn btn-primary"
+                                    @onclick="SearchLocationAsync"
+                                    disabled="@(_isLoading || string.IsNullOrWhiteSpace(_searchQuery))">
+                                <i class="bi bi-search"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <button class="btn btn-outline-primary btn-sm"
+                            @onclick="CenterMapAsync"
+                            disabled="@_isLoading">
+                        @(_isLoading ? "Loading..." : "Center Map")
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            @if (_isLoading)
+            {
+                <div class="d-flex justify-content-center align-items-center" style="height: 600px;">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading map...</span>
+                    </div>
+                    <span class="ms-2">Loading map and getting your location...</span>
+                </div>
+            }
+            <div id="map"
+                 style="height: 600px; border-radius: 4px; overflow: hidden; @(_isLoading ? "display: none;" : "") "></div>
+        </div>
+    </div>
+
+    @if (_showConfirm)
+    {
+        <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Save Location</h5>
+                        <button type="button" class="btn-close" @onclick="CancelConfirm"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <strong>@(_pendingGeo?.Name ?? "Unknown Location")</strong>
+                            @if (!string.IsNullOrWhiteSpace(_pendingGeo?.Address))
+                            {
+                                <div class="text-muted small">@_pendingGeo.Address</div>
+                            }
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Note (optional)</label>
+                            <textarea class="form-control" rows="3" @bind="_pendingNote"
+                                      placeholder="Add a note about this place..."></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" @onclick="CancelConfirm">Cancel</button>
+                        <button type="button" class="btn btn-primary" @onclick="ConfirmSaveAsync">Save</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <div class="card mt-3">
+        <div class="card-header">
+            <h5 class="card-title mb-0">Saved DateMarks (local)</h5>
+        </div>
+        <div class="card-body">
+            @if (_savedMarks.Count == 0)
+            {
+                <div class="text-muted">No marks saved yet. Click on the map or drag the marker to add one.</div>
+            }
+            else
+            {
+                <ul class="list-group">
+                    @foreach (var mark in _savedMarks)
+                    {
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    @if (!string.IsNullOrWhiteSpace(mark.Url))
+                                    {
+                                        <strong>
+                                            <a href="@mark.Url" target="_blank" rel="noopener noreferrer"
+                                               class="text-decoration-none text-primary">
+                                                @(mark.Name ?? "Unnamed Location")
+                                                <i class="bi bi-box-arrow-up-right ms-1" style="font-size: 0.8em;"></i>
+                                            </a>
+                                        </strong>
+                                    }
+                                    else
+                                    {
+                                        <strong>@(mark.Name ?? "Unnamed Location")</strong>
+                                    }
+                                    <div class="text-muted small">@mark.Address</div>
+                                    @if (!string.IsNullOrWhiteSpace(mark.Note))
+                                    {
+                                        <div class="small">@mark.Note</div>
+                                    }
+                                    <div class="text-muted small">Created by: @mark.UserId</div>
+                                </div>
+                                <div class="text-end">
+                                    <small class="text-muted">@mark.CreatedAt.ToString("MMM dd, yyyy")</small>
+                                    <div class="mt-1">
+                                        <button class="btn btn-sm btn-outline-primary me-1"
+                                                @onclick="() => FlyToAsync(mark)">
+                                            <i class="bi bi-geo-alt"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-danger"
+                                                @onclick="() => RemoveMarkAsync(mark)">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-secondary"
+                                                @onclick="() => EditMarkAsync(mark)">
+                                            <i class="bi bi-pencil"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </li>
+                    }
+                </ul>
+            }
+        </div>
+    </div>
+
+    <div class="mt-3">
+        <a href="/" class="btn btn-primary">Back to Home</a>
+    </div>
+</div>
+
+@code {
+    private IJSObjectReference? _mapModule;
+    private DotNetObjectReference<Map>? _dotNetHelper;
+    private double _latitude = 1.3521; // Default to Singapore
+    private double _longitude = 103.8198;
+    private int _zoom = 11;
+    private string _mapType = "roadmap";
+    private bool _isLoading = true;
+    private bool _isDisposed;
+    private string _searchQuery = string.Empty;
+    private string? _googleMapsApiKey;
+    private readonly List<DateMark> _savedMarks = new();
+    private bool _showConfirm;
+    private double _pendingLat;
+    private double _pendingLng;
+    private ReverseGeocodeResult? _pendingGeo;
+    private string _pendingNote = string.Empty;
+    private UserProfile _currentUserProfile = new();
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            try
+            {
+                _dotNetHelper = DotNetObjectReference.Create(this);
+                _mapModule = await JsRuntime.InvokeAsync<IJSObjectReference>("import", "/js/mapInitializer.js");
+
+                await HandleQueryParametersAsync();
+                await LoadCurrentUserProfileAsync();
+                await InitializeMapAsync();
+                await SetupUserProfileHookAsync();
+                await SetupCurrentUserIdentificationAsync();
+
+                // Load and display saved marks
+                await LoadMarksAsync();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in OnAfterRenderAsync: {ex.Message}");
+            }
+        }
+    }
+
+    private async Task LoadCurrentUserProfileAsync()
+    {
+        try
+        {
+            _currentUserProfile = await ProfileService.GetCurrentUserProfileAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading current user profile: {ex.Message}");
+        }
+    }
+
+
+    [JSInvokable]
+    public async Task<object?> GetUserProfileForJavaScriptAsync(string username)
+    {
+        try
+        {
+            // Get real user profile data using the UserProfileService
+            var userProfile = await ProfileService.GetUserProfileAsync(username);
+            if (userProfile != null)
+            {
+                var activityStats = await ProfileService.GetUserActivityStatsAsync(userProfile.UserId);
+
+                return new
+                {
+                    fullName = userProfile.DisplayName,
+                    username,
+                    bio = userProfile.Bio ?? "MapMe user",
+                    location = userProfile.Location ?? "Location not specified",
+                    website = (string?)null,
+                    joinedAt = userProfile.CreatedAt.ToString("MMM yyyy"),
+                    followers = 0, // Not implemented yet
+                    following = 0, // Not implemented yet
+                    photosCount = userProfile.Photos.Count,
+                    interests = userProfile.Interests.Take(5).ToArray(),
+                    avatar = userProfile.Photos.FirstOrDefault()?.Url ?? "/images/user-avatar.svg",
+                    age = userProfile.Age,
+                    gender = userProfile.Gender,
+                    totalDateMarks = activityStats.TotalDateMarks,
+                    uniqueCategories = activityStats.UniqueCategories,
+                    averageRating = activityStats.AverageRating
+                };
+            }
+
+            // Fallback for unknown users
+            return new
+            {
+                fullName = username,
+                username,
+                bio = "MapMe user",
+                location = "Location not specified",
+                website = (string?)null,
+                joinedAt = "Recently",
+                followers = 0,
+                following = 0,
+                photosCount = 0,
+                interests = Array.Empty<string>(),
+                avatar = "/images/user-avatar.svg"
+            };
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error in GetUserProfileForJS: {ex.Message}");
+            return null;
+        }
+    }
+
+    private async Task HandleQueryParametersAsync()
+    {
+        var uri = new Uri(Navigation.Uri);
+        var queryString = uri.Query.TrimStart('?');
+        var queryParams = new Dictionary<string, string>();
+
+        if (!string.IsNullOrEmpty(queryString))
+        {
+            foreach (var param in queryString.Split('&'))
+            {
+                var parts = param.Split('=', 2);
+                if (parts.Length == 2)
+                {
+                    queryParams[Uri.UnescapeDataString(parts[0])] = Uri.UnescapeDataString(parts[1]);
+                }
+            }
+        }
+
+        if (queryParams.TryGetValue("lat", out var latStr) && double.TryParse(latStr, out var lat) &&
+            queryParams.TryGetValue("lng", out var lngStr) && double.TryParse(lngStr, out var lng))
+        {
+            _latitude = lat;
+            _longitude = lng;
+
+            if (queryParams.TryGetValue("zoom", out var zoomStr) && int.TryParse(zoomStr, out var zoom))
+            {
+                _zoom = zoom;
+            }
+            else
+            {
+                _zoom = 15; // Default zoom when navigating to specific location
+            }
+
+            // Check if we should show popup for a specific place
+            if (queryParams.TryGetValue("showPopup", out var showPopupStr) && bool.TryParse(showPopupStr, out var showPopup) && showPopup)
+            {
+                var placeId = queryParams.GetValueOrDefault("placeId") ?? "";
+                // Schedule popup to show after map is initialized and marks are rendered
+                _ = Task.Run(async () =>
+                {
+                    await Task.Delay(2000); // Wait for map and marks to be ready
+                    await ShowPopupForLocationAsync(lat, lng, placeId);
+                });
+            }
+
+            // Handle edit parameter
+            if (queryParams.TryGetValue("edit", out var editDateMarkId) && !string.IsNullOrWhiteSpace(editDateMarkId))
+            {
+                await HandleEditDateMarkAsync(editDateMarkId);
+            }
+        }
+    }
+
+    private async Task HandleEditDateMarkAsync(string dateMarkId)
+    {
+        try
+        {
+            // Find the Date Mark to edit
+            var userProfile = await ProfileService.GetCurrentUserProfileAsync();
+            var dateMarks = await ProfileService.GetUserDateMarksAsync(userProfile.UserId);
+            var dateMarkToEdit = dateMarks.FirstOrDefault(dm => dm.Id == dateMarkId);
+
+            if (dateMarkToEdit != null)
+            {
+                // Set up for editing - you could show a modal or navigate to edit view
+                // For now, let's center the map on the Date Mark and show info
+                _latitude = dateMarkToEdit.Latitude;
+                _longitude = dateMarkToEdit.Longitude;
+                _zoom = 15;
+
+                Console.WriteLine($"Editing Date Mark: {dateMarkToEdit.Name} at {dateMarkToEdit.Address}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error handling edit Date Mark: {ex.Message}");
+        }
+    }
+
+    private async Task InitializeMapAsync()
+    {
+        try
+        {
+            _dotNetHelper = DotNetObjectReference.Create(this);
+            _mapModule = await JsRuntime.InvokeAsync<IJSObjectReference>(
+                "import",
+                "/js/mapInitializer.js");
+
+            // Fetch Google Maps API key from server configuration endpoint
+            try
+            {
+                var cfg = await Http.GetFromJsonAsync<MapConfig>("/config/maps");
+                _googleMapsApiKey = cfg?.ApiKey;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Failed to retrieve Maps API key: {ex.Message}");
+            }
+
+            // Try to get user's current location first
+            try
+            {
+                var location = await GetCurrentLocationAsync();
+                if (location != null)
+                {
+                    _latitude = location.Latitude;
+                    _longitude = location.Longitude;
+                    _zoom = 15; // Zoom in more when using current location
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Geolocation error: {ex.Message}. Using default location.");
+                // Use default location (Singapore)
+            }
+
+            await _mapModule.InvokeVoidAsync(
+                "initMap",
+                _dotNetHelper,
+                "map",
+                _latitude,
+                _longitude,
+                _zoom,
+                _mapType,
+                _googleMapsApiKey);
+
+            // Set up the getUserProfile hook for JavaScript to use real user data
+            await SetupUserProfileHookAsync();
+
+            // Load any existing marks from localStorage
+            await LoadMarksAsync();
+
+            // Render existing marks on the map with custom icons
+            await SyncMarksToMapAsync();
+
+            _isLoading = false;
+            StateHasChanged();
+        }
+        catch (JSDisconnectedException)
+        {
+            // Occurs during prerender or when the circuit/browser connection is gone.
+            // Swallow to avoid "no browser renderer" errors.
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error initializing map: {ex.Message}");
+            _isLoading = false;
+            try
+            {
+                StateHasChanged();
+            }
+            catch
+            {
+                /* ignore if renderer is gone */
+            }
+        }
+    }
+
+    private async Task<Location?> GetCurrentLocationAsync()
+    {
+        try
+        {
+            var position = await JsRuntime.InvokeAsync<GeolocationPosition>("getCurrentPosition");
+            if (position.Coords != null)
+            {
+                return new Location
+                {
+                    Latitude = position.Coords.Latitude,
+                    Longitude = position.Coords.Longitude
+                };
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error getting current location: {ex.Message}");
+        }
+
+        return null;
+    }
+
+    private class GeolocationPosition
+    {
+        public GeolocationCoordinates? Coords { get; set; }
+    }
+
+    private class GeolocationCoordinates
+    {
+        public double Latitude { get; set; }
+        public double Longitude { get; set; }
+    }
+
+    public class Location
+    {
+        public double Latitude { get; set; }
+        public double Longitude { get; set; }
+    }
+
+    private async Task CenterMapAsync()
+    {
+        try
+        {
+            if (_mapModule != null)
+            {
+                // Always recenter to the user's current geolocation
+                var location = await GetCurrentLocationAsync();
+                if (location != null)
+                {
+                    _latitude = location.Latitude;
+                    _longitude = location.Longitude;
+                    _zoom = 15; // Zoom in more when using current location
+                }
+
+                // Set the center on the already-initialized map
+                await _mapModule.InvokeVoidAsync("setCenter",
+                    _latitude,
+                    _longitude,
+                    _zoom);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error centering map: {ex.Message}");
+        }
+    }
+
+    private async Task SearchLocationAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_searchQuery) || _mapModule == null)
+        {
+            Console.WriteLine("Search query is empty or map module is not initialized");
+            return;
+        }
+
+        try
+        {
+            try
+            {
+                Console.WriteLine($"Searching for location: {_searchQuery}");
+
+                // Then call the search function
+                var result = await _mapModule.InvokeAsync<SearchResult>("searchLocation", _searchQuery);
+
+                if (result.Latitude != 0 && result.Longitude != 0)
+                {
+                    Console.WriteLine($"Found location: {result.Name} at {result.Latitude}, {result.Longitude}");
+                    _latitude = result.Latitude;
+                    _longitude = result.Longitude;
+                    _zoom = 16; // Zoom in more when searching for a location
+
+                    // Update the map center
+                    await _mapModule.InvokeVoidAsync("setCenter", _latitude, _longitude, _zoom);
+
+                    // Update the UI to show the new position
+                    StateHasChanged();
+                }
+                else
+                {
+                    // Show error to user
+                    Console.WriteLine($"Location '{_searchQuery}' not found. Please try a different search term.");
+                }
+            }
+            catch (JSException jsex)
+            {
+                Console.WriteLine($"JavaScript error during search: {jsex.Message}");
+                Console.WriteLine($"Stack trace: {jsex.StackTrace}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error during search: {ex.Message}");
+                Console.WriteLine($"Stack trace: {ex.StackTrace}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error in SearchLocation: {ex.Message}");
+            Console.WriteLine($"Stack trace: {ex.StackTrace}");
+        }
+    }
+
+    private async Task OnSearchKeyUpAsync(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await SearchLocationAsync();
+        }
+    }
+
+    private class SearchResult
+    {
+        public double Latitude { get; set; }
+        public double Longitude { get; set; }
+        public string? Name { get; set; }
+        public string? Address { get; set; }
+    }
+
+    private class MapConfig
+    {
+        public string? ApiKey { get; set; }
+    }
+
+    // Reverse geocode result shape from JS
+    private class ReverseGeocodeResult
+    {
+        public string? Name { get; set; }
+        public string? Address { get; set; }
+        public string? PlaceId { get; set; }
+        public string? Url { get; set; }
+
+        public List<string>? Types { get; set; }
+
+        // Note: Google Maps JS Places Photo objects do not expose photo_reference.
+        // For long-term stable images, use Places Details (Web Service) server-side
+        // to fetch photo_reference values and generate URLs on demand.
+        public List<string>? PhotoReferences { get; set; }
+        public string? PlacePhotoUrl { get; set; }
+        public List<string>? PlacePhotoUrls { get; set; }
+    }
+
+    // DTO from JS Places getDetails
+    public class PlaceDetailsDto
+    {
+        public string? PlaceId { get; set; }
+        public string? Name { get; set; }
+        public PlaceLocationDto? Coordinates { get; set; }
+        public List<string>? Types { get; set; }
+        public string? Url { get; set; }
+        public List<string>? PhotoReferences { get; set; }
+        public string? Address { get; set; }
+        public string? PlacePhotoUrl { get; set; }
+        public List<string>? PlacePhotoUrls { get; set; }
+    }
+
+    public class PlaceLocationDto
+    {
+        public double Lat { get; set; }
+        public double Lng { get; set; }
+    }
+
+    // Called from JS when map is clicked
+    [JSInvokable]
+    public async Task OnMapClickAsync(double lat, double lng)
+    {
+        await BeginConfirmAsync(lat, lng);
+    }
+
+    // Called from JS when marker drag ends
+    [JSInvokable]
+    public async Task OnMarkerDragEndAsync(double lat, double lng)
+    {
+        await BeginConfirmAsync(lat, lng);
+    }
+
+    // Called from JS when a POI was clicked and details are available
+    [JSInvokable]
+    public Task OnPlaceDetailsAsync(PlaceDetailsDto details)
+    {
+        if (details.Coordinates != null)
+        {
+            _pendingLat = details.Coordinates.Lat;
+            _pendingLng = details.Coordinates.Lng;
+        }
+        else
+        {
+            // Fallback to 0/0 if missing; user may cancel
+            _pendingLat = 0;
+            _pendingLng = 0;
+        }
+
+        _pendingNote = string.Empty;
+        _pendingGeo = new ReverseGeocodeResult
+        {
+            Name = details.Name,
+            Address = details.Address,
+            PlaceId = details.PlaceId,
+            Url = details.Url,
+            Types = details.Types,
+            PhotoReferences = details.PhotoReferences,
+            PlacePhotoUrl = details.PlacePhotoUrl,
+            PlacePhotoUrls = details.PlacePhotoUrls
+        };
+        _showConfirm = true;
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    private async Task BeginConfirmAsync(double lat, double lng)
+    {
+        _pendingLat = lat;
+        _pendingLng = lng;
+        _pendingNote = string.Empty;
+        _pendingGeo = null;
+        try
+        {
+            if (_mapModule != null)
+            {
+                _pendingGeo = await _mapModule.InvokeAsync<ReverseGeocodeResult>("reverseGeocode", lat, lng);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"reverseGeocode failed: {ex.Message}");
+        }
+
+        _showConfirm = true;
+        StateHasChanged();
+    }
+
+    private void CancelConfirm()
+    {
+        _showConfirm = false;
+        _pendingNote = string.Empty;
+        _pendingGeo = null;
+    }
+
+    private async Task ConfirmSaveAsync()
+    {
+        _showConfirm = false;
+        await SaveMarkAsync(_pendingLat, _pendingLng, _pendingNote, _pendingGeo);
+        _pendingNote = string.Empty;
+        _pendingGeo = null;
+    }
+
+    private async Task SaveMarkAsync(double lat, double lng, string note, ReverseGeocodeResult? geocoded)
+    {
+        try
+        {
+            if (geocoded == null && _mapModule != null)
+            {
+                geocoded = await _mapModule.InvokeAsync<ReverseGeocodeResult>("reverseGeocode", lat, lng);
+            }
+
+            var mark = new DateMark
+            {
+                Id = Guid.NewGuid().ToString(),
+                UserId = _currentUserProfile.UserId,
+                Latitude = lat,
+                Longitude = lng,
+                Name = geocoded?.Name ?? string.Empty,
+                Address = geocoded?.Address ?? string.Empty,
+                PlaceId = geocoded?.PlaceId ?? string.Empty,
+                Note = string.IsNullOrWhiteSpace(note) ? null : note,
+                Types = geocoded?.Types ?? [],
+                Url = geocoded?.Url ?? string.Empty,
+                PhotoReferences = geocoded?.PhotoReferences ?? [],
+                PlacePhotoUrl = geocoded?.PlacePhotoUrl ?? string.Empty,
+                PlacePhotoUrls = geocoded?.PlacePhotoUrls ?? [],
+                UserPhotoUrl = _currentUserProfile.Photos.FirstOrDefault()?.Url ?? "/images/user-avatar.svg",
+                UserPhotoUrls = _currentUserProfile.Photos.Select(p => p.Url).ToList(),
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
+
+            // Use the ProfileService to save the DateMark with duplicate checking
+            var (success, existingMark) = await ProfileService.SaveDateMarkAsync(mark);
+
+            if (success)
+            {
+                _savedMarks.Insert(0, mark);
+                await SyncMarksToMapAsync();
+                StateHasChanged();
+            }
+            else if (existingMark != null)
+            {
+                // Duplicate found, navigate to edit the existing mark
+                Navigation.NavigateTo($"/map?lat={existingMark.Latitude}&lng={existingMark.Longitude}&zoom=15&edit={existingMark.Id}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error saving mark: {ex.Message}");
+        }
+    }
+
+    private async Task LoadMarksAsync()
+    {
+        try
+        {
+            _savedMarks.Clear();
+            var userMarks = await ProfileService.GetUserDateMarksAsync(_currentUserProfile.UserId);
+            _savedMarks.AddRange(userMarks.OrderByDescending(m => m.CreatedAt));
+            await SyncMarksToMapAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading marks: {ex.Message}");
+        }
+    }
+
+    private async Task FlyToAsync(DateMark mark)
+    {
+        try
+        {
+            if (_mapModule != null)
+            {
+                await _mapModule.InvokeVoidAsync("setCenter", mark.Latitude, mark.Longitude, 17);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error flying to mark: {ex.Message}");
+        }
+    }
+
+    private async Task RemoveMarkAsync(DateMark mark)
+    {
+        try
+        {
+            var success = await ProfileService.DeleteDateMarkAsync(mark.Id);
+            if (success)
+            {
+                _savedMarks.Remove(mark);
+                await SyncMarksToMapAsync();
+                StateHasChanged();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error removing mark: {ex.Message}");
+        }
+    }
+
+    private void EditMarkAsync(DateMark mark)
+    {
+        try
+        {
+            Navigation.NavigateTo($"/map?lat={mark.Latitude}&lng={mark.Longitude}&zoom=15&edit={mark.Id}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error editing mark: {ex.Message}");
+        }
+    }
+
+    private async Task SyncMarksToMapAsync()
+    {
+        try
+        {
+            if (_mapModule == null) return;
+            var payload = _savedMarks.Select(m => new
+            {
+                lat = m.Latitude,
+                lng = m.Longitude,
+                title = !string.IsNullOrWhiteSpace(m.Name) ? m.Name : $"Lat {m.Latitude:F5}, Lng {m.Longitude:F5}",
+                m.Address,
+                m.Note,
+                createdBy = m.UserId,
+                m.UserPhotoUrl,
+                m.UserPhotoUrls,
+                m.PlacePhotoUrl,
+                m.PlacePhotoUrls,
+                m.Url
+            }).ToList();
+            await _mapModule.InvokeVoidAsync("renderMarks", payload);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error syncing marks to map: {ex.Message}");
+        }
+    }
+
+    private async Task ShowPopupForLocationAsync(double lat, double lng, string placeId)
+    {
+        try
+        {
+            // Call JavaScript function to show popup for specific location
+            if (_mapModule != null)
+            {
+                await _mapModule.InvokeVoidAsync("showPopupForLocation", lat, lng, placeId);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error showing popup for location: {ex.Message}");
+        }
+    }
+
+    private async Task SetupUserProfileHookAsync()
+    {
+        try
+        {
+            // Simplified JavaScript setup without problematic arguments usage
+            await JsRuntime.InvokeVoidAsync("eval", @"
+                window.MapMe = window.MapMe || {};
+                window.MapMe.getUserProfile = async function(username) {
+                    try {
+                        // Simple API fallback approach
+                        const response = await fetch(`/api/users/${username}`);
+                        if (response.ok) {
+                            return await response.json();
+                        } else {
+                            console.warn('User profile API call failed:', response.status);
+                            return null;
+                        }
+                    } catch (error) {
+                        console.error('Error getting user profile:', error);
+                        return null;
+                    }
+                };
+            ");
+
+            Console.WriteLine("User profile hook setup completed successfully");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error setting up user profile hook: {ex.Message}");
+        }
+    }
+
+    [JSInvokable]
+    public async Task<object> GetUserProfileForJsAsync(string username)
+    {
+        try
+        {
+            var userProfile = await ProfileService.GetUserProfileAsync(username);
+            if (userProfile == null)
+            {
+                return new
+                {
+                    fullName = username,
+                    username,
+                    bio = "MapMe user",
+                    location = "Location not specified",
+                    avatar = "/images/user-avatar.svg"
+                };
+            }
+
+            return new
+            {
+                fullName = userProfile.DisplayName,
+                username,
+                bio = userProfile.Bio ?? "MapMe user",
+                location = userProfile.Location ?? "Location not specified",
+                userProfile.Website,
+                joinedAt = "Member since 2024",
+                followers = 0,
+                following = 0,
+                photosCount = userProfile.Photos.Count,
+                interests = userProfile.Interests,
+                avatar = userProfile.Photos.FirstOrDefault()?.Url ?? "/images/user-avatar.svg"
+            };
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error getting user profile for JS: {ex.Message}");
+            return new
+            {
+                fullName = username,
+                username,
+                bio = "MapMe user",
+                avatar = "/images/user-avatar.svg"
+            };
+        }
+    }
+
+    private async Task SetupCurrentUserIdentificationAsync()
+    {
+        try
+        {
+            // Get current user profile to identify the user in JavaScript
+            var userProfile = await ProfileService.GetCurrentUserProfileAsync();
+            await JsRuntime.InvokeVoidAsync("eval", $@"
+                window.MapMe = window.MapMe || {{}};
+                window.MapMe.currentUser = '{userProfile.DisplayName}';
+                window.MapMe.editDateMark = function(dateMarkId) {{
+                    window.location.href = '/map?edit=' + encodeURIComponent(dateMarkId);
+                }};
+            ");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error setting up current user identification: {ex.Message}");
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_isDisposed) return;
+
+        if (_mapModule != null)
+        {
+            try
+            {
+                await _mapModule.InvokeVoidAsync("dispose");
+                await _mapModule.DisposeAsync();
+            }
+            catch (JSDisconnectedException)
+            {
+                // Handle the case where the JavaScript side is no longer available
+            }
+            catch
+            {
+                // Best-effort cleanup
+            }
+        }
+
+        _dotNetHelper?.Dispose();
+        _isDisposed = true;
+    }
+
+}
