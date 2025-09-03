@@ -18,6 +18,8 @@
         <PackageReference Include="Microsoft.Azure.Cosmos" Version="3.54.0-preview.0"/>
         <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.0-preview.7.25380.108"/>
         <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.2.1"/>
+        <!-- Required by Azure Cosmos SDK - DO NOT USE DIRECTLY, use System.Text.Json instead -->
+        <PackageReference Include="Newtonsoft.Json" Version="13.0.3"/>
 
         <!-- Logging and Observability -->
         <PackageReference Include="Serilog.AspNetCore" Version="8.0.2"/>
