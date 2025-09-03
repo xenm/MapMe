@@ -1238,13 +1238,22 @@ function renderMarks(marks) {
                             if (msgBtn) msgBtn.addEventListener('click', (e) => {
                                 e.preventDefault();
                                 const dest = msgBtn.getAttribute('data-msg');
-                                // Only allow safe relative URLs (defense-in-depth)
-                                if (typeof dest === 'string' && /^\/messages\/new\?to=/.test(dest)) {
-                                    window.location.href = dest;
-                                } else {
-                                    // optionally log or display error, but do nothing
-                                    console.warn('Unsafe navigation path blocked:', dest);
+                                // Extract username from dest, validate, and reconstruct safe URL
+                                let usernameParam = null;
+                                if (typeof dest === 'string') {
+                                    const match = dest.match(/^\/messages\/new\?to=(.+)$/);
+                                    if (match && match[1]) {
+                                        usernameParam = match[1];
+                                        // Accept only alphanumeric, underscore, dash, and dot; adjust as needed
+                                        if (/^[a-zA-Z0-9_.-]+$/.test(usernameParam)) {
+                                            const safeDest = `/messages/new?to=${encodeURIComponent(usernameParam)}`;
+                                            window.location.href = safeDest;
+                                            return;
+                                        }
+                                    }
                                 }
+                                // optionally log or display error, but do nothing
+                                console.warn('Unsafe navigation path blocked:', dest, usernameParam);
                             });
                             activePopover = pop;
                             try {
