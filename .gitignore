@@ -5,9 +5,12 @@
 [Rr]eleases/
 x64/
 x86/
+build/
 [Ww][Ii][Nn]32/
 [Aa][Rr][Mm]/
 [Aa][Rr][Mm]64/
+[Bb]in/
+[Oo]bj/
 
 # Test Results
 TestResults/
@@ -21,18 +24,8 @@ TestResults/
 # User-specific files
 *.rsuser
 *.suo
-*.user
-*.userosscache
 *.userprefs
 *.usertest
-*.sln.docstates
-
-# AI assistants shoud ignore this rulebook copy-paste (already git tracked)
-docs/development/ai-coding-assistant-rulebook.md
-
-# Build results
-[Bb]in/
-[Oo]bj/
 
 # .NET Core
 project.lock.json
@@ -47,17 +40,8 @@ tfs/
 .idea/
 *.sln.iml
 
-# Build results
-[Dd]ebug/
-[Dd]ebugPublic/
-[Rr]elease/
-[Rr]eleases/
-x64/
-x86/
-build/
-[Ww][Ii][Nn]32/
-[Aa][Rr][Mm]/
-[Aa][Rr][Mm]64/
+# AI assistants should ignore this rulebook copy-paste (already git tracked)
+docs/development/ai-coding-assistant-rulebook.md
 
 # App specific
 appsettings.*.json
