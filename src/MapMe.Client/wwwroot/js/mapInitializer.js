@@ -186,7 +186,7 @@ export async function initMap(dotNetHelper, elementId, lat, lng, zoom, mapType, 
                 if (!sharedInfoWindow) {
                     sharedInfoWindow = new google.maps.InfoWindow();
                 }
-                const safe = (s) => typeof s === 'string' ? s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') : '';
+                const safe = (s) => typeof s === 'string' ? s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;') : '';
                 const list = Array.isArray(photos) && photos.length > 0 ? photos : ['/images/place-photo.svg'];
                 const imgs = list
                     .map(u => `<img class=\"mm-thumb\" src=\"${u}\" style=\"width:72px;height:72px;border-radius:6px;object-fit:cover;border:1px solid #e9ecef;cursor:pointer;\"/>`)
