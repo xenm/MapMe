@@ -1225,7 +1225,9 @@ function renderMarks(marks) {
                                         !dest.includes('<') && !dest.includes('>') && !dest.includes('javascript:') &&
                                         (new URL(dest, window.location.origin)).origin === window.location.origin
                                     ) {
-                                        window.location.href = dest;
+                                        // Create a safe URL object to prevent HTML interpretation
+                                        const safeUrl = new URL(dest, window.location.origin);
+                                        window.location.href = safeUrl.href;
                                     } else {
                                         // optionally log or display error, but do nothing
                                         console.warn('Unsafe navigation path blocked:', dest);

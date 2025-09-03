@@ -1,3 +1,4 @@
+using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.Azure.Cosmos;
@@ -15,7 +16,9 @@ public class SystemTextJsonCosmosSerializer : CosmosSerializer
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         PropertyNameCaseInsensitive = true,
         WriteIndented = false,
-        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+        // Configure encoder to handle Unicode characters properly for Cosmos DB
+        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
     };
 
     private readonly JsonSerializerOptions _options;
@@ -76,12 +79,31 @@ public class SystemTextJsonCosmosSerializer : CosmosSerializer
         if (input is Stream inputStream)
             return inputStream;
 
-        var json = JsonSerializer.Serialize(input, _options);
-        var stream = new MemoryStream();
-        var writer = new StreamWriter(stream);
-        writer.Write(json);
-        writer.Flush();
-        stream.Position = 0;
-        return stream;
+        try
+        {
+            var json = JsonSerializer.Serialize(input, _options);
+            var stream = new MemoryStream();
+            var writer = new StreamWriter(stream);
+            writer.Write(json);
+            writer.Flush();
+            stream.Position = 0;
+            return stream;
+        }
+        catch (JsonException ex) when (ex.Message.Contains("Unicode") || ex.Message.Contains("escape"))
+        {
+            // If Unicode serialization fails, try with more restrictive encoding
+            var safeOptions = new JsonSerializerOptions(_options)
+            {
+                Encoder = JavaScriptEncoder.Default // More restrictive but safer
+            };
+
+            var json = JsonSerializer.Serialize(input, safeOptions);
+            var stream = new MemoryStream();
+            var writer = new StreamWriter(stream);
+            writer.Write(json);
+            writer.Flush();
+            stream.Position = 0;
+            return stream;
+        }
     }
 }

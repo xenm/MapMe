@@ -3,7 +3,6 @@
 @inject HttpClient Http
 @inject NavigationManager Navigation
 @inject UserProfileService ProfileService
-@using System.Web
 @using MapMe.Client.Models
 @using MapMe.Client.Services
 @implements IAsyncDisposable
@@ -13,64 +12,18 @@
 <HeadContent>
     <!-- Bootstrap CSS for navigation and basic styling -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"
+          integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN"
           crossorigin="anonymous">
     <!-- Bootstrap Icons -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet"
+          integrity="sha384-4LISF5TTJX/fLmGSxO53rV4miRxdg84mZsxmO8Rx5jGtp/LbrixFETvWa5a6sESd"
           crossorigin="anonymous">
     <!-- Remove broken Blazor Bootstrap dependencies - use pure Bootstrap instead -->
     <!-- MapMe specific styles for Map page -->
     <style>
-        /* Navigation and MapMe-specific styles */
+        /* Map page specific styles */
         .page {
             min-height: 100vh;
-        }
-
-        .navbar {
-            background-color: #0d6efd !important;
-        }
-
-        .navbar-brand {
-            color: white !important;
-            font-weight: bold !important;
-        }
-
-        .nav-link {
-            color: white !important;
-            opacity: 1 !important;
-            visibility: visible !important;
-        }
-
-        .nav-link:hover {
-            color: #cce7ff !important;
-            background-color: rgba(255, 255, 255, 0.1) !important;
-        }
-
-        .navbar-nav .nav-link {
-            color: white !important;
-            text-decoration: none !important;
-        }
-
-        .navbar-nav .nav-link.active {
-            color: #cce7ff !important;
-            background-color: rgba(255, 255, 255, 0.2) !important;
-        }
-
-        .btn-outline-light {
-            color: white !important;
-            border-color: white !important;
-        }
-
-        .btn-outline-light:hover {
-            background-color: white !important;
-            color: #0d6efd !important;
-        }
-
-        .navbar-toggler {
-            border-color: white !important;
-        }
-
-        .navbar-toggler-icon {
-            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%28255, 255, 255, 0.75%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e") !important;
         }
 
         /* Map-specific styles */
@@ -79,34 +32,6 @@
             width: 100%;
             border-radius: 8px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-
-        .map-container {
-            margin-top: 20px;
-        }
-
-        .controls {
-            margin-bottom: 20px;
-        }
-
-        .search-box {
-            max-width: 400px;
-        }
-
-        /* Card styles for map info */
-        .info-card {
-            background: white;
-            border-radius: 8px;
-            padding: 15px;
-            margin: 10px 0;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
-
-        .marker-info {
-            background: #f8f9fa;
-            border-left: 4px solid #0d6efd;
-            padding: 10px;
-            margin: 5px 0;
         }
     </style>
 </HeadContent>
@@ -271,7 +196,6 @@
     private bool _isDisposed;
     private string _searchQuery = string.Empty;
     private string? _googleMapsApiKey;
-    private const string StorageKey = "dateMarks";
     private readonly List<DateMark> _savedMarks = new();
     private bool _showConfirm;
     private double _pendingLat;
@@ -279,7 +203,6 @@
     private ReverseGeocodeResult? _pendingGeo;
     private string _pendingNote = string.Empty;
     private UserProfile _currentUserProfile = new();
-    private string _popupPlaceId = string.Empty;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -318,33 +241,9 @@
         }
     }
 
-    private async Task SetupJavaScriptHooksAsync()
-    {
-        try
-        {
-            // Set up JavaScript hook to get user profiles from Blazor
-            var objRef = DotNetObjectReference.Create(this);
-            await JsRuntime.InvokeVoidAsync("eval", $@"
-                window.MapMe = window.MapMe || {{}};
-                window.MapMe._mapInstance = {objRef};
-                window.MapMe.getUserProfile = async function(username) {{
-                    try {{
-                        return await window.MapMe._mapInstance.invokeMethodAsync('GetUserProfileForJS', username);
-                    }} catch (e) {{
-                        console.log('Error getting user profile:', e);
-                        return null;
-                    }}
-                }};
-            ");
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error setting up JavaScript hooks: {ex.Message}");
-        }
-    }
 
     [JSInvokable]
-    public async Task<object?> GetUserProfileForJSAsync(string username)
+    public async Task<object?> GetUserProfileForJavaScriptAsync(string username)
     {
         try
         {
@@ -356,17 +255,17 @@
 
                 return new
                 {
-                    fullName = userProfile.DisplayName ?? username,
-                    username = username,
+                    fullName = userProfile.DisplayName,
+                    username,
                     bio = userProfile.Bio ?? "MapMe user",
                     location = userProfile.Location ?? "Location not specified",
                     website = (string?)null,
                     joinedAt = userProfile.CreatedAt.ToString("MMM yyyy"),
                     followers = 0, // Not implemented yet
                     following = 0, // Not implemented yet
-                    photosCount = userProfile.Photos?.Count ?? 0,
-                    interests = userProfile.Interests?.Take(5).ToArray() ?? new string[0],
-                    avatar = userProfile.Photos?.FirstOrDefault()?.Url ?? "/images/user-avatar.svg",
+                    photosCount = userProfile.Photos.Count,
+                    interests = userProfile.Interests.Take(5).ToArray(),
+                    avatar = userProfile.Photos.FirstOrDefault()?.Url ?? "/images/user-avatar.svg",
                     age = userProfile.Age,
                     gender = userProfile.Gender,
                     totalDateMarks = activityStats.TotalDateMarks,
@@ -379,7 +278,7 @@
             return new
             {
                 fullName = username,
-                username = username,
+                username,
                 bio = "MapMe user",
                 location = "Location not specified",
                 website = (string?)null,
@@ -387,7 +286,7 @@
                 followers = 0,
                 following = 0,
                 photosCount = 0,
-                interests = new string[0],
+                interests = Array.Empty<string>(),
                 avatar = "/images/user-avatar.svg"
             };
         }
@@ -401,15 +300,28 @@
     private async Task HandleQueryParametersAsync()
     {
         var uri = new Uri(Navigation.Uri);
-        var query = HttpUtility.ParseQueryString(uri.Query);
+        var queryString = uri.Query.TrimStart('?');
+        var queryParams = new Dictionary<string, string>();
 
-        if (double.TryParse(query["lat"], out var lat) &&
-            double.TryParse(query["lng"], out var lng))
+        if (!string.IsNullOrEmpty(queryString))
+        {
+            foreach (var param in queryString.Split('&'))
+            {
+                var parts = param.Split('=', 2);
+                if (parts.Length == 2)
+                {
+                    queryParams[Uri.UnescapeDataString(parts[0])] = Uri.UnescapeDataString(parts[1]);
+                }
+            }
+        }
+
+        if (queryParams.TryGetValue("lat", out var latStr) && double.TryParse(latStr, out var lat) &&
+            queryParams.TryGetValue("lng", out var lngStr) && double.TryParse(lngStr, out var lng))
         {
             _latitude = lat;
             _longitude = lng;
 
-            if (int.TryParse(query["zoom"], out var zoom))
+            if (queryParams.TryGetValue("zoom", out var zoomStr) && int.TryParse(zoomStr, out var zoom))
             {
                 _zoom = zoom;
             }
@@ -419,9 +331,9 @@
             }
 
             // Check if we should show popup for a specific place
-            if (bool.TryParse(query["showPopup"], out var showPopup) && showPopup)
+            if (queryParams.TryGetValue("showPopup", out var showPopupStr) && bool.TryParse(showPopupStr, out var showPopup) && showPopup)
             {
-                var placeId = query["placeId"] ?? "";
+                var placeId = queryParams.GetValueOrDefault("placeId") ?? "";
                 // Schedule popup to show after map is initialized and marks are rendered
                 _ = Task.Run(async () =>
                 {
@@ -431,13 +343,9 @@
             }
 
             // Handle edit parameter
-            if (!string.IsNullOrWhiteSpace(query["edit"]))
+            if (queryParams.TryGetValue("edit", out var editDateMarkId) && !string.IsNullOrWhiteSpace(editDateMarkId))
             {
-                var editDateMarkId = query["edit"];
-                if (!string.IsNullOrEmpty(editDateMarkId))
-                {
-                    await HandleEditDateMarkAsync(editDateMarkId);
-                }
+                await HandleEditDateMarkAsync(editDateMarkId);
             }
         }
     }
@@ -448,24 +356,18 @@
         {
             // Find the Date Mark to edit
             var userProfile = await ProfileService.GetCurrentUserProfileAsync();
-            if (userProfile != null)
+            var dateMarks = await ProfileService.GetUserDateMarksAsync(userProfile.UserId);
+            var dateMarkToEdit = dateMarks.FirstOrDefault(dm => dm.Id == dateMarkId);
+
+            if (dateMarkToEdit != null)
             {
-                var dateMarks = await ProfileService.GetUserDateMarksAsync(userProfile.UserId);
-                var dateMarkToEdit = dateMarks.FirstOrDefault(dm => dm.Id == dateMarkId);
+                // Set up for editing - you could show a modal or navigate to edit view
+                // For now, let's center the map on the Date Mark and show info
+                _latitude = dateMarkToEdit.Latitude;
+                _longitude = dateMarkToEdit.Longitude;
+                _zoom = 15;
 
-                if (dateMarkToEdit != null)
-                {
-                    // Set up for editing - you could show a modal or navigate to edit view
-                    // For now, let's center the map on the Date Mark and show info
-                    _latitude = dateMarkToEdit.Latitude;
-                    _longitude = dateMarkToEdit.Longitude;
-                    _zoom = 15;
-
-                    // Store place ID for potential popup display
-                    _popupPlaceId = dateMarkToEdit.PlaceId ?? "";
-
-                    Console.WriteLine($"Editing Date Mark: {dateMarkToEdit.Name} at {dateMarkToEdit.Address}");
-                }
+                Console.WriteLine($"Editing Date Mark: {dateMarkToEdit.Name} at {dateMarkToEdit.Address}");
             }
         }
         catch (Exception ex)
@@ -537,7 +439,6 @@
         {
             // Occurs during prerender or when the circuit/browser connection is gone.
             // Swallow to avoid "no browser renderer" errors.
-            return;
         }
         catch (Exception ex)
         {
@@ -559,7 +460,7 @@
         try
         {
             var position = await JsRuntime.InvokeAsync<GeolocationPosition>("getCurrentPosition");
-            if (position?.Coords != null)
+            if (position.Coords != null)
             {
                 return new Location
                 {
@@ -567,31 +468,24 @@
                     Longitude = position.Coords.Longitude
                 };
             }
-
-            return null;
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Error getting current location: {ex.Message}");
-            return null;
         }
+
+        return null;
     }
 
     private class GeolocationPosition
     {
         public GeolocationCoordinates? Coords { get; set; }
-        public long Timestamp { get; set; }
     }
 
     private class GeolocationCoordinates
     {
         public double Latitude { get; set; }
         public double Longitude { get; set; }
-        public double? Altitude { get; set; }
-        public double Accuracy { get; set; }
-        public double? AltitudeAccuracy { get; set; }
-        public double? Heading { get; set; }
-        public double? Speed { get; set; }
     }
 
     public class Location
@@ -645,7 +539,7 @@
                 // Then call the search function
                 var result = await _mapModule.InvokeAsync<SearchResult>("searchLocation", _searchQuery);
 
-                if (result != null && result.Latitude != 0 && result.Longitude != 0)
+                if (result.Latitude != 0 && result.Longitude != 0)
                 {
                     Console.WriteLine($"Found location: {result.Name} at {result.Latitude}, {result.Longitude}");
                     _latitude = result.Latitude;
@@ -679,10 +573,6 @@
         {
             Console.WriteLine($"Error in SearchLocation: {ex.Message}");
             Console.WriteLine($"Stack trace: {ex.StackTrace}");
-        }
-        finally
-        {
-            // No-op: keep map visible during search to avoid layout glitches
         }
     }
 
@@ -729,16 +619,10 @@
     public class PlaceDetailsDto
     {
         public string? PlaceId { get; set; }
-
         public string? Name { get; set; }
-
-        // Matches JS payload: { location: { lat: number, lng: number } }
-        public PlaceLocationDto? Location { get; set; }
+        public PlaceLocationDto? Coordinates { get; set; }
         public List<string>? Types { get; set; }
-
         public string? Url { get; set; }
-
-        // See note above: JS does not expose photo_reference. Keep placeholders.
         public List<string>? PhotoReferences { get; set; }
         public string? Address { get; set; }
         public string? PlacePhotoUrl { get; set; }
@@ -769,10 +653,10 @@
     [JSInvokable]
     public Task OnPlaceDetailsAsync(PlaceDetailsDto details)
     {
-        if (details?.Location != null)
+        if (details.Coordinates != null)
         {
-            _pendingLat = details.Location.Lat;
-            _pendingLng = details.Location.Lng;
+            _pendingLat = details.Coordinates.Lat;
+            _pendingLng = details.Coordinates.Lng;
         }
         else
         {
@@ -784,14 +668,14 @@
         _pendingNote = string.Empty;
         _pendingGeo = new ReverseGeocodeResult
         {
-            Name = details?.Name,
-            Address = details?.Address,
-            PlaceId = details?.PlaceId,
-            Url = details?.Url,
-            Types = details?.Types,
-            PhotoReferences = details?.PhotoReferences,
-            PlacePhotoUrl = details?.PlacePhotoUrl,
-            PlacePhotoUrls = details?.PlacePhotoUrls
+            Name = details.Name,
+            Address = details.Address,
+            PlaceId = details.PlaceId,
+            Url = details.Url,
+            Types = details.Types,
+            PhotoReferences = details.PhotoReferences,
+            PlacePhotoUrl = details.PlacePhotoUrl,
+            PlacePhotoUrls = details.PlacePhotoUrls
         };
         _showConfirm = true;
         StateHasChanged();
@@ -839,9 +723,10 @@
     {
         try
         {
-            geocoded ??= _mapModule != null
-                ? await _mapModule.InvokeAsync<ReverseGeocodeResult>("reverseGeocode", lat, lng)
-                : null;
+            if (geocoded == null && _mapModule != null)
+            {
+                geocoded = await _mapModule.InvokeAsync<ReverseGeocodeResult>("reverseGeocode", lat, lng);
+            }
 
             var mark = new DateMark
             {
@@ -853,13 +738,13 @@
                 Address = geocoded?.Address ?? string.Empty,
                 PlaceId = geocoded?.PlaceId ?? string.Empty,
                 Note = string.IsNullOrWhiteSpace(note) ? null : note,
-                Types = geocoded?.Types ?? new List<string>(),
+                Types = geocoded?.Types ?? [],
                 Url = geocoded?.Url ?? string.Empty,
-                PhotoReferences = geocoded?.PhotoReferences ?? new List<string>(),
+                PhotoReferences = geocoded?.PhotoReferences ?? [],
                 PlacePhotoUrl = geocoded?.PlacePhotoUrl ?? string.Empty,
-                PlacePhotoUrls = geocoded?.PlacePhotoUrls ?? new List<string>(),
-                UserPhotoUrl = _currentUserProfile.Photos?.FirstOrDefault()?.Url ?? "/images/user-avatar.svg",
-                UserPhotoUrls = _currentUserProfile.Photos?.Select(p => p.Url).ToList() ?? new List<string>(),
+                PlacePhotoUrls = geocoded?.PlacePhotoUrls ?? [],
+                UserPhotoUrl = _currentUserProfile.Photos.FirstOrDefault()?.Url ?? "/images/user-avatar.svg",
+                UserPhotoUrls = _currentUserProfile.Photos.Select(p => p.Url).ToList(),
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             };
@@ -955,14 +840,14 @@
                 lat = m.Latitude,
                 lng = m.Longitude,
                 title = !string.IsNullOrWhiteSpace(m.Name) ? m.Name : $"Lat {m.Latitude:F5}, Lng {m.Longitude:F5}",
-                address = m.Address,
-                note = m.Note,
+                m.Address,
+                m.Note,
                 createdBy = m.UserId,
-                userPhotoUrl = m.UserPhotoUrl,
-                userPhotoUrls = m.UserPhotoUrls,
-                placePhotoUrl = m.PlacePhotoUrl,
-                placePhotoUrls = m.PlacePhotoUrls,
-                url = m.Url
+                m.UserPhotoUrl,
+                m.UserPhotoUrls,
+                m.PlacePhotoUrl,
+                m.PlacePhotoUrls,
+                m.Url
             }).ToList();
             await _mapModule.InvokeVoidAsync("renderMarks", payload);
         }
@@ -976,9 +861,9 @@
     {
         try
         {
+            // Call JavaScript function to show popup for specific location
             if (_mapModule != null)
             {
-                // Call JavaScript function to show popup for specific location
                 await _mapModule.InvokeVoidAsync("showPopupForLocation", lat, lng, placeId);
             }
         }
@@ -1031,7 +916,7 @@
                 return new
                 {
                     fullName = username,
-                    username = username,
+                    username,
                     bio = "MapMe user",
                     location = "Location not specified",
                     avatar = "/images/user-avatar.svg"
@@ -1040,17 +925,17 @@
 
             return new
             {
-                fullName = userProfile.DisplayName ?? username,
-                username = username,
+                fullName = userProfile.DisplayName,
+                username,
                 bio = userProfile.Bio ?? "MapMe user",
                 location = userProfile.Location ?? "Location not specified",
-                website = userProfile.Website,
+                userProfile.Website,
                 joinedAt = "Member since 2024",
                 followers = 0,
                 following = 0,
-                photosCount = userProfile.Photos?.Count ?? 0,
-                interests = userProfile.Interests ?? new List<string>(),
-                avatar = userProfile.Photos?.FirstOrDefault()?.Url ?? "/images/user-avatar.svg"
+                photosCount = userProfile.Photos.Count,
+                interests = userProfile.Interests,
+                avatar = userProfile.Photos.FirstOrDefault()?.Url ?? "/images/user-avatar.svg"
             };
         }
         catch (Exception ex)
@@ -1059,7 +944,7 @@
             return new
             {
                 fullName = username,
-                username = username,
+                username,
                 bio = "MapMe user",
                 avatar = "/images/user-avatar.svg"
             };
@@ -1072,16 +957,13 @@
         {
             // Get current user profile to identify the user in JavaScript
             var userProfile = await ProfileService.GetCurrentUserProfileAsync();
-            if (userProfile != null)
-            {
-                await JsRuntime.InvokeVoidAsync("eval", $@"
-                    window.MapMe = window.MapMe || {{}};
-                    window.MapMe.currentUser = '{userProfile.DisplayName}';
-                    window.MapMe.editDateMark = function(dateMarkId) {{
-                        window.location.href = '/map?edit=' + encodeURIComponent(dateMarkId);
-                    }};
-                ");
-            }
+            await JsRuntime.InvokeVoidAsync("eval", $@"
+                window.MapMe = window.MapMe || {{}};
+                window.MapMe.currentUser = '{userProfile.DisplayName}';
+                window.MapMe.editDateMark = function(dateMarkId) {{
+                    window.location.href = '/map?edit=' + encodeURIComponent(dateMarkId);
+                }};
+            ");
         }
         catch (Exception ex)
         {

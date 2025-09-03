@@ -124,7 +124,7 @@ public class AuthenticationService : IAuthenticationService
             await _userRepository.CreateAsync(user);
 
             // Create user profile
-            await CreateDefaultUserProfileAsync(userId, request.Username, request.DisplayName);
+            await CreateDefaultUserProfileAsync(userId, request.DisplayName);
 
             // Generate JWT token
             var (token, expiresAt) = _jwtService.GenerateToken(user, false);
@@ -197,18 +197,27 @@ public class AuthenticationService : IAuthenticationService
                     return new AuthenticationResponse(false, "An account with this email already exists");
                 }
 
-                // Generate unique username from display name
-                var username = await GenerateUniqueUsernameAsync(request.DisplayName);
+                // Sanitize Google OAuth data to prevent Unicode serialization issues
+                var sanitizedDisplayName = SanitizeUnicodeString(request.DisplayName);
+                var sanitizedEmail = SanitizeUnicodeString(request.Email);
+                var sanitizedGoogleId = SanitizeUnicodeString(request.GoogleId);
+
+                _logger.LogDebug(
+                    "Google OAuth data sanitized - Original DisplayName: {OriginalName}, Sanitized: {SanitizedName}",
+                    request.DisplayName?.Length, sanitizedDisplayName?.Length);
+
+                // Generate unique username from sanitized display name
+                var username = await GenerateUniqueUsernameAsync(sanitizedDisplayName);
                 var now = DateTimeOffset.UtcNow;
                 var userId = Guid.NewGuid().ToString();
 
                 var user = new User(
                     userId,
                     username,
-                    request.Email,
+                    sanitizedEmail,
                     null, // No password for Google users
                     null, // No salt for Google users
-                    request.GoogleId,
+                    sanitizedGoogleId,
                     true, // Email is verified through Google
                     true,
                     now,
@@ -217,7 +226,7 @@ public class AuthenticationService : IAuthenticationService
                 );
 
                 await _userRepository.CreateAsync(user);
-                await CreateDefaultUserProfileAsync(userId, username, request.DisplayName);
+                await CreateDefaultUserProfileAsync(userId, sanitizedDisplayName);
 
                 var (token, expiresAt) = _jwtService.GenerateToken(user, false);
 
@@ -225,7 +234,7 @@ public class AuthenticationService : IAuthenticationService
                     user.Id,
                     user.Username,
                     user.Email,
-                    request.DisplayName,
+                    sanitizedDisplayName,
                     user.IsEmailVerified
                 );
 
@@ -438,8 +447,11 @@ public class AuthenticationService : IAuthenticationService
 
     private async Task<string> GenerateUniqueUsernameAsync(string displayName)
     {
+        // Sanitize display name first to remove problematic Unicode characters
+        var sanitizedDisplayName = SanitizeUnicodeString(displayName);
+
         // Clean display name to create base username
-        var baseUsername = displayName
+        var baseUsername = sanitizedDisplayName
             .ToLowerInvariant()
             .Replace(" ", "")
             .Replace("-", "")
@@ -479,12 +491,14 @@ public class AuthenticationService : IAuthenticationService
         return Guid.NewGuid().ToString("N")[..8];
     }
 
-    private async Task CreateDefaultUserProfileAsync(string userId, string username, string displayName)
+    private async Task CreateDefaultUserProfileAsync(string userId, string displayName)
     {
+        var sanitizedDisplayName = SanitizeUnicodeString(displayName);
+
         var defaultProfile = new UserProfile(
             Id: Guid.NewGuid().ToString(),
             UserId: userId,
-            DisplayName: displayName,
+            DisplayName: sanitizedDisplayName,
             Bio: "New MapMe user",
             Photos: new List<UserPhoto>().AsReadOnly(),
             Preferences: new UserPreferences(
@@ -528,6 +542,56 @@ public class AuthenticationService : IAuthenticationService
 
         // Password is valid
         return new PasswordValidationResult(true, string.Empty);
+    }
+
+    /// <summary>
+    /// Sanitizes Unicode strings to prevent Cosmos DB serialization errors
+    /// </summary>
+    private static string SanitizeUnicodeString(string input)
+    {
+        if (string.IsNullOrEmpty(input))
+        {
+            return input;
+        }
+
+        try
+        {
+            // Remove or replace problematic Unicode characters that can cause Cosmos DB issues
+            var sanitized = input
+                // Remove null characters and control characters (except tab, newline, carriage return)
+                .Where(c => c >= 32 || c == 9 || c == 10 || c == 13)
+                // Remove Unicode escape sequences that might cause issues
+                .Where(c => c != '\\' || !IsFollowedByUnicodeEscape(input, input.IndexOf(c)))
+                .ToArray();
+
+            var result = new string(sanitized);
+
+            // Ensure the string is not empty after sanitization
+            if (string.IsNullOrWhiteSpace(result))
+            {
+                return "User";
+            }
+
+            // Limit length to prevent extremely long names
+            return result.Length > 100 ? result[..100].Trim() : result.Trim();
+        }
+        catch
+        {
+            // Fallback to safe default if sanitization fails
+            return "User";
+        }
+    }
+
+    /// <summary>
+    /// Checks if a backslash is followed by a Unicode escape sequence
+    /// </summary>
+    private static bool IsFollowedByUnicodeEscape(string input, int backslashIndex)
+    {
+        if (backslashIndex < 0 || backslashIndex >= input.Length - 1)
+            return false;
+
+        var nextChar = input[backslashIndex + 1];
+        return nextChar == 'u' || nextChar == 'U' || nextChar == 'x';
     }
 
     #endregion
