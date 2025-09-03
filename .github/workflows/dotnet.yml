@@ -22,6 +22,12 @@ jobs:
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 10.0.x
+    - name: Start Cosmos DB Emulator
+      run: |
+        chmod +x ./scripts/start-cosmos.sh
+        ./scripts/start-cosmos.sh
+        # Wait for Cosmos DB to be ready
+        sleep 30
     - name: Restore dependencies
       run: dotnet restore
     - name: Build
@@ -32,3 +38,12 @@ jobs:
         JWT__SecretKey: ${{ secrets.JWT_SECRETKEY }}
         GoogleMaps__ApiKey: ${{ secrets.GOOGLE_MAPS_API_KEY }}
         Google__ClientId: ${{ secrets.GOOGLE_CLIENT_ID }}
+        CosmosDb__Endpoint: "https://localhost:8081"
+        CosmosDb__Key: "C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw=="
+        CosmosDb__DatabaseName: "mapme"
+        CosmosDb__EnableSSLValidation: "false"
+    - name: Stop Cosmos DB Emulator
+      if: always()
+      run: |
+        chmod +x ./scripts/stop-cosmos.sh
+        ./scripts/stop-cosmos.sh

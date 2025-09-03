@@ -111,7 +111,6 @@ coverage*.xml
 # Tooling/analysis
 .sonarqube/
 .scannerwork/
-.sonarlint/
 BenchmarkDotNet.Artifacts/
 
 # Environment files

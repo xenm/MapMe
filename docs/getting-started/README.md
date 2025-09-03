@@ -4,12 +4,14 @@ Welcome to MapMe! This section will help you get up and running quickly, whether
 
 ## Quick Navigation
 
-| Document | Purpose | Time Required |
-|----------|---------|---------------|
-| [Quick Start](./quick-start.md) | Get the app running in 5 minutes | 5 minutes |
-| [Prerequisites](./prerequisites.md) | Required tools and dependencies | 10 minutes |
-| [Local Development](./local-development.md) | Complete local setup guide | 30 minutes |
-| [First Contribution](./first-contribution.md) | Make your first code contribution | 45 minutes |
+| Document                                        | Purpose                                                                         | Time Required     |
+|-------------------------------------------------|---------------------------------------------------------------------------------|-------------------|
+| [Quick Start](./quick-start.md)                 | Get the app running in 5 minutes                                                | 5 minutes         |
+| [**Local Development**](./local-development.md) | **Complete setup guide** (includes prerequisites, IDE setup, GPG configuration) | **45-60 minutes** |
+| [First Contribution](./first-contribution.md)   | Make your first code contribution                                               | 45 minutes        |
+
+> **📝 Note**: The Local Development guide is now the **single source of truth** for all development setup, consolidating
+> prerequisites, IDE configuration, and workflow guidance.
 
 ## What is MapMe?
 
@@ -25,9 +27,12 @@ MapMe is a modern dating application built with Blazor WebAssembly and .NET 10, 
 
 ```
 MapMe/
-├── MapMe/              # Server project (ASP.NET Core)
-├── MapMe.Client/       # Client project (Blazor WebAssembly)
-└── MapMe.Tests/        # Unit and integration tests
+├── src/
+│   ├── MapMe/              # Server project (ASP.NET Core)
+│   ├── MapMe.Client/       # Client project (Blazor WebAssembly)
+│   └── MapMe.Tests/        # Unit and integration tests
+├── docs/                   # Documentation
+└── scripts/                # Build and test scripts
 ```
 
 **Technology Stack:**
@@ -52,5 +57,5 @@ MapMe/
 
 ---
 
-**Last Updated**: 2025-08-30  
-**Next Review**: 2025-09-30
+**Last Updated**: 2025-09-03  
+**Next Review**: 2025-10-03

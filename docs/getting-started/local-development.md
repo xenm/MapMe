@@ -1,19 +1,125 @@
-# Local Development Setup
+# Complete Local Development Guide
 
-This comprehensive guide will help you set up a complete local development environment for MapMe.
+This comprehensive guide covers everything you need to develop MapMe locally - from initial setup to advanced
+development workflows.
 
-## Prerequisites
+## Prerequisites & Installation
 
-Before starting, ensure you have completed the [Prerequisites Guide](./prerequisites.md):
-- ✅ .NET 10 SDK (preview)
-- ✅ Git
-- ✅ Modern web browser
-- ✅ Google Maps API key configured
+### Required Tools
 
-## Complete Setup Process
+#### .NET 10 SDK (Preview)
 
-### 1. Repository Setup
+MapMe uses .NET 10 preview features.
 
+```bash
+# Download from Microsoft
+# https://dotnet.microsoft.com/download/dotnet/10.0
+
+# Verify installation
+dotnet --version
+# Should show: 10.0.100-preview.x.xxxxx.x
+```
+
+#### Git Configuration
+
+```bash
+# Set up Git identity
+git config --global user.name "Your Name"
+git config --global user.email "your.email@domain.com"
+
+# Enable signed commits (recommended)
+git config --global commit.gpgsign true
+```
+
+#### Modern Web Browser
+
+Required for testing the Blazor WebAssembly application.
+
+- Chrome 90+ (best developer tools)
+- Firefox 88+ / Safari 14+ / Edge 90+
+
+### Google Maps API Setup
+
+MapMe requires Google Maps API access for location features.
+
+#### 1. Create Google Cloud Project
+
+1. Go to [Google Cloud Console](https://console.cloud.google.com/)
+2. Create a new project or select existing one
+3. Enable billing (required for Maps APIs)
+
+#### 2. Enable Required APIs
+
+- **Maps JavaScript API** - Core map functionality
+- **Places API** - Location search and details
+- **Geocoding API** - Address to coordinates conversion
+
+#### 3. Create and Secure API Key
+
+1. Go to **APIs & Services** → **Credentials**
+2. Click **Create Credentials** → **API Key**
+3. Configure restrictions:
+    - **HTTP referrers**: `localhost:*`, `127.0.0.1:*`
+    - **API restrictions**: Maps JavaScript API, Places API, Geocoding API
+
+## Development Environment Setup
+
+### Recommended IDE Configuration
+
+#### Primary: JetBrains Rider + Cascade + Claude Sonnet 4+
+
+- **JetBrains Rider**: Superior .NET 10 preview support, integrated debugging
+- **Cascade Extension**: AI-powered coding assistant with Claude Sonnet 4+
+- **SonarQube for IDE**: Real-time code quality analysis
+- **Qodana Extension**: Continuous inspection and quality gates
+
+#### Rider Commit Settings (Recommended)
+
+Configure pre-commit actions in Rider's commit dialog:
+
+- ✅ **Sign-off commit** - Adds `Signed-off-by` for contribution tracking
+- ✅ **Reformat code** - Applies consistent formatting
+- ✅ **Rearrange code** - Organizes using statements and class members
+- ✅ **Optimize imports** - Removes unused imports
+- ✅ **Perform SonarQube for IDE analysis** - Quality checks before commit
+- ✅ **Check TODO** - Validates TODO comments
+- ✅ **Run 'test-all.sh'** - Full test suite execution
+- ✅ **Run advanced checks after commit** - Post-commit validation
+
+### GPG Key Setup (Recommended for Signed Commits)
+
+**Why GPG Signing?**
+
+- Verifies commit authenticity
+- Required for enterprise environments
+- Shows verified badges on GitHub
+
+**Setup Steps:**
+
+```bash
+# Generate GPG key (RSA 4096-bit, 2-year expiration)
+gpg --full-generate-key
+
+# List and export public key
+gpg --list-secret-keys --keyid-format=long
+gpg --armor --export KEY_ID
+
+# Configure Git to use GPG
+git config --global user.signingkey KEY_ID
+git config --global commit.gpgsign true
+git config --global tag.gpgsign true
+
+# macOS GPG agent configuration
+export GPG_TTY=$(tty)
+echo "pinentry-program /usr/local/bin/pinentry-mac" >> ~/.gnupg/gpg-agent.conf
+gpgconf --kill gpg-agent
+```
+
+**Add GPG key to GitHub**: Settings → SSH and GPG keys → New GPG key
+
+## Repository Setup & Configuration
+
+### 1. Clone and Initial Setup
 ```bash
 # Clone the repository
 git clone https://github.com/xenm/MapMe.git
@@ -21,15 +127,7 @@ cd MapMe
 
 # Verify repository structure
 ls -la
-# Should show: MapMe/, docs/, Scripts/, README.md, etc.
-```
-
-### 2. .NET Configuration
-
-```bash
-# Verify .NET version
-dotnet --version
-# Should show: 10.0.100-preview.x.xxxxx.x
+# Should show: src/, docs/, scripts/, README.md, etc.
 
 # Restore NuGet packages
 dotnet restore
@@ -38,12 +136,12 @@ dotnet restore
 dotnet build
 ```
 
-### 3. Google Maps API Configuration
+### 2. Configure Google Maps API
 
 #### Using User Secrets (Recommended)
 ```bash
 # Navigate to server project
-cd MapMe/MapMe/MapMe
+cd src/MapMe
 
 # Initialize user secrets
 dotnet user-secrets init
@@ -56,38 +154,28 @@ dotnet user-secrets list
 # Should show: GoogleMaps:ApiKey = your-key-here
 
 # Return to root directory
-cd ../../..
+cd ../..
 ```
 
-#### Alternative: Environment Variable
-```bash
-# Set environment variable (session-specific)
-export GOOGLE_MAPS_API_KEY="your-google-maps-api-key"
-
-# For persistent setting, add to your shell profile
-echo 'export GOOGLE_MAPS_API_KEY="your-google-maps-api-key"' >> ~/.bashrc
-source ~/.bashrc
-```
-
-### 4. Database Configuration
+### 3. Database Configuration
 
 MapMe uses in-memory repositories for local development by default. No additional setup required.
 
 #### Optional: Cosmos DB Emulator Setup
 ```bash
-# Start Cosmos DB Emulator (if desired)
-./Scripts/start-cosmos.ps1
+# Start Cosmos DB Emulator (cross-platform)
+./scripts/start-cosmos.sh
 
 # Initialize database
-./Scripts/init-cosmosdb.ps1
+./scripts/init-cosmosdb.sh
 ```
 
-### 5. Running the Application
+### 4. Running the Application
 
 #### Using .NET CLI
 ```bash
 # Run from root directory
-dotnet run --project MapMe/MapMe/MapMe.csproj
+dotnet run --project src/MapMe/MapMe.csproj
 
 # Application will start at:
 # HTTPS: https://localhost:8008
@@ -99,186 +187,163 @@ dotnet run --project MapMe/MapMe/MapMe.csproj
 - **Visual Studio**: Open `MapMe.sln` → Set MapMe as startup project → F5
 - **VS Code**: Open folder → Run "Launch MapMe" configuration
 
-### 6. Verification Steps
+### 5. Verification & Testing
 
-#### 1. Application Health Check
-Navigate to: `https://localhost:8008/health`
-Should return: `Healthy`
-
-#### 2. Google Maps Integration
-1. Open: `https://localhost:8008`
-2. Create account or sign in
-3. Verify map loads correctly
-4. Test location search functionality
-
-#### 3. API Endpoints
-Test key endpoints:
+#### Application Health Check
 ```bash
 # Health check
 curl https://localhost:8008/health
+# Should return: Healthy
 
-# Maps configuration (requires authentication)
-curl https://localhost:8008/config/maps
+# Test Google Maps integration
+# 1. Open: https://localhost:8008
+# 2. Create account or sign in
+# 3. Verify map loads correctly
+# 4. Test location search functionality
 ```
 
-## Development Workflow
-
-### 1. Daily Development
-```bash
-# Start development session
-cd MapMe
-dotnet run --project MapMe/MapMe/MapMe.csproj
-
-# In another terminal - run tests
-dotnet test MapMe/MapMe.Tests
-
-# Watch for changes (optional)
-dotnet watch run --project MapMe/MapMe/MapMe.csproj
-```
-
-### 2. Making Changes
-1. **Create Feature Branch**: `git checkout -b feature/your-feature`
-2. **Make Changes**: Edit code with hot reload support
-3. **Run Tests**: `dotnet test` to verify changes
-4. **Test Manually**: Verify functionality in browser
-5. **Commit Changes**: Follow commit message conventions
-
-### 3. Testing Your Changes
+#### Run Test Suite
 ```bash
 # Run all tests
-dotnet test MapMe/MapMe.Tests
+./scripts/test-all.sh
 
 # Run specific test categories
-dotnet test --filter "Category=Unit"
-dotnet test --filter "Category=Integration"
+./scripts/test-unit.sh
+./scripts/test-integration.sh
 
 # Run with coverage
 dotnet test --collect:"XPlat Code Coverage"
 ```
 
-## IDE-Specific Setup
+## Development Workflow
 
-### JetBrains Rider (Recommended)
-1. **Open Solution**: File → Open → Select `MapMe.sln`
-2. **Configure Run**: Use existing "MapMe" run configuration
-3. **Enable Hot Reload**: Settings → Build → Enable hot reload
-4. **Set Breakpoints**: Full debugging support available
+### Daily Development Process
 
-### Visual Studio 2022
-1. **Open Solution**: File → Open → Project/Solution → Select `MapMe.sln`
-2. **Set Startup Project**: Right-click MapMe project → Set as Startup Project
-3. **Configure Debugging**: F5 for debug mode, Ctrl+F5 for release
-4. **Package Manager**: Tools → NuGet Package Manager for dependencies
+```bash
+# 1. Start development session
+dotnet run --project src/MapMe/MapMe.csproj
 
-### Visual Studio Code
-1. **Open Folder**: File → Open Folder → Select MapMe root directory
-2. **Install Extensions**: C# Dev Kit, GitLens recommended
-3. **Configure Launch**: Use `.vscode/launch.json` configuration
-4. **Integrated Terminal**: Use for dotnet commands
+# 2. In another terminal - watch for changes
+dotnet watch run --project src/MapMe/MapMe.csproj
+
+# 3. Run tests before making changes
+./scripts/test-all.sh
+```
+
+### Feature Development Workflow
+
+1. **Pull latest changes**: `git pull origin main`
+2. **Create feature branch**: `git checkout -b feature/your-feature-name`
+3. **Make changes**: Edit code with hot reload support
+4. **Run tests**: `./scripts/test-all.sh` to verify changes
+5. **Test manually**: Verify functionality in browser
+6. **Commit with configured hooks**: Git commit triggers all quality checks
+7. **Push and create PR**: Follow contribution guidelines
+
+## Alternative Development Environments
+
+### Visual Studio 2022 + GitHub Copilot
+
+- Windows-optimized development
+- Integrated Azure tools
+- GitHub Copilot integration
+
+### VS Code + C# Dev Kit
+
+- Lightweight cross-platform option
+- Extensive extension ecosystem
+- Good for frontend development
+
+**Essential Extensions (Any IDE):**
+
+- SonarQube for IDE
+- GitToolBox
+- .env files support
+- Database Tools
+- HTTP Client
+- Docker support
 
 ## Common Development Tasks
 
 ### Adding New Features
-1. **Create Models**: Add to appropriate Models folder
-2. **Create Services**: Implement business logic in Services
-3. **Create Controllers**: Add API endpoints in Controllers
-4. **Create Components**: Add Blazor components in Client/Pages or Components
-5. **Write Tests**: Add unit and integration tests
-6. **Update Documentation**: Document new features
 
-### Database Development
+1. **Backend**: Add models in `src/MapMe/Models/`, services in `src/MapMe/Services/`
+2. **API**: Add endpoints in `src/MapMe/Program.cs` (minimal APIs)
+3. **Frontend**: Add Blazor components in `src/MapMe.Client/Pages/` or `Components/`
+4. **Tests**: Add unit tests in `src/MapMe.Tests/Unit/`, integration in `Integration/`
+5. **Documentation**: Update relevant docs in `docs/` folder
+
+### Key File Locations
 ```bash
-# Using in-memory repositories (default)
-# No additional setup required
+# Backend structure
+src/MapMe/
+├── Models/          # Data models
+├── Services/        # Business logic
+├── Repositories/    # Data access
+├── Authentication/  # JWT auth
+└── Program.cs       # API endpoints
 
-# Using Cosmos DB Emulator (optional)
-./Scripts/start-cosmos.ps1
-# Update appsettings.Development.json with Cosmos connection
-```
-
-### Frontend Development
-```bash
-# Client-side development
-cd MapMe/MapMe.Client
-
-# JavaScript files location
-# wwwroot/js/mapInitializer.js - Google Maps integration
-# wwwroot/css/ - Custom stylesheets
+# Frontend structure
+src/MapMe.Client/
+├── Pages/           # Blazor pages
+├── Components/      # Reusable components
+├── Services/        # Client services
+└── wwwroot/js/      # JavaScript integration
 ```
 
 ## Troubleshooting
 
-### Common Issues
+### Common Issues & Solutions
 
-#### Port Already in Use
-```bash
-# Find processes using ports
-lsof -i :8008
-lsof -i :8007
-
-# Kill processes
-kill -9 <PID>
-
-# Or update launchSettings.json with different ports
-```
-
-#### Google Maps Not Loading
-1. **Verify API Key**: Check user secrets configuration
-2. **Check Console**: Browser developer tools for errors
-3. **API Restrictions**: Verify Google Cloud Console settings
-4. **Enabled APIs**: Ensure Maps JavaScript API, Places API, Geocoding API are enabled
-
-#### Build Errors
-```bash
-# Clean and restore
-dotnet clean
-dotnet restore
-dotnet build
-
-# Check .NET version
-dotnet --version
-
-# Update global tools if needed
-dotnet tool update -g dotnet-ef
-```
-
-#### Authentication Issues
-1. **JWT Configuration**: Check JWT settings in appsettings
-2. **User Secrets**: Verify configuration with `dotnet user-secrets list`
-3. **Browser Storage**: Clear localStorage and cookies
-4. **Token Expiration**: Check token validity and refresh
+| Issue                       | Solution                                                          |
+|-----------------------------|-------------------------------------------------------------------|
+| **Port already in use**     | `lsof -i :8008` → `kill -9 <PID>` or update `launchSettings.json` |
+| **Google Maps not loading** | Verify API key: `dotnet user-secrets list`, check browser console |
+| **Build errors**            | `dotnet clean && dotnet restore && dotnet build`                  |
+| **Authentication issues**   | Clear browser storage, check JWT config, verify user secrets      |
+| **.NET 10 not found**       | Download from Microsoft .NET downloads page                       |
+| **GPG signing fails**       | `gpg --list-secret-keys`, verify `git config user.signingkey`     |
+| **Rider performance**       | Increase heap size, disable unnecessary plugins, clear caches     |
 
 ### Getting Help
-- **Documentation**: Check [Troubleshooting Guide](../troubleshooting/README.md)
+
+- **Documentation**: Check `docs/troubleshooting/README.md`
 - **GitHub Issues**: Search existing issues or create new one
-- **Team Chat**: Ask in development team channels
 - **Code Review**: Request help during code review process
 
-## Next Steps
-
-After successful setup:
-1. **Explore Codebase**: Familiarize yourself with project structure
-2. **Run Tests**: Understand test coverage and patterns
-3. **Make First Change**: Try a small feature or bug fix
-4. **Read Architecture**: Review [Architecture Documentation](../architecture/README.md)
-5. **Contribute**: Follow [Contributing Guidelines](../development/contributing.md)
-
-## Performance Tips
+## Performance & Debugging Tips
 
 ### Development Performance
 - **Hot Reload**: Use `dotnet watch` for automatic recompilation
-- **Parallel Testing**: Run tests in parallel for faster feedback
-- **IDE Optimization**: Configure IDE for optimal performance
-- **Resource Monitoring**: Monitor CPU and memory usage during development
+- **Parallel Testing**: Run `./scripts/test-all.sh` for faster feedback
+- **IDE Optimization**: Configure Rider memory settings for large solutions
+- **Build Optimization**: Enable parallel builds in IDE settings
 
-### Debugging Tips
-- **Structured Logging**: Use Serilog for comprehensive logging
+### Debugging Best Practices
+
+- **Structured Logging**: Use Serilog with SecureLogging utilities (see `docs/security/secure-logging.md`)
 - **Breakpoint Debugging**: Set breakpoints in both C# and JavaScript
 - **Network Inspection**: Use browser dev tools for API calls
 - **Database Queries**: Monitor Cosmos DB query performance
 
+## Security Considerations
+
+- **Never commit real secrets**: Use User Secrets for development
+- **Use secure logging**: Follow `docs/security/secure-logging.md` guidelines
+- **GPG sign commits**: Verify commit authenticity
+- **Keep dependencies updated**: Regular security updates
+
+## Next Steps
+
+After successful setup:
+
+1. **Read Architecture**: Review `docs/architecture/README.md`
+2. **Make First Change**: Try a small feature following `docs/getting-started/first-contribution.md`
+3. **Follow Coding Standards**: Review `docs/development/ai-coding-assistant-rulebook.md`
+4. **Contribute**: Follow `CONTRIBUTING.md` guidelines
+
 ---
 
-**Estimated Setup Time**: 30-45 minutes  
-**Last Updated**: 2025-08-30  
-**Maintained By**: Development Team
+**Estimated Setup Time**: 45-60 minutes  
+**Last Updated**: 2025-09-03  
+**Single Source of Truth**: This guide replaces all other local development documentation
