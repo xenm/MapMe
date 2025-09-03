@@ -1216,7 +1216,14 @@ function renderMarks(marks) {
                             const btn = pop.querySelector('button.mm-btn[data-go]');
                             if (btn) btn.addEventListener('click', (e) => {
                                 e.preventDefault();
-                                window.location.href = btn.getAttribute('data-go');
+                                const dest = btn.getAttribute('data-go');
+                                // Only allow safe relative URLs (defense-in-depth)
+                                if (typeof dest === 'string' && /^\/user\//.test(dest)) {
+                                    window.location.href = dest;
+                                } else {
+                                    // optionally log or display error, but do nothing
+                                    console.warn('Unsafe navigation path blocked:', dest);
+                                }
                             });
                             const msgBtn = pop.querySelector('button.mm-btn[data-msg]');
                             if (msgBtn) msgBtn.addEventListener('click', (e) => {
