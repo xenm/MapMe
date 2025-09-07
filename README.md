@@ -1,6 +1,6 @@
 # MapMe
 
-![.NET](https://img.shields.io/badge/.NET-10-blue) ![Blazor](https://img.shields.io/badge/Blazor-WASM%20%2B%20Interactive%20SSR-purple) ![Tests](https://img.shields.io/badge/Tests-300/300%20Passing-green) ![License](https://img.shields.io/badge/License-Proprietary-lightgrey) [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=xenm_MapMe&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=xenm_MapMe)
+[![.NET](https://img.shields.io/badge/.NET-10-blue)](https://learn.microsoft.com/en-us/dotnet/core/whats-new/dotnet-10/overview) [![Blazor](https://img.shields.io/badge/Blazor-WASM%20%2B%20Interactive%20SSR-purple)](https://learn.microsoft.com/en-us/aspnet/core/blazor/?view=aspnetcore-10.0) [![Azure Cosmos DB](https://img.shields.io/badge/Azure%20Cosmos%20DB-Cloud-blue?logo=azurecosmosdb&logoColor=white)](https://azure.microsoft.com/en-us/products/cosmos-db/) [![Google Maps](https://img.shields.io/badge/Google%20Maps-API-lightgrey?logo=googlemaps&logoColor=white)](https://developers.google.com/maps) [![Tests](https://img.shields.io/badge/Tests-300/300%20Passing-green)](https://github.com/xenm/MapMe/tree/main/src/MapMe.Tests) [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=xenm_MapMe&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=xenm_MapMe) [![PolyForm Noncommercial License 1.0.0](https://img.shields.io/badge/License-PolyForm%20Noncommercial%201.0.0-blue.svg)](https://polyformproject.org/licenses/noncommercial/1.0.0/)
 
 **A modern dating application built with .NET 10 and Blazor WebAssembly, featuring interactive Google Maps integration,
 comprehensive user profiles, and location-based social discovery.**
@@ -346,8 +346,6 @@ export ASPNETCORE_ENVIRONMENT=Development
 - **Security First**: JWT authentication, secure logging, input validation
 - **Production Ready**: Docker support, CI/CD pipelines, monitoring integration
 
-## License & Ownership
-
 ## License
 
 MapMe is licensed under the [PolyForm Noncommercial License 1.0.0](LICENSE).
@@ -355,7 +353,7 @@ MapMe is licensed under the [PolyForm Noncommercial License 1.0.0](LICENSE).
 **In simple terms:**
 - ✅ **You CAN:** Use for personal projects, research, education, non-profit organizations
 - ❌ **You CANNOT:** Use for commercial purposes, sell services using this code, or make money from it
-- 📧 **Commercial licensing:** For business/commercial use, contact [Adam Zaplatílek](mailto:adam.zaplatilek@gmail.com)
+- 📧 **Commercial licensing:** For business/commercial use, contact [💬 Adam Zaplatílek](mailto:adam.zaplatilek@gmail.com)
 
 See the [LICENSE](LICENSE) file for complete terms.
 
