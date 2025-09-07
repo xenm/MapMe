@@ -177,11 +177,28 @@ Contributors will be recognized in:
 - **GitHub**: Contributor statistics and activity
 
 ## License Agreement
+By contributing code to MapMe, you agree that your contributions will be licensed under the same [PolyForm Noncommercial License 1.0.0](LICENSE) as the project.
 
-By contributing to MapMe, you agree that:
-- Your contributions will be licensed under the same terms as the project
-- You have the right to submit the contributions
-- You understand the proprietary nature of the project's core concepts
+## What You Can Contribute
+- ✅ Bug fixes and improvements
+- ✅ New features that enhance the platform
+- ✅ Documentation improvements
+- ✅ Testing and quality assurance
+
+## What This Means
+- Your contributions become part of the noncommercial codebase
+- Adam Zaplatílek retains the right to offer commercial licenses
+- You retain attribution for your specific contributions
+- All contributions must respect the noncommercial nature of the project
+
+## How to Contribute
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Submit a pull request
+5. Ensure your code follows the project standards
+
+Questions about licensing? Contact [💬 Adam Zaplatílek](mailto:adam.zaplatilek@gmail.com)
 
 ## Questions?
 
