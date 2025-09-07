@@ -1,9 +1,9 @@
 ---
 name: Bug report
 about: Create a report to help us improve
-title: ''
-labels: ''
-assignees: ''
+title: 'Bug: [Short Description of the Problem]'
+labels: bug
+assignees: xenm
 
 ---
 
