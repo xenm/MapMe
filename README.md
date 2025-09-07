@@ -348,17 +348,16 @@ export ASPNETCORE_ENVIRONMENT=Development
 
 ## License & Ownership
 
-This project and its innovative concepts are the intellectual property of Adam Zaplatílek. While the source code is
-publicly available for educational and demonstration purposes, the core ideas, architecture, and unique features remain
-under proprietary ownership.
+## License
 
-**Usage Guidelines:**
-- Educational and demonstration use is encouraged
-- Commercial use requires explicit permission
-- Please ensure you comply with Google Maps API terms of service when using this application
-- Attribution is appreciated when referencing this work
+MapMe is licensed under the [PolyForm Noncommercial License 1.0.0](LICENSE).
 
-For licensing inquiries or commercial use permissions, please contact the project owner.
+**In simple terms:**
+- ✅ **You CAN:** Use for personal projects, research, education, non-profit organizations
+- ❌ **You CANNOT:** Use for commercial purposes, sell services using this code, or make money from it
+- 📧 **Commercial licensing:** For business/commercial use, contact [Adam Zaplatílek](mailto:adam.zaplatilek@gmail.com)
+
+See the [LICENSE](LICENSE) file for complete terms.
 
 ---
 
