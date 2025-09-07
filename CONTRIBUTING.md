@@ -2,6 +2,30 @@
 
 Thank you for your interest in contributing to MapMe! This document provides guidelines and information for contributors.
 
+## License Agreement
+By contributing code to MapMe, you agree that your contributions will be licensed under the same [PolyForm Noncommercial License 1.0.0](LICENSE) as the project.
+
+## What You Can Contribute
+- ✅ Bug fixes and improvements
+- ✅ New features that enhance the platform
+- ✅ Documentation improvements
+- ✅ Testing and quality assurance
+
+## What This Means
+- Your contributions become part of the noncommercial codebase
+- Adam Zaplatílek retains the right to offer commercial licenses
+- You retain attribution for your specific contributions
+- All contributions must respect the noncommercial nature of the project
+
+## How to Contribute
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Submit a pull request
+5. Ensure your code follows the project standards
+
+Questions about licensing? Contact [💬 Adam Zaplatílek](mailto:adam.zaplatilek@gmail.com)
+
 ## Getting Started
 
 ### Prerequisites
@@ -175,30 +199,6 @@ Contributors will be recognized in:
 - **CONTRIBUTORS.md**: List of all contributors
 - **Release Notes**: Major contributions highlighted
 - **GitHub**: Contributor statistics and activity
-
-## License Agreement
-By contributing code to MapMe, you agree that your contributions will be licensed under the same [PolyForm Noncommercial License 1.0.0](LICENSE) as the project.
-
-## What You Can Contribute
-- ✅ Bug fixes and improvements
-- ✅ New features that enhance the platform
-- ✅ Documentation improvements
-- ✅ Testing and quality assurance
-
-## What This Means
-- Your contributions become part of the noncommercial codebase
-- Adam Zaplatílek retains the right to offer commercial licenses
-- You retain attribution for your specific contributions
-- All contributions must respect the noncommercial nature of the project
-
-## How to Contribute
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Submit a pull request
-5. Ensure your code follows the project standards
-
-Questions about licensing? Contact [💬 Adam Zaplatílek](mailto:adam.zaplatilek@gmail.com)
 
 ## Questions?
 
