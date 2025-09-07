@@ -346,8 +346,6 @@ export ASPNETCORE_ENVIRONMENT=Development
 - **Security First**: JWT authentication, secure logging, input validation
 - **Production Ready**: Docker support, CI/CD pipelines, monitoring integration
 
-## License & Ownership
-
 ## License
 
 MapMe is licensed under the [PolyForm Noncommercial License 1.0.0](LICENSE).
